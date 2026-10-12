@@ -6,6 +6,9 @@ import { getUser } from "@/lib/auth";
 import { supabaseConfigured } from "@/lib/supabase/server";
 
 export const metadata = { title: { default: "Admin", template: "%s · Admin" }, robots: { index: false, follow: false } };
+// Admin is per-user and per-request; never pre-render it at build time (a build without Supabase env vars would
+// otherwise try to render admin pages with no admin and crash).
+export const dynamic = "force-dynamic";
 
 function Notice({ title, body, links }: { title: string; body: string; links: { href: string; label: string }[] }) {
   return (
