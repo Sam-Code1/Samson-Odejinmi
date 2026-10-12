@@ -15,7 +15,7 @@ function refresh(courseId?: string) {
 
 /** Attach a downloadable file or an external link to a course, module, lesson or quiz. */
 export async function uploadResource(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const courseId = str(fd, "courseId", 40);
     if (!isUuid(courseId)) return { ok: false, fieldErrors: { courseId: "Choose a course." } };
     const title = str(fd, "title", 140);
@@ -60,7 +60,7 @@ export async function uploadResource(_: ActionResult, fd: FormData): Promise<Act
 }
 
 export async function toggleResourceDownload(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "resourceId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing resource." };
     const on = str(fd, "enabled", 5) === "yes";
@@ -72,7 +72,7 @@ export async function toggleResourceDownload(_: ActionResult, fd: FormData): Pro
 }
 
 export async function deleteResource(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "resourceId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing resource." };
     const { data: r } = await supabase.from("lesson_resources").select("file_path, course_id").eq("id", id).single();
@@ -85,7 +85,7 @@ export async function deleteResource(_: ActionResult, fd: FormData): Promise<Act
 }
 
 export async function uploadMedia(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("media", async (ctx) => {
     const fail = (key: string, message: string): ActionResult => ({ ok: false, fieldErrors: { [key]: message } });
     const file = fd.get("file");
     if (!isFile(file)) return fail("file", "Choose an image to upload.");
@@ -101,7 +101,7 @@ export async function uploadMedia(_: ActionResult, fd: FormData): Promise<Action
 }
 
 export async function deleteMedia(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("media", async ({ supabase }) => {
     const id = str(fd, "mediaId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing image." };
     const { data: m } = await supabase.from("media_assets").select("bucket, path").eq("id", id).single();

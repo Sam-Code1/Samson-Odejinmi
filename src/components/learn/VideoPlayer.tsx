@@ -13,8 +13,9 @@ const embeds: Partial<Record<VideoProvider, (id: string) => string | null>> = {
   youtube: (id) => (/^[A-Za-z0-9_-]{11}$/.test(id) ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&cc_load_policy=0&fs=1` : null),
 };
 
-export function VideoPlayer({ provider, id, title, enabled = true }: { provider: VideoProvider; id?: string | null; title: string; enabled?: boolean }) {
-  const src = enabled && provider !== "none" && id ? embeds[provider]?.(id) ?? null : null;
+export function VideoPlayer({ provider, id, title, enabled = true, autoplay = false }: { provider: VideoProvider; id?: string | null; title: string; enabled?: boolean; autoplay?: boolean }) {
+  const base = enabled && provider !== "none" && id ? embeds[provider]?.(id) ?? null : null;
+  const src = base && autoplay ? `${base}&autoplay=1` : base;
   const unsupported = enabled && provider !== "none" && !embeds[provider];
 
   return (

@@ -31,5 +31,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!ctx) {
     return <Notice title="You don't have access to the admin area" body="This area is for Academy administrators. If you think you should have access, ask the site owner to add your account." links={[{ href: "/dashboard", label: "Go to your dashboard" }, { href: "/academy", label: "Visit the Academy" }]} />;
   }
-  return <AdminShell email={ctx.user.email}>{children}</AdminShell>;
+  return <AdminShell email={ctx.user.email} role={ctx.role}>{children}</AdminShell>;
 }

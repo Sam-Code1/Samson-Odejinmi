@@ -4,7 +4,7 @@ export type CourseRow = {
   id: string; slug: string; title: string; subtitle: string | null; description: string | null; level: string | null;
   status: CourseStatus; image_url: string | null; thumbnail_url: string | null; instructor: string | null; category: string | null;
   estimated_duration: string | null; objectives: string[]; learning_outcomes: string[]; requirements: string[]; target_audience: string[];
-  seo_title: string | null; seo_description: string | null; certificate_enabled: boolean; published_at: string | null; created_at: string; updated_at: string;
+  seo_title: string | null; seo_description: string | null; certificate_enabled: boolean; certificate_requires_quizzes?: boolean; published_at: string | null; created_at: string; updated_at: string;
 };
 
 export type ModuleRow = { id: string; course_id: string; position: number; title: string; description: string | null; status?: "draft" | "published" };

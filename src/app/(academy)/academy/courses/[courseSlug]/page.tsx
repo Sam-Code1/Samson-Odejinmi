@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Container, Section, SectionHeader } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
 import { Accordion } from "@/components/ui/Accordion";
 import { Badge } from "@/components/ui/Badge";
 import { PriceSwitcher } from "@/components/academy/PriceSwitcher";
@@ -11,6 +10,10 @@ import { CourseCurriculum } from "@/components/academy/CourseCurriculum";
 import { course as content } from "@/content/course";
 import { getPublishedCourse } from "@/lib/academy";
 import { getCoursePricing, guessCurrency } from "@/lib/pricing";
+import { CheckoutPanel } from "@/components/academy/CheckoutPanel";
+import { getUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { payableCurrencies, paystackConfigured } from "@/lib/payments/paystack";
 
 export async function generateMetadata({ params }: { params: Promise<{ courseSlug: string }> }): Promise<Metadata> {
   const { courseSlug } = await params;
@@ -35,7 +38,14 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   const course = await getPublishedCourse(courseSlug);
   if (!course) notFound();
 
-  const [prices, h] = await Promise.all([getCoursePricing(course.slug), headers()]);
+  const [prices, h, user] = await Promise.all([getCoursePricing(course.slug), headers(), getUser()]);
+  let enrolled = false;
+  if (user && course.id) {
+    const supabase = await createClient();
+    const { data: e } = await supabase.from("enrolments").select("id").eq("user_id", user.id).eq("course_id", course.id).in("status", ["active", "completed"]).maybeSingle();
+    enrolled = !!e;
+  }
+  const checkout = <CheckoutPanel courseId={course.id} slug={course.slug} prices={prices} payable={payableCurrencies()} signedIn={!!user} enrolled={enrolled} paymentsReady={paystackConfigured()} />;
   const defaultCurrency = guessCurrency(h.get("x-vercel-ip-country"));
   const outcomes = [...course.learningOutcomes, ...course.objectives];
 
@@ -43,7 +53,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
 
       <section className="mesh grain relative overflow-hidden border-b border-line">
         <Container className="grid gap-12 pb-14 pt-14 sm:pt-20 lg:grid-cols-12 lg:pb-24 lg:pt-28">
@@ -64,10 +74,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
             <div className="rounded-xl border border-line bg-elevated/80 p-6 shadow-[0_30px_60px_-34px_rgb(var(--ink)/0.45)] backdrop-blur">
               <div className="thread -mx-6 -mt-6 mb-6 h-px" aria-hidden />
               <PriceSwitcher prices={prices} defaultCurrency={defaultCurrency} size="md" />
-              <div className="mt-7 space-y-3">
-                <Button href="/register" className="w-full">Create an account</Button>
-                <p className="text-caption text-ink-3">Payments aren&apos;t live yet. Create an account now and you&apos;ll be ready when enrolment opens.</p>
-              </div>
+              <div className="mt-7">{checkout}</div>
             </div>
           </div>
         </Container>
@@ -155,7 +162,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
       <Section tone="night">
         <Container className="flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-end">
           <h2 className="text-h1 max-w-3xl">Ready when you are.</h2>
-          <div><Button href="/register" size="lg">Create an account</Button><p className="mt-3 text-caption text-ink-3">Enrolment opens once payments are live.</p></div>
+          <div className="w-full max-w-sm rounded-xl border border-line bg-elevated p-6">{checkout}</div>
         </Container>
       </Section>
     </>

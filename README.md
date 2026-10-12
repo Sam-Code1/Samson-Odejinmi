@@ -17,14 +17,17 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 2. **`supabase/migrations/0002_admin_cms.sql`** (admin CMS, quizzes, payments, certificates, media, settings, storage buckets, security functions). It is **idempotent**: safe on a fresh database and after a partial earlier run. To see what is/isn't applied first, run `supabase/diagnostics/check_0002_status.sql` (read-only).
 3. **`supabase/migrations/0003_website_cms.sql`** (website CMS: site settings, page sections, portfolio, services, SEO, social links, contact messages, activity log; reusable question bank; module publishing; AI generation log). Idempotent, and it seeds the site's existing copy so nothing changes visually. Until it's run, the public site falls back to `src/content/defaults.ts` and the website admin pages ask you to run it.
 4. `supabase/migrations/0004_hero_scene.sql` (moves the Spline scene into the homepage hero; safe to re-run).
-5. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
-6. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
-7. Make yourself an admin (after registering):
+5. **`supabase/migrations/0005_batch1_foundation.sql`** (admin roles + Owner, admin management, coupons, Paystack checkout/fulfilment, certificate numbering + quiz rule, role-aware RLS). Idempotent and non-destructive. **The earliest existing admin becomes the Owner**; other existing admins become Super Admins.
+6. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
+7. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
+8. Make yourself an admin (after registering):
    ```sql
    insert into public.admin_users (user_id) select id from auth.users where email = 'odejinmisamson37@gmail.com';
    ```
 
 ### Environment variables
+Full per-environment guide (Development / Preview / Production, Paystack and email setup): **ENVIRONMENT.md**.
+
 | Variable | Needed for | Notes |
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Everything backed by Supabase | Public, protected by RLS |
@@ -37,6 +40,18 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 If you already ran `seed.sql` before this update, your Blender course is still **published**. Open Admin → Courses → Blender Foundations → Publishing to unpublish it, or leave it published when you're ready.
 
 ## 3. Admin (`/admin`)
+
+### Roles
+| Role | Can use |
+|---|---|
+| Owner (exactly one) | Everything, including Admins (add / invite / change role / disable / remove / transfer ownership) |
+| Super Admin | Everything except managing admins |
+| Academy Admin | Courses, modules, lessons, quizzes, questions, resources, AI tools, students, enrolments, certificates, media |
+| Content Manager | Website CMS, media, coupons |
+| Support | Students, enrolments |
+
+Enforced three times: hidden in the sidebar (UI), re-checked in every server action (`runAdmin(permission, …)`), and enforced by RLS through `has_admin_permission()` in the database. Registering, paying or enrolling never grants admin access. Sensitive Owner actions (removing an admin, granting Super Admin, transferring ownership) ask for the Owner's password again, with a 5-attempts-per-15-minutes limit.
+
 Authorisation is enforced on the server: signed-out users go to login, signed-in non-admins see an "no access" page, and every action re-checks `is_admin()` in the database. Nothing relies on hiding links.
 
 | Area | What you can do |
@@ -79,7 +94,6 @@ AI generation (`/admin/ai/quiz-generator`): choose course → module → lesson 
 8. Turn certificates on, complete every lesson, open `/dashboard` → certificate link → public verification.
 
 ## 5. Not built / deferred (honestly)
-- **Paystack checkout and server-side verification**: tables, admin views and settings are ready; the payment flow is not built. Enrol students manually for now.
 - **Drag-and-drop** reordering: replaced by reliable up/down + "move to module" controls.
 - **Rich-text editor**: lessons use plain text with paragraphs, `## headings` and `- lists`.
 - **Free-preview playback**: the flag is stored; previews are not enabled (every lesson requires enrolment).

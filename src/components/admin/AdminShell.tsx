@@ -3,59 +3,64 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { AtSign, Award, BookOpen, Briefcase, ClipboardList, Compass, CreditCard, FolderOpen, Globe, HelpCircle, History, Home, Image as ImageIcon, Inbox, Layers, LayoutDashboard, LogOut, Menu, Paperclip, PenLine, PlayCircle, Search, Settings, Share2, Sparkles, User, UserCheck, Users, X } from "lucide-react";
+import { ShieldCheck, TicketPercent, AtSign, Award, BookOpen, Briefcase, ClipboardList, Compass, CreditCard, FolderOpen, Globe, HelpCircle, History, Home, Image as ImageIcon, Inbox, Layers, LayoutDashboard, LogOut, Menu, Paperclip, PenLine, PlayCircle, Search, Settings, Share2, Sparkles, User, UserCheck, Users, X } from "lucide-react";
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
 import { signOut } from "@/app/auth-actions";
 import { ToastProvider } from "./Toast";
 import { cn } from "@/lib/utils";
+import { can, ROLE_LABELS, type AdminRole, type Permission } from "@/lib/admin/roles";
 
-type Item = { href: string; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; exact?: boolean };
+type Item = { href: string; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; exact?: boolean; perm?: Permission };
 
 const groups: { title: string; items: Item[] }[] = [
   { title: "Overview", items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true }] },
   { title: "Website", items: [
-    { href: "/admin/website/homepage", label: "Homepage", icon: Home },
-    { href: "/admin/website/about", label: "About", icon: User },
-    { href: "/admin/website/portfolio", label: "Portfolio", icon: FolderOpen },
-    { href: "/admin/website/services", label: "Services", icon: Briefcase },
-    { href: "/admin/website/contact", label: "Contact", icon: AtSign },
-    { href: "/admin/website/messages", label: "Messages", icon: Inbox },
-    { href: "/admin/website/social", label: "Social links", icon: Share2 },
-    { href: "/admin/website/seo", label: "SEO", icon: Search },
+    { href: "/admin/website/homepage", label: "Homepage", icon: Home, perm: "website" },
+    { href: "/admin/website/about", label: "About", icon: User, perm: "website" },
+    { href: "/admin/website/portfolio", label: "Portfolio", icon: FolderOpen, perm: "website" },
+    { href: "/admin/website/services", label: "Services", icon: Briefcase, perm: "website" },
+    { href: "/admin/website/contact", label: "Contact", icon: AtSign, perm: "website" },
+    { href: "/admin/website/messages", label: "Messages", icon: Inbox, perm: "website" },
+    { href: "/admin/website/social", label: "Social links", icon: Share2, perm: "website" },
+    { href: "/admin/website/seo", label: "SEO", icon: Search, perm: "website" },
   ] },
   { title: "Academy", items: [
-    { href: "/admin/courses", label: "Courses", icon: BookOpen },
-    { href: "/admin/modules", label: "Modules", icon: Layers },
-    { href: "/admin/lessons", label: "Lessons", icon: PlayCircle },
-    { href: "/admin/quizzes", label: "Quizzes", icon: ClipboardList },
-    { href: "/admin/questions", label: "Question bank", icon: HelpCircle },
-    { href: "/admin/resources", label: "Resources", icon: Paperclip },
+    { href: "/admin/courses", label: "Courses", icon: BookOpen, perm: "academy" },
+    { href: "/admin/modules", label: "Modules", icon: Layers, perm: "academy" },
+    { href: "/admin/lessons", label: "Lessons", icon: PlayCircle, perm: "academy" },
+    { href: "/admin/quizzes", label: "Quizzes", icon: ClipboardList, perm: "academy" },
+    { href: "/admin/questions", label: "Question bank", icon: HelpCircle, perm: "academy" },
+    { href: "/admin/resources", label: "Resources", icon: Paperclip, perm: "academy" },
   ] },
   { title: "People", items: [
-    { href: "/admin/students", label: "Students", icon: Users },
-    { href: "/admin/enrolments", label: "Enrolments", icon: UserCheck },
-    { href: "/admin/payments", label: "Payments", icon: CreditCard },
-    { href: "/admin/certificates", label: "Certificates", icon: Award },
+    { href: "/admin/students", label: "Students", icon: Users, perm: "students" },
+    { href: "/admin/enrolments", label: "Enrolments", icon: UserCheck, perm: "enrolments" },
+    { href: "/admin/payments", label: "Payments", icon: CreditCard, perm: "payments" },
+    { href: "/admin/certificates", label: "Certificates", icon: Award, perm: "certificates" },
+  ] },
+  { title: "Marketing", items: [
+    { href: "/admin/coupons", label: "Coupons", icon: TicketPercent, perm: "coupons" },
   ] },
   { title: "AI tools", items: [
-    { href: "/admin/ai/quiz-generator", label: "Quiz generator", icon: Sparkles },
-    { href: "/admin/ai/content-assistant", label: "Content assistant", icon: PenLine },
+    { href: "/admin/ai/quiz-generator", label: "Quiz generator", icon: Sparkles, perm: "ai" },
+    { href: "/admin/ai/content-assistant", label: "Content assistant", icon: PenLine, perm: "ai" },
   ] },
   { title: "System", items: [
-    { href: "/admin/media", label: "Media", icon: ImageIcon },
-    { href: "/admin/settings/site", label: "Site settings", icon: Globe },
-    { href: "/admin/settings", label: "Academy settings", icon: Settings, exact: true },
-    { href: "/admin/activity", label: "Activity", icon: History },
+    { href: "/admin/media", label: "Media", icon: ImageIcon, perm: "media" },
+    { href: "/admin/settings/site", label: "Site settings", icon: Globe, perm: "settings" },
+    { href: "/admin/settings", label: "Academy settings", icon: Settings, exact: true, perm: "settings" },
+    { href: "/admin/admins", label: "Admins", icon: ShieldCheck, perm: "admins" },
+    { href: "/admin/activity", label: "Activity log", icon: History, perm: "activity" },
   ] },
 ];
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function NavLinks({ onNavigate, role }: { onNavigate?: () => void; role: AdminRole }) {
   const pathname = usePathname();
   const active = (i: Item) => (i.exact ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + "/"));
   const link = "flex h-10 items-center gap-3 rounded px-3 text-[0.9375rem] font-medium transition-colors lg:h-9 lg:text-body-sm";
   return (
     <nav aria-label="Admin" className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-      {groups.map((g) => (
+      {groups.map((g) => ({ ...g, items: g.items.filter((i) => !i.perm || can(role, i.perm)) })).filter((g) => g.items.length > 0).map((g) => (
         <div key={g.title}>
           <p className="px-3 pb-2 text-meta font-semibold uppercase tracking-wider text-ink-3">{g.title}</p>
           <ul className="space-y-0.5">
@@ -90,7 +95,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AdminShell({ email, children }: { email?: string; children: React.ReactNode }) {
+export function AdminShell({ email, role, children }: { email?: string; role: AdminRole; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const btn = useRef<HTMLButtonElement>(null);
@@ -110,7 +115,7 @@ export function AdminShell({ email, children }: { email?: string; children: Reac
           <div className="flex h-16 shrink-0 items-center border-b border-line px-6">
             <Link href="/admin" className="text-[1.0625rem] font-semibold tracking-tight">Fola Academy<span className="ml-2 text-caption font-medium text-ink-3">Admin</span></Link>
           </div>
-          <NavLinks />
+          <NavLinks role={role} />
         </aside>
 
         <div className="min-w-0">
@@ -122,7 +127,7 @@ export function AdminShell({ email, children }: { email?: string; children: Reac
               <span className="text-label lg:hidden">Fola Academy</span>
             </div>
             <div className="flex items-center gap-2">
-              {email && <span className="hidden max-w-[16rem] truncate text-caption text-ink-3 sm:inline">{email}</span>}
+              {email && <span className="hidden max-w-[16rem] truncate text-caption text-ink-3 sm:inline">{email} · {ROLE_LABELS[role]}</span>}
               <ThemeSwitcher />
             </div>
           </header>
@@ -137,7 +142,7 @@ export function AdminShell({ email, children }: { email?: string; children: Reac
                 <span className="text-label">Fola Academy Admin</span>
                 <button type="button" onClick={() => { setOpen(false); btn.current?.focus(); }} aria-label="Close navigation" className="-mr-2 flex h-11 w-11 items-center justify-center"><X aria-hidden className="h-5 w-5" strokeWidth={1.5} /></button>
               </div>
-              <NavLinks onNavigate={() => setOpen(false)} />
+              <NavLinks role={role} onNavigate={() => setOpen(false)} />
             </div>
           </div>
         )}

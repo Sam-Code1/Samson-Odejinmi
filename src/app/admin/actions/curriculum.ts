@@ -6,6 +6,7 @@ import { dbError, runAdmin } from "@/lib/admin/guard";
 import type { ActionResult } from "@/lib/admin/result";
 import { bool, int, isUuid, optStr, parseYouTubeId, slugify, str } from "@/lib/admin/validation";
 import { logActivity } from "@/lib/admin/activity";
+import { resolveImageField } from "@/lib/admin/storage";
 
 function refresh(courseId: string, slug?: string) {
   revalidatePath(`/admin/courses/${courseId}`);
@@ -18,7 +19,7 @@ function refresh(courseId: string, slug?: string) {
 
 // ───────────── modules ─────────────
 export async function createModule(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const courseId = str(fd, "courseId", 40);
     const title = str(fd, "title", 120);
     if (!isUuid(courseId)) return { ok: false, error: "Missing course." };
@@ -32,7 +33,7 @@ export async function createModule(_: ActionResult, fd: FormData): Promise<Actio
 }
 
 export async function renameModule(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "moduleId", 40);
     const title = str(fd, "title", 120);
     if (!isUuid(id)) return { ok: false, error: "Missing module." };
@@ -45,7 +46,7 @@ export async function renameModule(_: ActionResult, fd: FormData): Promise<Actio
 }
 
 export async function setModuleStatus(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const id = str(fd, "moduleId", 40), to = str(fd, "to", 10);
     if (!isUuid(id) || !["draft", "published"].includes(to)) return { ok: false, error: "That change isn't valid." };
     const { data, error } = await ctx.supabase.from("modules").update({ status: to }).eq("id", id).select("course_id, title").single();
@@ -57,7 +58,7 @@ export async function setModuleStatus(_: ActionResult, fd: FormData): Promise<Ac
 }
 
 export async function deleteModule(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "moduleId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing module." };
     const { data: m } = await supabase.from("modules").select("course_id").eq("id", id).single();
@@ -69,7 +70,7 @@ export async function deleteModule(_: ActionResult, fd: FormData): Promise<Actio
 }
 
 export async function moveModule(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "moduleId", 40);
     const dir = str(fd, "dir", 4);
     if (!isUuid(id) || !["up", "down"].includes(dir)) return { ok: false, error: "That move isn't valid." };
@@ -122,12 +123,16 @@ function parseLesson(fd: FormData): Parsed {
 }
 
 export async function createLesson(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async (ctx) => {
+    const { supabase } = ctx;
     const courseId = str(fd, "courseId", 40);
     const moduleId = str(fd, "module_id", 40);
     if (!isUuid(courseId) || !isUuid(moduleId)) return { ok: false, fieldErrors: { module_id: "Choose a module. Create one first if the course has none." } };
     const parsed = parseLesson(fd);
     if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
+    const thumb = await resolveImageField(ctx, fd, "video_thumbnail", "lesson_image");
+    if (!thumb.ok) return { ok: false, fieldErrors: { video_thumbnail: thumb.error } };
+    if (thumb.url !== undefined) parsed.patch.video_thumbnail = thumb.url;
     const { data: mod } = await supabase.from("modules").select("course_id").eq("id", moduleId).single();
     if (!mod || mod.course_id !== courseId) return { ok: false, fieldErrors: { module_id: "That module isn't part of this course." } };
     const { data: last } = await supabase.from("lessons").select("position").eq("module_id", moduleId).order("position", { ascending: false }).limit(1);
@@ -141,12 +146,15 @@ export async function createLesson(_: ActionResult, fd: FormData): Promise<Actio
 }
 
 export async function saveLesson(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const { supabase } = ctx;
     const id = str(fd, "lessonId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing lesson." };
     const parsed = parseLesson(fd);
     if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
+    const thumb = await resolveImageField(ctx, fd, "video_thumbnail", "lesson_image");
+    if (!thumb.ok) return { ok: false, fieldErrors: { video_thumbnail: thumb.error } };
+    if (thumb.url !== undefined) parsed.patch.video_thumbnail = thumb.url;
     const intent = str(fd, "intent", 10);
     const patch: Record<string, unknown> = { ...parsed.patch };
     if (intent === "publish") patch.status = "published";
@@ -165,7 +173,7 @@ export async function saveLesson(_: ActionResult, fd: FormData): Promise<ActionR
 }
 
 export async function setLessonStatus(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "lessonId", 40);
     const to = str(fd, "to", 10);
     if (!isUuid(id) || !["draft", "published"].includes(to)) return { ok: false, error: "That change isn't valid." };
@@ -177,7 +185,7 @@ export async function setLessonStatus(_: ActionResult, fd: FormData): Promise<Ac
 }
 
 export async function publishAllLessons(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const courseId = str(fd, "courseId", 40);
     if (!isUuid(courseId)) return { ok: false, error: "Missing course." };
     const { error } = await supabase.from("lessons").update({ status: "published" }).eq("course_id", courseId);
@@ -188,7 +196,7 @@ export async function publishAllLessons(_: ActionResult, fd: FormData): Promise<
 }
 
 export async function deleteLesson(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "lessonId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing lesson." };
     const { data: l } = await supabase.from("lessons").select("course_id").eq("id", id).single();
@@ -201,7 +209,7 @@ export async function deleteLesson(_: ActionResult, fd: FormData): Promise<Actio
 }
 
 export async function duplicateLesson(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "lessonId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing lesson." };
     const { data: l } = await supabase.from("lessons").select("*").eq("id", id).single();
@@ -218,7 +226,7 @@ export async function duplicateLesson(_: ActionResult, fd: FormData): Promise<Ac
 }
 
 export async function moveLesson(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "lessonId", 40);
     const dir = str(fd, "dir", 4);
     if (!isUuid(id) || !["up", "down"].includes(dir)) return { ok: false, error: "That move isn't valid." };
@@ -237,7 +245,7 @@ export async function moveLesson(_: ActionResult, fd: FormData): Promise<ActionR
 }
 
 export async function moveLessonToModule(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "lessonId", 40);
     const moduleId = str(fd, "moduleId", 40);
     if (!isUuid(id) || !isUuid(moduleId)) return { ok: false, error: "Choose a module to move the lesson to." };

@@ -7,7 +7,9 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ActionButton } from "@/components/admin/ActionButton";
 import { AdminError } from "@/components/admin/AdminStates";
 import { setCertificateRevoked } from "@/app/admin/actions/people";
-import { getAdminContext } from "@/lib/admin/guard";
+import { requirePermission } from "@/lib/admin/guard";
+import { Panel } from "@/components/admin/PageHeader";
+import { IssueCertificateForm } from "@/components/admin/IssueCertificateForm";
 import { personName, type Person } from "@/lib/admin/format";
 import { PAGE_SIZE, first, formatDate, pageParam, safeSearch } from "@/lib/admin/validation";
 
@@ -17,21 +19,24 @@ type Row = { id: string; certificate_number: string; issued_at: string; complete
 export default async function CertificatesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const q = safeSearch(first(sp.q) ?? "").toUpperCase(), page = pageParam(sp.page);
-  const { supabase } = (await getAdminContext())!;
+  const ctx = await requirePermission("certificates");
+  if (!ctx) return null;
+  const { supabase } = ctx;
   let query = supabase.from("certificates").select("id, certificate_number, issued_at, completed_at, revoked, courses(title), profiles(first_name, last_name, email)", { count: "exact" }).order("issued_at", { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   if (q) query = query.ilike("certificate_number", `%${q}%`);
-  const { data, count, error } = await query;
+  const [{ data, count, error }, { data: courses }] = await Promise.all([query, supabase.from("courses").select("id, title").neq("status", "archived").order("title")]);
 
   return (
     <>
-      <PageHeader title="Certificates" subtitle="Issued automatically when a student completes 100% of a course that has certificates turned on (Course → Publishing)." />
+      <PageHeader title="Certificates" subtitle="Issued automatically when a student completes every lesson (and, if the course requires it, passes every quiz) in a course with certificates turned on. IDs look like FOLA-ACADEMY-CERT-2026-000001." />
+      <Panel title="Issue a certificate manually" className="mb-8"><IssueCertificateForm courses={(courses ?? []) as { id: string; title: string }[]} /></Panel>
       <div className="mb-5"><SearchInput placeholder="Search certificate number" /></div>
       {error ? <AdminError /> : (
         <>
           <DataTable<Row> rows={(data ?? []) as unknown as Row[]} rowKey={(r) => r.id}
             empty={{ title: "No certificates yet", body: "They appear here after students complete a course with certificates enabled.", action: { href: "/admin/courses", label: "Go to courses" } }}
             columns={[
-              { key: "n", header: "Number", primary: true, cell: (r) => <Link href={`/certificate/${r.certificate_number}`} className="font-medium hover:underline">{r.certificate_number}</Link> },
+              { key: "n", header: "Number", primary: true, cell: (r) => <Link href={`/verify/certificate/${r.certificate_number}`} className="font-medium hover:underline">{r.certificate_number}</Link> },
               { key: "s", header: "Student", cell: (r) => personName(r.profiles) },
               { key: "c", header: "Course", cell: (r) => r.courses?.title ?? "–" },
               { key: "d", header: "Issued", cell: (r) => formatDate(r.issued_at) },

@@ -8,6 +8,7 @@ import { ResourceList } from "@/components/admin/ResourceList";
 import { ActionButton } from "@/components/admin/ActionButton";
 import { deleteLesson } from "@/app/admin/actions/curriculum";
 import { getAdminContext } from "@/lib/admin/guard";
+import { getLibraryImages } from "@/lib/admin/media";
 import { isUuid } from "@/lib/admin/validation";
 import type { LessonRow, ResourceRow } from "@/lib/admin/types";
 
@@ -16,7 +17,9 @@ export const metadata = { title: "Edit lesson" };
 export default async function EditLesson({ params }: { params: Promise<{ courseId: string; lessonId: string }> }) {
   const { courseId, lessonId } = await params;
   if (!isUuid(courseId) || !isUuid(lessonId)) notFound();
-  const { supabase } = (await getAdminContext())!;
+  const ctx = (await getAdminContext())!;
+  const { supabase } = ctx;
+  const library = await getLibraryImages(ctx);
 
   const [{ data: lessonRaw }, { data: modules }, { data: all }, { data: res }, { data: quizzes }, { data: sources }] = await Promise.all([
     supabase.from("lessons").select("*").eq("id", lessonId).eq("course_id", courseId).maybeSingle(),
@@ -42,7 +45,7 @@ export default async function EditLesson({ params }: { params: Promise<{ courseI
       <PageHeader eyebrow={mod?.title ?? "Lesson"} title={lesson.title} subtitle={<Link href={`${base}?tab=curriculum`} className="underline underline-offset-4">Back to curriculum</Link>}
         actions={<><StatusBadge status={lesson.status} /><Link href={`${base}/lessons/${lessonId}/preview`} className="inline-flex h-10 items-center gap-2 rounded border border-line-strong px-4 text-label hover:border-ink"><Eye aria-hidden className="h-4 w-4" />Preview as student</Link></>} />
       <div className="grid gap-8 xl:grid-cols-[1fr_20rem]">
-        <LessonForm courseId={courseId} modules={mods} lesson={lesson} sources={sources as { transcript: string | null; notes: string | null } | null} />
+        <LessonForm courseId={courseId} modules={mods} lesson={lesson} sources={sources as { transcript: string | null; notes: string | null } | null} library={library} />
         <div className="space-y-6">
           <Panel title="Navigate">
             <div className="flex flex-col gap-2 text-body-sm">

@@ -11,6 +11,9 @@ const matches = (path: string, bases: string[]) => bases.some((b) => path === b 
  * This is a convenience only: every protected page and action re-checks on the server, and RLS enforces access.
  */
 export async function updateSession(request: NextRequest) {
+  // Lets server components (the admin template) know which admin area is being rendered. Never trusted for auth on
+  // its own: it only decides which permission to check, and is overwritten here so a client can't spoof it.
+  request.headers.set("x-pathname", request.nextUrl.pathname);
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

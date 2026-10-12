@@ -1,4 +1,4 @@
-import { setCertificates, setCourseStatus } from "@/app/admin/actions/courses";
+import { setCertificateQuizRule, setCertificates, setCourseStatus } from "@/app/admin/actions/courses";
 import { Panel } from "../PageHeader";
 import { StatusBadge } from "../StatusBadge";
 import { ActionButton } from "../ActionButton";
@@ -46,6 +46,14 @@ export function PublishingTab({ course, modules, publishedLessons, pricingRows }
         <ActionButton action={setCertificates} fields={{ courseId: course.id, enabled: course.certificate_enabled ? "no" : "yes" }} variant="outline" className="h-10 px-4 text-label">
           {course.certificate_enabled ? "Certificates are on. Turn off" : "Certificates are off. Turn on"}
         </ActionButton>
+        {course.certificate_enabled && (
+          <div className="mt-4 border-t border-line pt-4">
+            <p className="mb-2 text-body-sm text-ink-2">{course.certificate_requires_quizzes ? "Students must also pass every published quiz in this course." : "Quizzes are optional for the certificate."}</p>
+            <ActionButton action={setCertificateQuizRule} fields={{ courseId: course.id, required: course.certificate_requires_quizzes ? "no" : "yes" }} variant="outline" className="h-10 px-4 text-label">
+              {course.certificate_requires_quizzes ? "Make quizzes optional" : "Require passing all quizzes"}
+            </ActionButton>
+          </div>
+        )}
       </Panel>
     </div>
   );

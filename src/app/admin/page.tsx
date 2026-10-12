@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Briefcase, CreditCard, FolderOpen, PlayCircle, Plus, Sparkles, Users } from "lucide-react";
+import { TicketPercent, Briefcase, CreditCard, FolderOpen, PlayCircle, Plus, Sparkles, Users } from "lucide-react";
 import { PageHeader, Panel } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { AdminEmpty, AdminError } from "@/components/admin/AdminStates";
 import { getAdminContext } from "@/lib/admin/guard";
+import type { Permission } from "@/lib/admin/roles";
 import { formatDate, formatMoneyMinor } from "@/lib/admin/validation";
 
 export const metadata = { title: "Dashboard" };
@@ -12,7 +13,10 @@ export const metadata = { title: "Dashboard" };
 type Person = { first_name: string; last_name: string; email: string | null } | null;
 const name = (p: Person) => (p ? `${p.first_name} ${p.last_name}`.trim() || p.email || "Student" : "Deleted user");
 
-type Stats = { students: number; active_enrolments: number; published_courses: number; draft_courses: number; lessons: number; quiz_attempts: number; revenue: Record<string, number> };
+type Stats = {
+  students: number; active_enrolments: number; published_courses: number; draft_courses: number; lessons: number; quiz_attempts: number;
+  revenue: Record<string, number> | null; active_students?: number; completed_enrolments?: number; total_courses?: number; certificates?: number;
+};
 
 export default async function AdminDashboard() {
   const ctx = (await getAdminContext())!;
@@ -41,7 +45,7 @@ export default async function AdminDashboard() {
   const sectionRows = (sections.data ?? []) as { status: string }[];
   const sectionsLive = sectionRows.filter((r) => r.status === "published").length;
 
-  const header = <PageHeader eyebrow="Control room" title="Dashboard" subtitle="Your website and Fola Academy at a glance. Every number here comes from the database." actions={<Link href="/admin/website/portfolio/new" className="inline-flex h-10 items-center gap-2 rounded bg-ink px-4 text-label text-canvas hover:bg-ink/90"><Plus aria-hidden className="h-4 w-4" />New project</Link>} />;
+  const header = <PageHeader eyebrow="Control room" title="Dashboard" subtitle="Your website and Fola Academy at a glance. Every number here comes from the database." actions={ctx.can("academy") ? <Link href="/admin/courses/new" className="inline-flex h-10 items-center gap-2 rounded bg-ink px-4 text-label text-canvas hover:bg-ink/90"><Plus aria-hidden className="h-4 w-4" />New course</Link> : undefined} />;
 
   if (stats.error || !stats.data) {
     // Server-side only (shows in the terminal running `npm run dev`). The on-screen message is unchanged.
@@ -69,14 +73,15 @@ export default async function AdminDashboard() {
   const payRows = (pays.data ?? []) as unknown as P[];
 
   const quick = [
-    { href: "/admin/website/portfolio/new", label: "New portfolio project", icon: FolderOpen },
-    { href: "/admin/website/services/new", label: "New service", icon: Briefcase },
-    { href: "/admin/courses/new", label: "New course", icon: Plus },
-    { href: "/admin/courses", label: "New lesson (choose a course)", icon: PlayCircle },
-    { href: "/admin/ai/quiz-generator", label: "Generate quiz", icon: Sparkles },
-    { href: "/admin/students", label: "View students", icon: Users },
-    { href: "/admin/payments", label: "Review payments", icon: CreditCard },
-  ];
+    { href: "/admin/website/portfolio/new", label: "New portfolio project", icon: FolderOpen, perm: "website" },
+    { href: "/admin/website/services/new", label: "New service", icon: Briefcase, perm: "website" },
+    { href: "/admin/courses/new", label: "New course", icon: Plus, perm: "academy" },
+    { href: "/admin/courses", label: "New lesson (choose a course)", icon: PlayCircle, perm: "academy" },
+    { href: "/admin/ai/quiz-generator", label: "Generate quiz", icon: Sparkles, perm: "ai" },
+    { href: "/admin/coupons/new", label: "New coupon", icon: TicketPercent, perm: "coupons" },
+    { href: "/admin/students", label: "View students", icon: Users, perm: "students" },
+    { href: "/admin/payments", label: "Review payments", icon: CreditCard, perm: "payments" },
+  ].filter((q) => ctx.can(q.perm as Permission));
   type Log = { id: string; action: string; resource_label: string | null; actor_email: string | null; created_at: string };
   const logRows = (recentLog.data ?? []) as Log[];
   const studentRows = (newStudents.data ?? []) as { id: string; first_name: string; last_name: string; email: string | null; created_at: string }[];
@@ -84,8 +89,8 @@ export default async function AdminDashboard() {
   return (
     <>
       {header}
-      <h2 className="mb-3 text-admin-section">Website</h2>
-      {websiteReady ? (
+      {ctx.can("website") && <h2 className="mb-3 text-admin-section">Website</h2>}
+      {!ctx.can("website") ? null : websiteReady ? (
         <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
           <StatCard label="Published projects" value={pPub.count ?? 0} hint={pPlaceholder.count ? `+ ${pPlaceholder.count} placeholder${pPlaceholder.count === 1 ? "" : "s"} to replace` : undefined} href="/admin/website/portfolio" />
           <StatCard label="Draft projects" value={pDraft.count ?? 0} href="/admin/website/portfolio?status=draft" />
@@ -98,12 +103,12 @@ export default async function AdminDashboard() {
       )}
       <h2 className="mb-3 text-admin-section">Academy</h2>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Total students" value={s.students} href="/admin/students" />
-        <StatCard label="Active enrolments" value={s.active_enrolments} href="/admin/enrolments" />
-        <StatCard label="Published courses" value={s.published_courses} hint={`${s.draft_courses} draft`} href="/admin/courses" />
-        <StatCard label="Total lessons" value={s.lessons} href="/admin/lessons" />
+        <StatCard label="Students" value={s.students} hint={s.active_students != null ? `${s.active_students} active in 30 days` : undefined} href="/admin/students" />
+        <StatCard label="Active enrolments" value={s.active_enrolments} hint={s.completed_enrolments != null ? `${s.completed_enrolments} completed` : undefined} href="/admin/enrolments" />
+        <StatCard label="Courses" value={s.total_courses ?? s.published_courses} hint={`${s.published_courses} published · ${s.draft_courses} draft`} href="/admin/courses" />
         <StatCard label="Quiz attempts" value={s.quiz_attempts} href="/admin/quizzes" />
-        <StatCard label="Revenue" value={revenue.length ? formatMoneyMinor(revenue[0][1], revenue[0][0]) : "0"} hint={revenue.length > 1 ? revenue.slice(1).map(([c, v]) => formatMoneyMinor(v, c)).join(" · ") : revenue.length ? undefined : "No successful payments yet"} href="/admin/payments" />
+        <StatCard label="Certificates issued" value={s.certificates ?? 0} href="/admin/certificates" />
+        {ctx.can("payments") && <StatCard label="Revenue" value={revenue.length ? formatMoneyMinor(revenue[0][1], revenue[0][0]) : "0"} hint={revenue.length > 1 ? revenue.slice(1).map(([c, v]) => formatMoneyMinor(v, c)).join(" · ") : revenue.length ? undefined : "No successful payments yet"} href="/admin/payments" />}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -152,8 +157,8 @@ export default async function AdminDashboard() {
             </ul>
           </Panel>
 
-          <Panel title="Recent payments" actions={<Link href="/admin/payments" className="text-caption font-semibold text-ink-2 hover:text-ink">View all</Link>}>
-            {payRows.length === 0 ? <p className="text-body-sm text-ink-3">No payments yet. They appear here once Paystack is connected.</p> : (
+          {ctx.can("payments") && <Panel title="Recent payments" actions={<Link href="/admin/payments" className="text-caption font-semibold text-ink-2 hover:text-ink">View all</Link>}>
+            {payRows.length === 0 ? <p className="text-body-sm text-ink-3">No payments yet.</p> : (
               <ul className="divide-y divide-line">
                 {payRows.map((p) => (
                   <li key={p.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
@@ -163,7 +168,7 @@ export default async function AdminDashboard() {
                 ))}
               </ul>
             )}
-          </Panel>
+          </Panel>}
 
           <Panel title="New students">
             {studentRows.length === 0 ? <p className="text-body-sm text-ink-3">New registrations appear here.</p> : (
@@ -171,11 +176,11 @@ export default async function AdminDashboard() {
             )}
           </Panel>
 
-          <Panel title="Recent content updates" actions={<Link href="/admin/activity" className="text-caption font-semibold text-ink-2 hover:text-ink">View all</Link>}>
+          {ctx.can("activity") && <Panel title="Recent activity log" actions={<Link href="/admin/activity" className="text-caption font-semibold text-ink-2 hover:text-ink">View all</Link>}>
             {logRows.length === 0 ? <p className="text-body-sm text-ink-3">Changes made in Admin are listed here.</p> : (
-              <ul className="space-y-3">{logRows.map((l) => <li key={l.id} className="text-body-sm"><p><span className="first-letter:uppercase">{l.action}</span>{l.resource_label ? `: ${l.resource_label}` : ""}</p><p className="text-caption text-ink-3">{formatDate(l.created_at, true)}{l.actor_email ? ` · ${l.actor_email}` : ""}</p></li>)}</ul>
+              <ul className="space-y-3">{logRows.map((l) => <li key={l.id} className="text-body-sm"><p><span className="first-letter:uppercase">{l.action}</span>{l.resource_label ? `: ${l.resource_label}` : ""}</p><p className="text-caption text-ink-3">{formatDate(l.created_at, true)}{l.actor_email ? ` · ${l.actor_email}` : " · system"}</p></li>)}</ul>
             )}
-          </Panel>
+          </Panel>}
 
           <Panel title="Learning activity">
             {activity.length === 0 ? <p className="text-body-sm text-ink-3">Lesson completions and quiz attempts will show up here.</p> : (

@@ -5,24 +5,31 @@ import { createClient } from "@/lib/supabase/server";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/States";
+import { formatMoney } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
 type Enrol = { course_id: string; courses: { slug: string; title: string; subtitle: string | null } };
 type Recent = { completed_at: string; lessons: { title: string; slug: string; courses: { slug: string; title: string } } };
-type Prog = { course_id: string; percent: number; completed_lessons: number; total_lessons: number };
+type Prog = { course_id: string; percent: number; completed_lessons: number; total_lessons: number; last_lesson_id: string | null };
+type Attempt = { id: string; percent: number; passed: boolean; submitted_at: string; quizzes: { title: string } | null };
+type Purchase = { reference: string; amount_minor: number; currency: string; provider: string; status: string; paid_at: string | null; created_at: string; courses: { title: string } | null };
 
 export default async function DashboardPage() {
   const user = await requireUser("/dashboard");
   const supabase = await createClient();
 
-  const [{ data: profile }, { data: enrolRaw }, { data: progRaw }, { data: recentRaw }, { data: certRaw }] = await Promise.all([
+  const [{ data: profile }, { data: enrolRaw }, { data: progRaw }, { data: recentRaw }, { data: certRaw }, { data: attemptRaw }, { data: payRaw }] = await Promise.all([
     supabase.from("profiles").select("first_name").eq("id", user.id).maybeSingle(),
     supabase.from("enrolments").select("course_id, courses(slug, title, subtitle)").eq("user_id", user.id).in("status", ["active", "completed"]),
-    supabase.from("course_progress").select("course_id, percent, completed_lessons, total_lessons").eq("user_id", user.id),
+    supabase.from("course_progress").select("course_id, percent, completed_lessons, total_lessons, last_lesson_id").eq("user_id", user.id),
     supabase.from("lesson_progress").select("completed_at, lessons(title, slug, courses(slug, title))").eq("user_id", user.id).eq("completed", true).order("completed_at", { ascending: false }).limit(5),
     supabase.from("certificates").select("certificate_number, issued_at, revoked, courses(title)").eq("user_id", user.id).eq("revoked", false),
+    supabase.from("quiz_attempts").select("id, percent, passed, submitted_at, quizzes(title)").eq("user_id", user.id).order("submitted_at", { ascending: false }).limit(5),
+    supabase.from("payments").select("reference, amount_minor, currency, provider, status, paid_at, created_at, courses(title)").eq("user_id", user.id).in("status", ["successful", "refunded"]).order("created_at", { ascending: false }).limit(10),
   ]);
+  const attempts = (attemptRaw ?? []) as unknown as Attempt[];
+  const purchases = (payRaw ?? []) as unknown as Purchase[];
   const certs = (certRaw ?? []) as unknown as { certificate_number: string; issued_at: string; courses: { title: string } | null }[];
 
   const enrols = (enrolRaw ?? []) as unknown as Enrol[];
@@ -30,6 +37,8 @@ export default async function DashboardPage() {
   const recent = (recentRaw ?? []) as unknown as Recent[];
   const current = enrols.find((e) => (progress.get(e.course_id)?.percent ?? 0) < 100) ?? enrols[0];
   const name = profile?.first_name?.trim();
+  const lastId = current ? progress.get(current.course_id)?.last_lesson_id : null;
+  const { data: lastLesson } = lastId ? await supabase.from("lessons").select("title, slug").eq("id", lastId).maybeSingle() : { data: null };
 
   return (
     <div className="space-y-20">
@@ -50,10 +59,11 @@ export default async function DashboardPage() {
                   <p className="mt-3 text-h2">{current.courses.title}</p>
                   <div className="mt-6 max-w-md">
                     <ProgressBar value={progress.get(current.course_id)?.percent ?? 0} label={`${current.courses.title} progress`} />
-                    <p className="mt-2 text-caption text-ink-3">{progress.get(current.course_id)?.completed_lessons ?? 0} of {progress.get(current.course_id)?.total_lessons ?? 0} lessons complete</p>
+                    <p className="mt-2 text-caption text-ink-3">{Math.round(progress.get(current.course_id)?.percent ?? 0)}% · {progress.get(current.course_id)?.completed_lessons ?? 0} of {progress.get(current.course_id)?.total_lessons ?? 0} lessons complete</p>
+                    {lastLesson && <p className="mt-3 text-body-sm text-ink-2">Last viewed: {lastLesson.title as string}</p>}
                   </div>
                 </div>
-                <div className="lg:col-span-4 lg:text-right"><Button href={`/learn/${current.courses.slug}`} size="lg">Continue</Button></div>
+                <div className="lg:col-span-4 lg:text-right"><Button href={lastLesson ? `/learn/${current.courses.slug}/${lastLesson.slug as string}` : `/learn/${current.courses.slug}`} size="lg">Continue</Button></div>
               </div>
             </section>
           )}
@@ -84,7 +94,35 @@ export default async function DashboardPage() {
             {certs.map((c) => (
               <li key={c.certificate_number} className="flex flex-wrap items-center justify-between gap-2 border-b border-line py-4">
                 <span className="text-body">{c.courses?.title}</span>
-                <Link href={`/certificate/${c.certificate_number}`} className="text-label"><span className="link-line pb-0.5">View certificate {c.certificate_number}</span></Link>
+                <Link href={`/verify/certificate/${c.certificate_number}`} className="text-label"><span className="link-line pb-0.5">View certificate {c.certificate_number}</span></Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {attempts.length > 0 && (
+        <section aria-labelledby="quizzes">
+          <h2 id="quizzes" className="text-h3">Quiz results</h2>
+          <ul className="mt-6 border-t border-line">
+            {attempts.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line py-4">
+                <span className="text-body">{a.quizzes?.title ?? "Quiz"}</span>
+                <span className="text-body-sm"><span className="tabular-nums">{a.percent}%</span> <span className={a.passed ? "text-blue" : "text-warm"}>{a.passed ? "Passed" : "Not passed"}</span> <span className="text-caption text-ink-3">· {new Date(a.submitted_at).toLocaleDateString("en", { day: "numeric", month: "short" })}</span></span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {purchases.length > 0 && (
+        <section aria-labelledby="purchases">
+          <h2 id="purchases" className="text-h3">Purchases</h2>
+          <ul className="mt-6 border-t border-line">
+            {purchases.map((p) => (
+              <li key={p.reference} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line py-4">
+                <span className="text-body">{p.courses?.title ?? "Course"}<span className="block text-caption text-ink-3">Ref {p.reference}</span></span>
+                <span className="text-body-sm tabular-nums">{p.provider === "free" ? "Free" : formatMoney(p.amount_minor, p.currency)}{p.status === "refunded" && <span className="ml-2 text-warm">Refunded</span>}</span>
               </li>
             ))}
           </ul>

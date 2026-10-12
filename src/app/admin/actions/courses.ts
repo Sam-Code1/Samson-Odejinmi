@@ -18,7 +18,7 @@ function revalidatePublic(slug?: string) {
 }
 
 export async function createCourse(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const { supabase } = ctx;
     const title = str(fd, "title", 120);
     if (!title) return { ok: false, fieldErrors: { title: "Course title is required." } };
@@ -34,7 +34,7 @@ export async function createCourse(_: ActionResult, fd: FormData): Promise<Actio
 }
 
 export async function saveCourse(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const id = str(fd, "id", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing course." };
     const title = str(fd, "title", 120);
@@ -71,7 +71,7 @@ export async function saveCourse(_: ActionResult, fd: FormData): Promise<ActionR
 }
 
 export async function saveSeo(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "id", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing course." };
     const seo_title = optStr(fd, "seo_title", 70);
@@ -84,7 +84,7 @@ export async function saveSeo(_: ActionResult, fd: FormData): Promise<ActionResu
 }
 
 export async function savePricing(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "id", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing course." };
     const fieldErrors: Record<string, string> = {};
@@ -110,7 +110,7 @@ export async function savePricing(_: ActionResult, fd: FormData): Promise<Action
 }
 
 export async function setCourseStatus(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const { supabase } = ctx;
     const id = str(fd, "courseId", 40);
     const to = str(fd, "to", 20);
@@ -135,12 +135,25 @@ export async function setCourseStatus(_: ActionResult, fd: FormData): Promise<Ac
 }
 
 export async function setCertificates(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("academy", async ({ supabase }) => {
     const id = str(fd, "courseId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing course." };
     const { error } = await supabase.from("courses").update({ certificate_enabled: str(fd, "enabled", 5) === "yes" }).eq("id", id);
     if (error) return dbError(error);
     revalidatePath(`/admin/courses/${id}`);
     return { ok: true, message: "Certificate setting saved." };
+  });
+}
+
+export async function setCertificateQuizRule(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  return runAdmin("academy", async (ctx) => {
+    const id = str(fd, "courseId", 40);
+    if (!isUuid(id)) return { ok: false, error: "Missing course." };
+    const required = str(fd, "required", 5) === "yes";
+    const { data, error } = await ctx.supabase.from("courses").update({ certificate_requires_quizzes: required }).eq("id", id).select("title").single();
+    if (error) return dbError(error);
+    await logActivity(ctx, "certificate rule changed", "course", id, (data?.title as string) ?? null, { requires_quizzes: required });
+    revalidatePath(`/admin/courses/${id}`);
+    return { ok: true, message: required ? "Students must now pass every quiz to get the certificate." : "Quizzes are now optional for the certificate." };
   });
 }

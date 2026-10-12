@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/admin/validation";
+import { notifyNewCertificates } from "@/lib/certificates";
 
 export type QuizReview = { question_id: string; is_correct: boolean; explanation: string | null; correct_option_ids: string[] | null };
 export type QuizResult = {
@@ -17,7 +18,7 @@ export type QuizResult = {
  * The browser only sends which options were ticked, never scores, never user ids.
  */
 export async function submitQuiz(fd: FormData): Promise<QuizResult> {
-  await requireUser();
+  const user = await requireUser();
   const quizId = String(fd.get("quizId") ?? "");
   if (!isUuid(quizId)) return { ok: false, error: "That quiz isn't available." };
 
@@ -37,5 +38,10 @@ export async function submitQuiz(fd: FormData): Promise<QuizResult> {
     return { ok: false, error: "We couldn't submit your answers. Please try again." };
   }
   revalidatePath("/dashboard");
-  return { ok: true, result: data as NonNullable<QuizResult["result"]> };
+  const result = data as NonNullable<QuizResult["result"]>;
+  if (result.passed) {
+    const { data: p } = await supabase.from("profiles").select("first_name").eq("id", user.id).maybeSingle();
+    await notifyNewCertificates(supabase, user, (p?.first_name as string) ?? "");
+  }
+  return { ok: true, result };
 }

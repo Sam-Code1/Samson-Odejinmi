@@ -29,7 +29,7 @@ type Fail = { ok: false; error: string };
 
 async function admin(): Promise<AdminContext | Fail> {
   const ctx = await getAdminContext();
-  return ctx ?? { ok: false, error: "You don't have permission to do that." };
+  return ctx && ctx.can("ai") ? ctx : { ok: false, error: "You don't have permission to do that." };
 }
 const isFail = (x: unknown): x is Fail => !!x && typeof x === "object" && (x as Fail).ok === false;
 

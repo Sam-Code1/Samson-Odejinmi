@@ -2,8 +2,9 @@ import { createLesson, saveLesson } from "@/app/admin/actions/curriculum";
 import { AdminForm } from "./AdminForm";
 import { CheckboxInput, FormSection, SelectInput, TextAreaInput, TextInput } from "./FormFields";
 import type { LessonRow } from "@/lib/admin/types";
+import { ImageField, type LibraryImage } from "./ImageField";
 
-export function LessonForm({ courseId, modules, lesson, defaultModuleId, sources }: { courseId: string; modules: { id: string; title: string }[]; lesson?: LessonRow; defaultModuleId?: string; sources?: { transcript: string | null; notes: string | null } | null }) {
+export function LessonForm({ courseId, modules, lesson, defaultModuleId, sources, library = [] }: { courseId: string; modules: { id: string; title: string }[]; lesson?: LessonRow; defaultModuleId?: string; sources?: { transcript: string | null; notes: string | null } | null; library?: LibraryImage[] }) {
   const published = lesson?.status === "published";
   const secs = lesson?.duration_seconds ?? 0;
   return (
@@ -33,6 +34,7 @@ export function LessonForm({ courseId, modules, lesson, defaultModuleId, sources
           <TextInput label="Minutes" name="duration_min" type="number" min={0} defaultValue={secs ? String(Math.floor(secs / 60)) : ""} />
           <TextInput label="Seconds" name="duration_sec" type="number" min={0} max={59} defaultValue={secs ? String(secs % 60) : ""} />
         </div>
+        <ImageField name="video_thumbnail" label="Video thumbnail (optional)" current={lesson?.video_thumbnail ?? null} library={library} hint="Shown as a click-to-play poster. The video only loads when the student presses play." />
         <CheckboxInput label="Show the video to students" name="video_enabled" defaultChecked={lesson?.video_enabled ?? true} hint="Untick to hide the video without removing it." className="self-end pb-2" />
       </FormSection>
 

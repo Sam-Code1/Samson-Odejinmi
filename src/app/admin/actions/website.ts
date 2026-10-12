@@ -46,7 +46,7 @@ function parseCta(fd: FormData, prefix: "cta" | "cta2", errors: FieldErrors) {
 
 // ═════════════════════════ PAGE SECTIONS ═════════════════════════
 export async function saveSection(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "sectionId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing section." };
     const { data: row } = await ctx.supabase.from("page_sections").select("page, section_key, label, settings").eq("id", id).maybeSingle();
@@ -99,7 +99,7 @@ export async function saveSection(_: ActionResult, fd: FormData): Promise<Action
 }
 
 export async function moveSection(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "sectionId", 40), dir = str(fd, "dir", 4);
     if (!isUuid(id) || !["up", "down"].includes(dir)) return { ok: false, error: "That move isn't valid." };
     const { data: row } = await ctx.supabase.from("page_sections").select("page").eq("id", id).maybeSingle();
@@ -119,7 +119,7 @@ export async function moveSection(_: ActionResult, fd: FormData): Promise<Action
 
 // ═════════════════════════ SITE SETTINGS ═════════════════════════
 export async function saveSiteSettings(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const errors: FieldErrors = {};
     const site_name = str(fd, "site_name", 80), full_name = str(fd, "full_name", 120);
     if (!site_name) errors.site_name = "Site name is required.";
@@ -149,7 +149,7 @@ export async function saveSiteSettings(_: ActionResult, fd: FormData): Promise<A
 
 /** Contact page details live in site_settings; this saves only the contact-related fields. */
 export async function saveContactSettings(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const contact_email = str(fd, "contact_email", 200);
     if (!EMAIL_RE.test(contact_email)) return { ok: false, fieldErrors: { contact_email: "Enter a valid email address." } };
     const { error } = await ctx.supabase.from("site_settings").update({
@@ -167,7 +167,7 @@ export async function saveContactSettings(_: ActionResult, fd: FormData): Promis
 const PLATFORMS = ["linkedin", "x", "instagram", "youtube", "pinterest", "github", "behance", "artstation", "vimeo", "tiktok", "facebook", "email", "website", "other"];
 
 export async function saveSocialLink(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "linkId", 40);
     const platform = str(fd, "platform", 20), label = str(fd, "label", 60), raw = str(fd, "url", 500);
     const errors: FieldErrors = {};
@@ -195,7 +195,7 @@ export async function saveSocialLink(_: ActionResult, fd: FormData): Promise<Act
 }
 
 export async function deleteSocialLink(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "linkId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing link." };
     const { error } = await ctx.supabase.from("social_links").delete().eq("id", id);
@@ -213,7 +213,7 @@ export async function moveSocialLink(_: ActionResult, fd: FormData): Promise<Act
 
 /** Generic up/down reorder for tables with a display_order column (rewrites orders as 10, 20, 30…). */
 async function reorder(fd: FormData, table: "social_links" | "portfolio_projects" | "services" | "portfolio_media", idField: string, path: string, scope?: { column: string; value: string }) {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, idField, 40), dir = str(fd, "dir", 4);
     if (!isUuid(id) || !["up", "down"].includes(dir)) return { ok: false, error: "That move isn't valid." };
     let q = ctx.supabase.from(table).select("id").order("display_order").order("created_at");
@@ -237,7 +237,7 @@ async function reorder(fd: FormData, table: "social_links" | "portfolio_projects
 const SEO_ROUTES = ["home", "about", "portfolio", "services", "contact", "academy", "academy_courses"];
 
 export async function saveSeoEntry(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const key = str(fd, "route_key", 30);
     if (!SEO_ROUTES.includes(key)) return { ok: false, error: "Unknown page." };
     const errors: FieldErrors = {};
@@ -265,7 +265,7 @@ export async function saveSeoEntry(_: ActionResult, fd: FormData): Promise<Actio
 
 // ═════════════════════════ CONTACT MESSAGES ═════════════════════════
 export async function setMessageStatus(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "messageId", 40), to = str(fd, "to", 10);
     if (!isUuid(id) || !["new", "read", "archived"].includes(to)) return { ok: false, error: "That change isn't valid." };
     const { error } = await ctx.supabase.from("contact_messages").update({ status: to, read_at: to === "new" ? null : new Date().toISOString() }).eq("id", id);
@@ -277,7 +277,7 @@ export async function setMessageStatus(_: ActionResult, fd: FormData): Promise<A
 }
 
 export async function deleteMessage(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "messageId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing message." };
     const { error } = await ctx.supabase.from("contact_messages").delete().eq("id", id);
@@ -331,7 +331,7 @@ async function parseProject(ctx: AdminContext, fd: FormData) {
 }
 
 export async function createProject(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const title = str(fd, "title", 140);
     if (!title) return { ok: false, fieldErrors: { title: "Project title is required." } };
     const slug = slugify(str(fd, "slug", 80) || title);
@@ -350,7 +350,7 @@ export async function createProject(_: ActionResult, fd: FormData): Promise<Acti
 }
 
 export async function saveProject(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "projectId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing project." };
     const { errors, patch, title } = await parseProject(ctx, fd);
@@ -369,7 +369,7 @@ export async function saveProject(_: ActionResult, fd: FormData): Promise<Action
 }
 
 export async function setProjectStatus(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "projectId", 40), to = str(fd, "to", 12);
     if (!isUuid(id) || !(STATUSES as readonly string[]).includes(to)) return { ok: false, error: "That change isn't valid." };
     const { data, error } = await ctx.supabase.from("portfolio_projects").update({ status: to }).eq("id", id).select("title").single();
@@ -382,7 +382,7 @@ export async function setProjectStatus(_: ActionResult, fd: FormData): Promise<A
 }
 
 export async function toggleProjectFeatured(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "projectId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing project." };
     const on = str(fd, "on", 5) === "yes";
@@ -399,7 +399,7 @@ export async function moveProject(_: ActionResult, fd: FormData): Promise<Action
 }
 
 export async function deleteProject(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "projectId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing project." };
     const { data } = await ctx.supabase.from("portfolio_projects").select("title").eq("id", id).maybeSingle();
@@ -413,7 +413,7 @@ export async function deleteProject(_: ActionResult, fd: FormData): Promise<Acti
 }
 
 export async function addGalleryImage(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const projectId = str(fd, "projectId", 40);
     if (!isUuid(projectId)) return { ok: false, error: "Missing project." };
     const img = await resolveImageField(ctx, fd, "gallery", "portfolio");
@@ -431,7 +431,7 @@ export async function addGalleryImage(_: ActionResult, fd: FormData): Promise<Ac
 }
 
 export async function updateGalleryImage(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "mediaId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing image." };
     const alt = str(fd, "alt", 200);
@@ -445,7 +445,7 @@ export async function updateGalleryImage(_: ActionResult, fd: FormData): Promise
 }
 
 export async function deleteGalleryImage(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "mediaId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing image." };
     const { data } = await ctx.supabase.from("portfolio_media").select("project_id").eq("id", id).maybeSingle();
@@ -465,7 +465,7 @@ export async function moveGalleryImage(_: ActionResult, fd: FormData): Promise<A
 
 // ═════════════════════════ SERVICES ═════════════════════════
 export async function createService(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const name = str(fd, "name", 100);
     if (!name) return { ok: false, fieldErrors: { name: "Service name is required." } };
     const slug = slugify(str(fd, "slug", 80) || name);
@@ -481,7 +481,7 @@ export async function createService(_: ActionResult, fd: FormData): Promise<Acti
 }
 
 export async function saveService(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "serviceId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing service." };
     const errors: FieldErrors = {};
@@ -514,7 +514,7 @@ export async function saveService(_: ActionResult, fd: FormData): Promise<Action
 }
 
 export async function setServiceStatus(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "serviceId", 40), to = str(fd, "to", 12);
     if (!isUuid(id) || !(STATUSES as readonly string[]).includes(to)) return { ok: false, error: "That change isn't valid." };
     const { data, error } = await ctx.supabase.from("services").update({ status: to }).eq("id", id).select("name").single();
@@ -531,7 +531,7 @@ export async function moveService(_: ActionResult, fd: FormData): Promise<Action
 }
 
 export async function deleteService(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("website", async (ctx) => {
     const id = str(fd, "serviceId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing service." };
     const { data } = await ctx.supabase.from("services").select("name").eq("id", id).maybeSingle();
@@ -546,7 +546,7 @@ export async function deleteService(_: ActionResult, fd: FormData): Promise<Acti
 
 // ═════════════════════════ MEDIA LIBRARY ═════════════════════════
 export async function updateMediaDetails(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("media", async (ctx) => {
     const id = str(fd, "mediaId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing file." };
     const { error } = await ctx.supabase.from("media_assets").update({ alt_text: optStr(fd, "alt_text", 200), caption: optStr(fd, "caption", 300) }).eq("id", id);
@@ -557,7 +557,7 @@ export async function updateMediaDetails(_: ActionResult, fd: FormData): Promise
 }
 
 export async function setMediaArchived(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("media", async (ctx) => {
     const id = str(fd, "mediaId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing file." };
     const on = str(fd, "on", 5) === "yes";

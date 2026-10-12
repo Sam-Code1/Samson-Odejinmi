@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Download, ExternalLink, FileText } from "lucide-react";
 import { VideoPlayer, type VideoProvider } from "./VideoPlayer";
+import { VideoPoster } from "./VideoPoster";
 import { LessonText } from "./LessonText";
 import { formatBytes } from "@/lib/admin/validation";
 
 export type LessonData = {
   id: string; title: string; summary: string | null; content_md: string | null; lesson_type: "video" | "text" | "mixed";
-  video_provider: VideoProvider; video_id: string | null; video_enabled: boolean;
+  video_provider: VideoProvider; video_id: string | null; video_enabled: boolean; video_thumbnail?: string | null;
 };
 export type ResourceItem = { id: string; title: string; description: string | null; kind: string; url: string | null; size_bytes: number | null; download_enabled: boolean };
 export type QuizLink = { id: string; title: string };
@@ -16,7 +17,13 @@ export function LessonBody({ lesson, resources, quizzes, courseSlug }: { lesson:
   const showVideo = lesson.lesson_type !== "text";
   return (
     <>
-      {showVideo && <div className="mt-8"><VideoPlayer provider={lesson.video_provider} id={lesson.video_id} title={lesson.title} enabled={lesson.video_enabled} /></div>}
+      {showVideo && (
+        <div className="mt-8">
+          {lesson.video_thumbnail && lesson.video_id && lesson.video_enabled
+            ? <VideoPoster thumbnail={lesson.video_thumbnail} title={lesson.title}><VideoPlayer provider={lesson.video_provider} id={lesson.video_id} title={lesson.title} enabled={lesson.video_enabled} autoplay /></VideoPoster>
+            : <VideoPlayer provider={lesson.video_provider} id={lesson.video_id} title={lesson.title} enabled={lesson.video_enabled} />}
+        </div>
+      )}
 
       <div className="mt-10 grid gap-10 xl:grid-cols-[1fr_18rem]">
         <div className="max-w-prose">

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { FormState } from "@/app/auth-actions";
+import { notifyNewCertificates } from "@/lib/certificates";
 
 export async function updateProfile(_: FormState, fd: FormData): Promise<FormState> {
   const user = await requireUser();
@@ -40,9 +41,14 @@ export async function setLessonComplete(fd: FormData): Promise<void> {
   if (!/^[0-9a-f-]{36}$/i.test(lessonId)) return;
 
   const supabase = await createClient();
-  const { data: lesson } = await supabase.from("lessons").select("id, course_id").eq("id", lessonId).maybeSingle();
+  // Only published lessons the student can see (RLS: enrolled + published module). Progress % is computed by the database.
+  const { data: lesson } = await supabase.from("lessons").select("id, course_id").eq("id", lessonId).eq("status", "published").maybeSingle();
   if (!lesson) return;
-  await supabase.from("lesson_progress").upsert({ user_id: user.id, lesson_id: lesson.id, course_id: lesson.course_id, completed }, { onConflict: "user_id,lesson_id" });
+  const { error } = await supabase.from("lesson_progress").upsert({ user_id: user.id, lesson_id: lesson.id, course_id: lesson.course_id, completed }, { onConflict: "user_id,lesson_id" });
+  if (!error && completed) {
+    const { data: p } = await supabase.from("profiles").select("first_name").eq("id", user.id).maybeSingle();
+    await notifyNewCertificates(supabase, user, (p?.first_name as string) ?? "");
+  }
   revalidatePath(`/learn/${courseSlug}`, "layout");
   revalidatePath("/dashboard");
 }

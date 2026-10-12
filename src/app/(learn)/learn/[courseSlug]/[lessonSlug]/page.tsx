@@ -25,7 +25,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   const supabase = await createClient();
   const { data: lessonRaw } = await supabase
     .from("lessons")
-    .select("id, module_id, title, summary, content_md, lesson_type, video_provider, video_id, video_enabled")
+    .select("id, module_id, title, summary, content_md, lesson_type, video_provider, video_id, video_enabled, video_thumbnail")
     .eq("course_id", data.course.id).eq("slug", lessonSlug).eq("status", "published").maybeSingle();
   const lesson = lessonRaw as (LessonData & { module_id: string }) | null;
 

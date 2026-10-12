@@ -9,6 +9,8 @@ import { updateProfile } from "@/app/student-actions";
 import { getAdminContext } from "@/lib/admin/guard";
 import { personName } from "@/lib/admin/format";
 import { aiStatus } from "@/lib/ai/provider";
+import { payableCurrencies, paystackMode } from "@/lib/payments/paystack";
+import { site } from "@/lib/site";
 import Link from "next/link";
 
 export const metadata = { title: "Academy settings" };
@@ -54,12 +56,22 @@ export default async function SettingsPage() {
             <p className="mt-3 text-caption text-ink-3">Set in environment variables, not here.</p>
           </Panel>
 
-          <Panel title="Payments" description="Paystack. Keys stay in server environment variables, never in the database.">
+          <Panel title="Payments" description="Paystack. Keys stay in server environment variables, never in the database or the browser.">
             <ul className="space-y-2 text-body-sm">
-              <li className="flex items-center justify-between gap-3"><span>Paystack secret key</span>{configured(process.env.PAYSTACK_SECRET_KEY)}</li>
-              <li className="flex items-center justify-between gap-3"><span>Checkout and verification</span><StatusBadge status="not_set" /></li>
+              <li className="flex items-center justify-between gap-3"><span>PAYSTACK_SECRET_KEY</span>{configured(process.env.PAYSTACK_SECRET_KEY)}</li>
+              <li className="flex items-center justify-between gap-3"><span>Mode</span><span className="text-ink-2">{paystackMode() ?? "–"}</span></li>
+              <li className="flex items-center justify-between gap-3"><span>Currencies accepted</span><span className="text-ink-2">{payableCurrencies().join(", ")}</span></li>
+              <li className="flex items-center justify-between gap-3"><span>SUPABASE_SERVICE_ROLE_KEY (needed to confirm payments)</span>{configured(process.env.SUPABASE_SERVICE_ROLE_KEY)}</li>
             </ul>
-            <p className="mt-3 text-caption text-ink-3">The payments table and admin view are ready; the Paystack checkout and server-side verification flow is the next piece to build. Until then, enrol students manually.</p>
+            <p className="mt-3 text-caption text-ink-3">Webhook URL for Paystack: <code className="rounded bg-surface px-1.5 py-0.5">{site.url}/api/webhooks/paystack</code>. Test in test mode (sk_test_…) before switching to live keys.</p>
+          </Panel>
+
+          <Panel title="Transactional email" description="Purchase, enrolment, certificate and welcome emails.">
+            <ul className="space-y-2 text-body-sm">
+              <li className="flex items-center justify-between gap-3"><span>RESEND_API_KEY</span>{configured(process.env.RESEND_API_KEY)}</li>
+              <li className="flex items-center justify-between gap-3"><span>Sender</span><span className="text-ink-2">{process.env.EMAIL_FROM ?? process.env.CONTACT_FROM_EMAIL ?? "Not set"}</span></li>
+            </ul>
+            <p className="mt-3 text-caption text-ink-3">Without a key these emails are skipped (never faked). Verification and password-reset emails come from Supabase Auth: set its SMTP to the same provider.</p>
           </Panel>
 
           <Panel title="AI" description="Used by the quiz generator and content assistant. The key stays in server environment variables.">

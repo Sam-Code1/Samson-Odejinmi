@@ -55,7 +55,7 @@ async function parseQuiz(fd: FormData, supabase: AdminContext["supabase"]) {
 }
 
 export async function createQuiz(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const parsed = await parseQuiz(fd, ctx.supabase);
     if ("fieldErrors" in parsed) return { ok: false, fieldErrors: parsed.fieldErrors };
     const { data, error } = await ctx.supabase.from("quizzes").insert({ ...parsed.patch, status: "draft" }).select("id").single();
@@ -67,7 +67,7 @@ export async function createQuiz(_: ActionResult, fd: FormData): Promise<ActionR
 }
 
 export async function saveQuiz(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const id = str(fd, "quizId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing quiz." };
     const parsed = await parseQuiz(fd, ctx.supabase);
@@ -88,7 +88,7 @@ export async function saveQuiz(_: ActionResult, fd: FormData): Promise<ActionRes
 }
 
 export async function deleteQuiz(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const id = str(fd, "quizId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing quiz." };
     const { error } = await ctx.supabase.from("quizzes").delete().eq("id", id);
@@ -101,7 +101,7 @@ export async function deleteQuiz(_: ActionResult, fd: FormData): Promise<ActionR
 
 // ───────────── quiz ↔ question links ─────────────
 export async function attachQuestions(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const quizId = str(fd, "quizId", 40);
     const ids = fd.getAll("questionIds").map(String).filter(isUuid).slice(0, 100);
     if (!isUuid(quizId)) return { ok: false, error: "Missing quiz." };
@@ -115,7 +115,7 @@ export async function attachQuestions(_: ActionResult, fd: FormData): Promise<Ac
 }
 
 export async function detachQuestion(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const quizId = str(fd, "quizId", 40), questionId = str(fd, "questionId", 40);
     if (!isUuid(quizId) || !isUuid(questionId)) return { ok: false, error: "Missing question." };
     const { error } = await ctx.supabase.from("quiz_questions").delete().eq("quiz_id", quizId).eq("question_id", questionId);
@@ -126,7 +126,7 @@ export async function detachQuestion(_: ActionResult, fd: FormData): Promise<Act
 }
 
 export async function moveQuizQuestion(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const quizId = str(fd, "quizId", 40), questionId = str(fd, "questionId", 40), dir = str(fd, "dir", 4);
     if (!isUuid(quizId) || !isUuid(questionId) || !["up", "down"].includes(dir)) return { ok: false, error: "That move isn't valid." };
     const { data } = await ctx.supabase.from("quiz_questions").select("question_id").eq("quiz_id", quizId).order("position").order("created_at");
@@ -144,7 +144,7 @@ export async function moveQuizQuestion(_: ActionResult, fd: FormData): Promise<A
 
 // ───────────── questions ─────────────
 export async function saveQuestion(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const { supabase } = ctx;
     const quizId = str(fd, "quizId", 40);
     const questionId = str(fd, "questionId", 40);
@@ -218,7 +218,7 @@ export async function saveQuestion(_: ActionResult, fd: FormData): Promise<Actio
 
 /** The only way a question becomes visible to students: approve, then publish. AI output starts as 'ai_generated'. */
 export async function reviewQuestion(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const id = str(fd, "questionId", 40);
     const op = str(fd, "op", 10);
     if (!isUuid(id)) return { ok: false, error: "Missing question." };
@@ -244,7 +244,7 @@ export async function reviewQuestion(_: ActionResult, fd: FormData): Promise<Act
 }
 
 export async function deleteQuestion(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async (ctx) => {
+  return runAdmin("academy", async (ctx) => {
     const id = str(fd, "questionId", 40);
     if (!isUuid(id)) return { ok: false, error: "Missing question." };
     const quizzes = await quizzesOf(ctx, id);

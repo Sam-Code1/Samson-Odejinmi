@@ -6,7 +6,7 @@ import type { ActionResult } from "@/lib/admin/result";
 import { optStr, str } from "@/lib/admin/validation";
 
 export async function saveAcademySettings(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  return runAdmin(async ({ supabase }) => {
+  return runAdmin("settings", async ({ supabase }) => {
     const academy_name = str(fd, "academy_name", 80);
     const support_email = str(fd, "support_email", 200);
     const currency = str(fd, "default_currency", 3).toUpperCase();
