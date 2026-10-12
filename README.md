@@ -15,9 +15,10 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 ## 2. Supabase setup (in this order, in the SQL editor)
 1. `supabase/migrations/0001_init.sql`
 2. **`supabase/migrations/0002_admin_cms.sql`** (admin CMS, quizzes, payments, certificates, media, settings, storage buckets, security functions). It is **idempotent**: safe on a fresh database and after a partial earlier run. To see what is/isn't applied first, run `supabase/diagnostics/check_0002_status.sql` (read-only).
-3. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
-4. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
-5. Make yourself an admin (after registering):
+3. **`supabase/migrations/0003_website_cms.sql`** (website CMS: site settings, page sections, portfolio, services, SEO, social links, contact messages, activity log; reusable question bank; module publishing; AI generation log). Idempotent, and it seeds the site's existing copy so nothing changes visually. Until it's run, the public site falls back to `src/content/defaults.ts` and the website admin pages ask you to run it.
+4. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
+5. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
+6. Make yourself an admin (after registering):
    ```sql
    insert into public.admin_users (user_id) select id from auth.users where email = 'odejinmisamson37@gmail.com';
    ```
@@ -29,7 +30,8 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 | `SUPABASE_SERVICE_ROLE_KEY` | **Resource file downloads only** | Server-only. Never `NEXT_PUBLIC_`. Without it, file downloads are disabled (links still work) |
 | `RESEND_API_KEY`, `CONTACT_*` | Contact form delivery | Falls back to a mailto link |
 | `PAYSTACK_SECRET_KEY` | Future payments | Server-only. Admin only shows whether it is set |
-| `AI_QUESTION_PROVIDER` | Future AI drafts | Nothing is generated until implemented |
+| `ANTHROPIC_API_KEY` | AI quiz generator + content assistant | **Server-only.** Never `NEXT_PUBLIC_`. Without it the AI pages say so and generate nothing |
+| `AI_PROVIDER`, `AI_MODEL` | Optional | `anthropic` (default) and `claude-opus-5-5` (default). Provider code: `src/lib/ai/provider.ts` |
 
 If you already ran `seed.sql` before this update, your Blender course is still **published**. Open Admin → Courses → Blender Foundations → Publishing to unpublish it, or leave it published when you're ready.
 
@@ -38,6 +40,11 @@ Authorisation is enforced on the server: signed-out users go to login, signed-in
 
 | Area | What you can do |
 |---|---|
+| Website → Homepage / About / Services / Contact | Every block of those pages: text, images (upload or pick from the library), buttons, lists (cards, timeline, steps), draft/published, order on the page, preview |
+| Website → Portfolio | Create, edit, publish/unpublish, archive, delete, reorder, "show on homepage", case-study sections, gallery, YouTube video, SEO per project |
+| Website → Messages / Social links / SEO | Contact-form inbox (read/archive/delete); social profiles; per-page SEO (title, description, social image, canonical, noindex) |
+| AI tools | Quiz generator (lesson → grounded draft questions → review/edit/regenerate/approve → question bank, never auto-published) and content assistant (drafts only) |
+| System | Media library (search, alt text, copy link, archive), Site settings, Academy settings, Activity log |
 | Dashboard | Real counts, recent enrolments/payments/activity, course performance, quick actions |
 | Courses | Create, edit, save draft, publish (with confirmation + checklist), unpublish, archive. Tabs: Overview, Curriculum, Pricing (NGN/USD/GBP), Resources, SEO, Publishing (+ certificates on/off) |
 | Curriculum | Add/rename/delete/reorder modules; add/edit/duplicate/delete/publish lessons; reorder with up/down; move between modules |
@@ -52,8 +59,13 @@ Authorisation is enforced on the server: signed-out users go to login, signed-in
 ### Video rules (strict view-only)
 YouTube is temporary. Students watch inside the lesson page and are never shown a download, share, copy-link or "Watch on YouTube" control, or any URL or video ID. Only the 11-character ID is stored (pasted URLs and embed code are parsed or rejected). The iframe is sandboxed without popups so YouTube's own logo/title links can't open YouTube. There is no video download or proxy route. The video reference is only fetched after sign-in + enrolment + published checks, and RLS blocks anonymous reads of lessons. This reduces casual copying but is **not DRM**: someone who can watch can still screen-record. To move off YouTube later, add a provider to `src/components/learn/VideoPlayer.tsx` (the database already allows `bunny`, `mux`, `cloudflare`).
 
-### Quiz & AI workflow
-Students never read answers: the database returns questions without `is_correct` and scores submissions itself. Only questions that are **approved and published** appear. AI output must enter as `ai_generated` drafts; `src/lib/ai/questions.ts` is the plug-in point (no model is called and nothing is faked).
+### Preview
+"Preview" buttons in Admin switch on Next.js draft mode after a server-side admin check (`/api/preview`). Public pages then read with your own session, so the database only returns drafts to admins. A banner shows "Exit preview".
+
+### Quiz, question bank & AI workflow
+Students never read answers: the database returns questions without `is_correct` and scores submissions itself. Questions live in a reusable bank and are linked to quizzes through `quiz_questions`. Only questions that are **approved, published and not archived** appear, and only in published quizzes.
+
+AI generation (`/admin/ai/quiz-generator`): choose course → module → lesson → sources (lesson text, transcript, notes, PDF/text resources) → count / difficulty / types / explanations → generate. The server builds the material (max 60,000 characters, with explicit notes when anything is shortened), calls the model with structured output, validates every question (shape, 4 distinct options with one correct answer, True/False, no "all of the above", no answer give-aways, explanations), drops exact duplicates and flags near-duplicates, retries once if the output is unusable, and logs the request. You approve/edit/regenerate/reject each card, then save approved questions to the bank (optionally into an existing or new draft quiz). They are saved **approved but unpublished**. Limits: 20 questions per request, 30 AI requests per admin per hour, capped output tokens. Transcripts and teaching notes are stored in the admin-only `lesson_sources` table, never readable by students.
 
 ## 4. Testing checklist
 1. `/admin` signed out → login. Signed in as a non-admin → "no access". As admin → dashboard.
@@ -67,11 +79,13 @@ Students never read answers: the database returns questions without `is_correct`
 
 ## 5. Not built / deferred (honestly)
 - **Paystack checkout and server-side verification**: tables, admin views and settings are ready; the payment flow is not built. Enrol students manually for now.
-- **AI generation**: data model + admin review UI only.
 - **Drag-and-drop** reordering: replaced by reliable up/down + "move to module" controls.
 - **Rich-text editor**: lessons use plain text with paragraphs, `## headings` and `- lists`.
 - **Free-preview playback**: the flag is stored; previews are not enabled (every lesson requires enrolment).
 - **Video position tracking** (`last_position_seconds`): column exists, not written.
 - Unsaved-changes warning covers closing/reloading the tab, not in-app link clicks.
-- Rate limiting, e2e tests, monitoring.
+- Rate limiting (beyond the AI hourly limit and the contact form's per-email limit), e2e tests, monitoring.
+- Testimonials: no section exists because there are no real testimonials to show. Add one only when there are.
+- The Academy landing page copy (`/academy`) and the legal pages are still in code; only its SEO is CMS-managed.
+- Edits to an already-published section/project/service are live on save (draft/preview applies to unpublished items; there are no draft revisions of published content).
 # Samson-Odejinmi

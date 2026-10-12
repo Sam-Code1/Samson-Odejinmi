@@ -1,0 +1,6 @@
+{
+  "samson-site": {
+    "path": "./.",
+    "start": "npm run dev"
+  }
+}

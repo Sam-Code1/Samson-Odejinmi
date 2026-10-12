@@ -1,0 +1,151 @@
+{
+  "slug": "blender-foundations",
+  "title": "Blender Foundations",
+  "level": "Beginner",
+  "promise": "Build a clear foundation in 3D and Blender.",
+  "modules": [
+    {
+      "number": 1,
+      "title": "Understanding 3D",
+      "lessons": [
+        {
+          "number": "1.1",
+          "title": "Welcome to the World of 3D"
+        },
+        {
+          "number": "1.2",
+          "title": "What Exactly Is 3D?"
+        },
+        {
+          "number": "1.3",
+          "title": "What Is 3D Animation?"
+        },
+        {
+          "number": "1.4",
+          "title": "Basic 3D Production Pipeline"
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "title": "Meet Blender",
+      "lessons": [
+        {
+          "number": "2.1",
+          "title": "What Is Blender?"
+        },
+        {
+          "number": "2.2",
+          "title": "Installing and Opening Blender"
+        },
+        {
+          "number": "2.3",
+          "title": "Understanding Blender Interface"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "title": "First Experience in 3D",
+      "lessons": [
+        {
+          "number": "3.1",
+          "title": "Understanding Objects"
+        },
+        {
+          "number": "3.2",
+          "title": "G / R / S"
+        },
+        {
+          "number": "3.3",
+          "title": "Understanding the 3D Viewport"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "title": "First 3D Model",
+      "lessons": [
+        {
+          "number": "4.1",
+          "title": "What Is 3D Modelling?"
+        },
+        {
+          "number": "4.2",
+          "title": "Object Mode vs Edit Mode"
+        },
+        {
+          "number": "4.3",
+          "title": "Extrude / Inset / Loop Cut / Bevel"
+        },
+        {
+          "number": "4.4",
+          "title": "Mini Low-Poly Stool Exercise"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "title": "Making the Model Look Good",
+      "lessons": [
+        {
+          "number": "5.1",
+          "title": "Materials"
+        },
+        {
+          "number": "5.2",
+          "title": "Creating a Simple Material"
+        },
+        {
+          "number": "5.3",
+          "title": "Lighting"
+        },
+        {
+          "number": "5.4",
+          "title": "Camera and Composition"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "title": "First Complete 3D Scene",
+      "lessons": [
+        {
+          "number": "6.1",
+          "title": "Building a Scene"
+        },
+        {
+          "number": "6.2",
+          "title": "Rendering"
+        },
+        {
+          "number": "6.3",
+          "title": "First 3D Project — Simple Product Scene"
+        },
+        {
+          "number": "6.4",
+          "title": "Where to Go Next"
+        }
+      ]
+    }
+  ],
+  "bonus": [
+    "Blender Shortcut Cheat Sheet",
+    "Beginner 3D Glossary",
+    "Practice Challenge"
+  ],
+  "shortDescription": "Build a clear foundation in 3D and Blender.",
+  "learn": [
+    "What 3D and 3D animation actually are, and how a basic production pipeline fits together",
+    "How Blender's interface and 3D viewport are organised",
+    "How to move, rotate and scale objects with confidence",
+    "How modelling works, then how to model a simple low-poly object",
+    "How materials, lighting and camera work together to make a model look good",
+    "How to build, light and render a simple product scene from start to finish"
+  ],
+  "forWho": [
+    "You've never opened Blender, or you opened it once and closed it again.",
+    "You want to understand 3D, not just follow along with a tutorial.",
+    "You're a student, designer, animator or self-taught creative curious about 3D."
+  ]
+}

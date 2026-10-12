@@ -1,0 +1,2 @@
+/** Runs before first paint (inline, blocking) so there is never a wrong-theme flash. */
+export const themeScript = `(function(){try{var s=localStorage.getItem('theme');var p=(s==='light'||s==='dark'||s==='system')?s:'system';var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var t=p==='system'?(d?'dark':'light'):p;var r=document.documentElement;r.dataset.theme=t;r.dataset.themePref=p;r.style.colorScheme=t;}catch(e){}})();`;
