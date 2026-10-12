@@ -21,7 +21,8 @@ export async function PageSections({ page, exclude = [] }: { page: "home" | "abo
     console.error("[admin] page_sections:", error.code, error.message);
     return <AdminError title="Unable to load page content" body="Run supabase/migrations/0003_website_cms.sql in the Supabase SQL editor, then refresh." />;
   }
-  const rows = ((data ?? []) as SectionRow[]).filter((r) => !exclude.includes(r.section_key));
+  // interactive_3d was merged into the hero (migration 0004); hide it if 0004 hasn't been run yet.
+  const rows = ((data ?? []) as SectionRow[]).filter((r) => !exclude.includes(r.section_key) && !(page === "home" && r.section_key === "interactive_3d"));
   if (!rows.length) return <AdminEmpty title="No sections for this page yet" body="Run migration 0003 to create this page's content blocks." />;
   const reorderable = exclude.length === 0;
 

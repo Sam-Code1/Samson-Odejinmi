@@ -44,6 +44,7 @@ const pages: Record<PageKey, Section[]> = {
       title: "Creating worlds.\nDesigning experiences.\nBuilding what's next.",
       body: "I'm Samson Odejinmi, exploring the space between visual storytelling and technology.",
       cta: ["Explore my work", "/portfolio"], cta2: ["Explore Fola Academy", "/academy"],
+      settings: { scene_url: "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode" },
       items: [
         { title: "3D Animation", meta: "Core practice", body: "Objects, cameras and scenes brought to life with *deliberate timing* and movement." },
         { title: "Environment Design", meta: "Core practice", body: "Spaces with a sense of place, built for *mood, scale and depth*." },
@@ -52,11 +53,6 @@ const pages: Record<PageKey, Section[]> = {
       ],
     }),
     s("statement", { title: "I create visual experiences, and I'm increasingly exploring how technology can extend what creativity can do." }),
-    s("interactive_3d", {
-      eyebrow: "Real-time 3D", title: "Interactive 3D",
-      body: "A live 3D scene, running right here in the browser. Move your cursor across it.",
-      settings: { scene_url: "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode" },
-    }),
     s("selected_work", { title: "Selected work", body: "Drag, or use the arrows. Personal studies are labelled as such.", cta: ["All work", "/portfolio"] }),
     s("about_preview", {
       title: "Creative by instinct. Technical by curiosity.",

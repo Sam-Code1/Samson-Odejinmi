@@ -32,7 +32,7 @@ export function SectionEditor({ s, def, library, courses }: { s: SectionRow; def
           </>
         )}
         {def.settings?.includes("scene_url") && (
-          <TextInput label="Spline scene URL" name="scene_url" defaultValue={typeof s.settings.scene_url === "string" ? s.settings.scene_url : ""} className="sm:col-span-2" placeholder="https://prod.spline.design/…/scene.splinecode" hint="Leave empty to hide the 3D block." />
+          <TextInput label="Spline scene URL" name="scene_url" defaultValue={typeof s.settings.scene_url === "string" ? s.settings.scene_url : ""} className="sm:col-span-2" placeholder="https://prod.spline.design/…/scene.splinecode" hint="Leave empty to show the static 3D artwork instead of the live scene." />
         )}
         {def.settings?.includes("featured_course_slug") && (
           <SelectInput label="Featured course" name="featured_course_slug" defaultValue={typeof s.settings.featured_course_slug === "string" ? s.settings.featured_course_slug : ""}

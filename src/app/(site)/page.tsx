@@ -7,11 +7,10 @@ import { CarouselStacked, type Slide } from "@/components/ui/carousel-07";
 import { HeroPreviewWalls } from "@/components/ui/hero-preview-walls";
 import { AcademyVisual } from "@/components/visual/AcademyVisual";
 import { WorkflowStack } from "@/components/sections/StepStack";
-import { InteractiveScene } from "@/components/sections/InteractiveScene";
 import { Paragraphs } from "@/components/cms/RichText";
 import { getPage, getProjects, getSiteSettings } from "@/lib/cms";
 import { buildMetadata } from "@/lib/cms/seo";
-import { canOptimize, safeImageSrc } from "@/lib/cms/images";
+import { DEFAULT_HERO_SCENE, canOptimize, safeImageSrc, splineSceneUrl } from "@/lib/cms/images";
 import { getPublishedCourse } from "@/lib/academy";
 import type { Section as CmsSection } from "@/lib/cms/types";
 import { site } from "@/lib/site";
@@ -38,8 +37,13 @@ export default async function HomePage() {
 
   const render = async (s: CmsSection) => {
     switch (s.key) {
-      case "hero":
-        return <HeroPreviewWalls key={s.key} hero={s} />;
+      case "hero": {
+        // The hero is built on the interactive 3D (Spline) card. An empty scene URL falls back to the static 3D artwork.
+        // An explicitly empty URL means "use the static artwork". Older databases keep the URL on the retired interactive_3d row.
+        const own = s.settings.scene_url;
+        const scene = typeof own === "string" ? splineSceneUrl(own) : splineSceneUrl(page.interactive_3d?.settings.scene_url) ?? DEFAULT_HERO_SCENE;
+        return <HeroPreviewWalls key={s.key} hero={s} scene={scene} />;
+      }
 
       case "statement":
         return s.title ? (
@@ -48,14 +52,8 @@ export default async function HomePage() {
           </Section>
         ) : null;
 
-      case "interactive_3d": {
-        const scene = typeof s.settings.scene_url === "string" && /^https:\/\/prod\.spline\.design\//.test(s.settings.scene_url) ? s.settings.scene_url : null;
-        return scene ? (
-          <Section key={s.key} className="!py-16 sm:!py-24">
-            <Container><InteractiveScene eyebrow={s.eyebrow} title={s.title} body={s.body} cta={s.cta} sceneUrl={scene} /></Container>
-          </Section>
-        ) : null;
-      }
+      case "interactive_3d":
+        return null; // Merged into the hero.
 
       case "selected_work": {
         if (!featured.length) return null;

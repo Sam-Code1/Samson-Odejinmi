@@ -7,7 +7,7 @@ Audit of the codebase before and after the Website CMS work (migration `0003_web
 | Content | Before | Now (source of truth) | Edit in |
 |---|---|---|---|
 | Homepage copy (hero, statement, about preview, disciplines, Academy intro, workflow intro, exploring, contact CTA) | Hard-coded in `src/app/(site)/page.tsx` and `src/content/services.ts` | `page_sections` (page `home`) | Admin → Website → Homepage |
-| Homepage interactive 3D block (new) | — | `page_sections` `home/interactive_3d` (Spline scene URL in settings) | Admin → Website → Homepage |
+| Homepage hero 3D scene (new) | — | `page_sections` `home/hero` (Spline scene URL in settings) | Admin → Website → Homepage → Hero |
 | About page (intro, biography, philosophy, timeline, NARRIO, direction, CTA) | Hard-coded in `about/page.tsx` + `src/content/about.ts` | `page_sections` (page `about`) | Admin → Website → About |
 | Portfolio projects | `src/content/projects.ts` | `portfolio_projects`, `portfolio_media` | Admin → Website → Portfolio |
 | Services + process steps | `src/content/services.ts` | `services`, `page_sections` `services/process` | Admin → Website → Services |

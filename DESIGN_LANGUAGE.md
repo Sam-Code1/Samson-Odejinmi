@@ -88,7 +88,7 @@ Quiet and purposeful, via `motion/react`:
 - One orchestrated hero entrance (staggered rise) on Home and Academy.
 - Image reveals on project frames; hover movement on links and list rows.
 - A soft page fade (`template.tsx`).
-- Everything respects `prefers-reduced-motion`. No parallax or decorative WebGL, with one deliberate exception: the homepage "Interactive 3D" block (`src/components/sections/InteractiveScene.tsx`) shows a real-time Spline scene with a soft cursor spotlight. It lives in a night card, loads only when scrolled near, and the spotlight is off under reduced motion.
+- Everything respects `prefers-reduced-motion`. No parallax or decorative WebGL, with one deliberate exception: the homepage hero (`HeroPreviewWalls` in `src/components/ui/hero-preview-walls.tsx`) is a night card with the hero text on the left and a real-time Spline scene on the right (`src/components/sections/LazySpline.tsx`), plus a soft cursor spotlight. The spotlight is off under reduced motion; an empty scene URL falls back to the static HeroVisual art.
 
 ## Accessibility
 Semantic landmarks and heading order, skip link, visible focus ring, 44 px touch targets, `aria-current`/`aria-expanded`/`radiogroup` semantics on nav, theme and currency controls, native `<details>` accordions, alt text on all meaningful images, form errors announced with `role="alert"`, drawer with Escape and focus return.

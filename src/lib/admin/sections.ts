@@ -17,15 +17,12 @@ const generic: SectionDef = { fields: ["eyebrow", "title", "body", "image", "cta
 export const SECTION_DEFS: Record<string, Record<string, SectionDef>> = {
   home: {
     hero: {
-      fields: ["eyebrow", "title", "body", "cta", "cta2"], multilineTitle: true,
+      fields: ["eyebrow", "title", "body", "cta", "cta2"], multilineTitle: true, settings: ["scene_url"],
+      help: "The hero is the interactive 3D card: this text on the left, the Spline scene on the right. Clear the scene URL to show the static 3D artwork instead.",
       labels: { eyebrow: "Eyebrow (small badge)", title: "Headline", body: "Supporting text" },
       items: { label: "Capability cards", fields: { title: "Title", body: "Text (*asterisks* = accent)", meta: "Footer label" }, max: 6, help: "The stacked cards over the hero image." },
     },
     statement: { fields: ["title"], labels: { title: "Statement" } },
-    interactive_3d: {
-      fields: ["eyebrow", "title", "body", "cta"], settings: ["scene_url"],
-      help: "The interactive Spline scene. Paste a public Spline scene URL (https://prod.spline.design/…/scene.splinecode).",
-    },
     selected_work: { fields: ["title", "body", "cta"], help: "Shows portfolio projects marked “Show on homepage”, in portfolio order. Choose and reorder them in Website → Portfolio." },
     about_preview: { fields: ["title", "body", "image", "cta"] },
     disciplines: {

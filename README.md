@@ -16,9 +16,10 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 1. `supabase/migrations/0001_init.sql`
 2. **`supabase/migrations/0002_admin_cms.sql`** (admin CMS, quizzes, payments, certificates, media, settings, storage buckets, security functions). It is **idempotent**: safe on a fresh database and after a partial earlier run. To see what is/isn't applied first, run `supabase/diagnostics/check_0002_status.sql` (read-only).
 3. **`supabase/migrations/0003_website_cms.sql`** (website CMS: site settings, page sections, portfolio, services, SEO, social links, contact messages, activity log; reusable question bank; module publishing; AI generation log). Idempotent, and it seeds the site's existing copy so nothing changes visually. Until it's run, the public site falls back to `src/content/defaults.ts` and the website admin pages ask you to run it.
-4. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
-5. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
-6. Make yourself an admin (after registering):
+4. `supabase/migrations/0004_hero_scene.sql` (moves the Spline scene into the homepage hero; safe to re-run).
+5. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
+6. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
+7. Make yourself an admin (after registering):
    ```sql
    insert into public.admin_users (user_id) select id from auth.users where email = 'odejinmisamson37@gmail.com';
    ```

@@ -9,6 +9,9 @@ import { HeroVisual } from "@/components/visual/HeroVisual";
 import { PlaceholderArt } from "@/components/visual/MediaFrame";
 import { Emph, Lines } from "@/components/cms/RichText";
 import type { Section } from "@/lib/cms/types";
+import { Card } from "@/components/ui/card";
+import { Spotlight } from "@/components/ui/spotlight";
+import { LazySpline } from "@/components/sections/LazySpline";
 
 /**
  * Card stack + hero (adapted from 21st.dev hero-preview-walls).
@@ -124,8 +127,12 @@ export function CardSlide({
   );
 }
 
-/** Home hero: headline left-aligned, framed 3D scene below, capability cards stacked over its lower edge. Content comes from the CMS. */
-export function HeroPreviewWalls({ hero }: { hero: Section }) {
+/**
+ * Home hero, built on the Spline "interactive 3D" card: hero text on the left, a live 3D scene on the right,
+ * a cursor spotlight, and the blue→violet thread on the top edge. The card is a `.theme-night` band, so it stays dark
+ * in both themes using the project tokens. Capability cards stack just below it. All text comes from the CMS.
+ */
+export function HeroPreviewWalls({ hero, scene }: { hero: Section; scene: string | null }) {
   const reduce = useReducedMotion();
   const tints = ["blue", "violet", "peach", "mint"] as const;
   const cards: StackCard[] = hero.items.map((it, i) => ({
@@ -139,29 +146,41 @@ export function HeroPreviewWalls({ hero }: { hero: Section }) {
   const rise = (d: number) => ({ initial: reduce ? false : { opacity: 0, y: 22 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.9, delay: d, ease: [0.22, 1, 0.36, 1] as const } });
 
   return (
-    <section className="mesh grain relative w-full overflow-hidden border-b border-line pb-28 pt-14 sm:pb-24 sm:pt-20 lg:pt-28">
-      <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        {hero.eyebrow && <motion.div {...rise(0)}><Badge className="mb-6 rounded-full border-line-strong bg-elevated/70 px-3 py-1.5 text-xs backdrop-blur">{hero.eyebrow}</Badge></motion.div>}
-        {hero.title && <motion.h1 {...rise(0.08)} className="text-display"><Lines text={hero.title} /></motion.h1>}
-        {hero.body && <motion.p {...rise(0.18)} className="mt-8 max-w-[34rem] text-body-lg text-ink-2">{hero.body}</motion.p>}
-        {(hero.cta || hero.cta2) && (
-          <motion.div {...rise(0.26)} className="mb-14 mt-10 flex flex-wrap items-center gap-x-8 gap-y-4 sm:mb-20">
-            {hero.cta?.label && <Button href={hero.cta.href} size="lg">{hero.cta.label}</Button>}
-            {hero.cta2 && <Button href={hero.cta2.href} variant="text">{hero.cta2.label}</Button>}
-          </motion.div>
-        )}
+    <section className={cn("mesh grain relative w-full overflow-hidden border-b border-line pt-6 sm:pt-8 lg:pt-10", cards.length ? "pb-16 sm:pb-20" : "pb-12 sm:pb-16")}>
+      <div className="mx-auto max-w-page px-5 sm:px-8 lg:px-12">
+        <motion.div {...rise(0)}>
+          <Card className="theme-night relative w-full overflow-hidden border-line bg-canvas shadow-[0_40px_80px_-40px_rgb(var(--ink)/0.55)] md:min-h-[min(82vh,660px)]">
+            <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" size={260} />
+            <span aria-hidden className="thread absolute inset-x-0 top-0 h-px" />
+            <div className="flex h-full flex-col md:min-h-[min(82vh,660px)] md:flex-row">
+              <div className="relative z-10 flex flex-col justify-center px-6 pb-4 pt-10 sm:px-10 sm:pt-14 md:w-[54%] md:py-12 lg:pl-14">
+                {hero.eyebrow && <motion.div {...rise(0.1)}><Badge className="mb-6 rounded-full border-line-strong bg-elevated/60 px-3 py-1.5 text-xs text-ink-2 backdrop-blur">{hero.eyebrow}</Badge></motion.div>}
+                {hero.title && (
+                  <motion.h1 {...rise(0.16)} className="bg-gradient-to-b from-ink to-ink-2 bg-clip-text text-display text-transparent">
+                    <Lines text={hero.title} />
+                  </motion.h1>
+                )}
+                {hero.body && <motion.p {...rise(0.24)} className="mt-6 max-w-[32rem] text-body-lg text-ink-2">{hero.body}</motion.p>}
+                {(hero.cta || hero.cta2) && (
+                  <motion.div {...rise(0.32)} className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
+                    {hero.cta?.label && <Button href={hero.cta.href} size="lg">{hero.cta.label}</Button>}
+                    {hero.cta2 && <Button href={hero.cta2.href} variant="text">{hero.cta2.label}</Button>}
+                  </motion.div>
+                )}
+              </div>
+              <div className="relative h-80 flex-none sm:h-[26rem] md:h-auto md:flex-1">
+                {scene ? <LazySpline scene={scene} className="h-full w-full" /> : <HeroVisual className="absolute inset-0 h-full w-full" />}
+              </div>
+            </div>
+          </Card>
+        </motion.div>
       </div>
 
-      <div className={cn("relative mx-auto flex max-w-6xl justify-center px-5 sm:px-8", !(hero.cta || hero.cta2) && "mt-14")}>
-        <div className="relative h-[34rem] w-full overflow-hidden rounded-2xl border-8 border-elevated bg-canvas shadow-[0_40px_80px_-40px_rgb(var(--ink)/0.5)] ring-1 ring-line sm:h-[38rem] lg:h-[40rem]">
-          <HeroVisual className="absolute inset-0 h-full w-full" />
+      {cards.length > 0 && (
+        <div className="relative z-10 mx-auto mt-16 flex max-w-6xl justify-center px-5 sm:mt-20 sm:px-8">
+          <CardSlide items={cards} label="What I work on" />
         </div>
-        {cards.length > 0 && (
-          <div className="absolute -bottom-24 flex w-full justify-center sm:-bottom-12">
-            <CardSlide items={cards} label="What I work on" />
-          </div>
-        )}
-      </div>
+      )}
     </section>
   );
 }

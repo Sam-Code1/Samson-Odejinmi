@@ -22,3 +22,9 @@ export function safeImageSrc(src: string | null | undefined): string | null {
   if (src.startsWith("/") && !src.startsWith("//")) return src;
   try { return new URL(src).protocol === "https:" ? src : null; } catch { return null; }
 }
+
+/** Default Spline scene for the homepage hero (public Spline export). Only prod.spline.design scene URLs are accepted. */
+export const DEFAULT_HERO_SCENE = "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode";
+export function splineSceneUrl(v: unknown): string | null {
+  return typeof v === "string" && /^https:\/\/prod\.spline\.design\/[A-Za-z0-9_-]+\/scene\.splinecode$/.test(v) ? v : null;
+}
