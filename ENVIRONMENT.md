@@ -15,8 +15,15 @@ server code (server actions, route handlers, server components). Never prefix a 
 | `RESEND_API_KEY` | **Yes** | optional | optional | recommended | Transactional email + contact form |
 | `EMAIL_FROM` | No | optional | optional | your verified sender | From address for transactional email |
 | `NEXT_PUBLIC_CONTACT_EMAIL`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` | No | optional | optional | optional | Contact form (the CMS contact email takes precedence on the site) |
-| `ANTHROPIC_API_KEY` | **Yes** | optional | optional | optional | AI tools in Admin |
-| `AI_PROVIDER`, `AI_MODEL` | No | optional | optional | optional | AI provider/model selection |
+| `ANTHROPIC_API_KEY` | **Yes** | optional | optional | optional | AI tools in Admin, student AI tutor, public Academy chatbot. **Never** `NEXT_PUBLIC_ANTHROPIC_API_KEY` |
+| `AI_PROVIDER`, `AI_MODEL` | No | optional | optional | optional | AI provider/model selection (default `claude-opus-5-5`) |
+| `AI_MODEL_<FEATURE>` | No | optional | optional | optional | Per-feature model override: `QUIZ`, `REGENERATE`, `CONTENT`, `LESSON_ASSISTANT`, `TUTOR`, `CHATBOT` |
+| `AI_PUBLIC_DAILY_CAP` | No | optional | optional | recommended | Daily ceiling on public chatbot requests across all visitors (default 500) |
+| `AI_RATE_SALT` | **Yes** | optional | optional | recommended | Salt for hashing visitor IPs in the AI log (falls back to the service-role key) |
+
+The student tutor and the public chatbot appear only when **both** `ANTHROPIC_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY`
+are set, because their per-user/per-visitor limits are counted server-side. `/academy` is statically cached, so redeploy
+after changing these.
 
 `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` is **not used**: checkout redirects to Paystack's hosted page (initialized server-side),
 so no Paystack key is ever needed in the browser. Add it only if an inline popup checkout is built later.

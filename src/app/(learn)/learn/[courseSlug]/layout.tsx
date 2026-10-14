@@ -34,6 +34,7 @@ export default async function LearnLayout({ children, params }: { children: Reac
           <LessonDrawer courseSlug={data.course.slug} modules={data.modules} completed={data.completed} quizzes={data.quizzes.filter((q) => !q.lesson_id)} />
           <Link href="/dashboard" className="hidden text-label text-ink-3 hover:text-ink sm:inline">Dashboard</Link>
           <p className="min-w-0 flex-1 truncate text-label">{data.course.title}</p>
+          <span className="shrink-0 text-caption tabular-nums text-ink-3 sm:hidden" aria-label={`Course progress ${Math.round(data.percent)}%`}>{Math.round(data.percent)}%</span>
           <div className="hidden w-40 sm:block"><ProgressBar value={data.percent} label="Course progress" /></div>
           <ThemeSwitcher />
         </div>

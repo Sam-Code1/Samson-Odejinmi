@@ -6,6 +6,8 @@ import { getPublishedCourses } from "@/lib/academy";
 import { getCoursePricing } from "@/lib/pricing";
 import { buildMetadata } from "@/lib/cms/seo";
 
+export const revalidate = 300;
+
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("academy_courses", { title: "Courses — Fola Academy", absoluteTitle: true, description: "Courses from Fola Academy: practical creative education, concept first.", path: "/academy/courses" });
 }

@@ -14,6 +14,8 @@ import { faqAcademy } from "@/content/about";
 import { getCoursePricing } from "@/lib/pricing";
 import { buildMetadata } from "@/lib/cms/seo";
 
+export const revalidate = 300;
+
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("academy", {
     title: "Fola Academy — Practical Creative Education",
@@ -183,7 +185,7 @@ export default async function AcademyPage() {
       </Section>
 
       <Section tone="mint">
-        <Container className="grid gap-12 lg:grid-cols-12">
+        <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <h2 className="text-h2">More programmes</h2>
             <p className="mt-5 text-body text-ink-2">More programmes are being developed. When a course is ready, it appears here.</p>
@@ -192,7 +194,7 @@ export default async function AcademyPage() {
       </Section>
 
       <Section>
-        <Container className="grid gap-12 lg:grid-cols-12">
+        <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
           <div className="lg:col-span-4"><SectionHeader title="Questions" /></div>
           <div className="lg:col-span-7 lg:col-start-6"><Accordion items={faqAcademy.map((f) => ({ q: f.q, a: f.a }))} /></div>
         </Container>

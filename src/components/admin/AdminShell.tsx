@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ShieldCheck, TicketPercent, AtSign, Award, BookOpen, Briefcase, ClipboardList, Compass, CreditCard, FolderOpen, Globe, HelpCircle, History, Home, Image as ImageIcon, Inbox, Layers, LayoutDashboard, LogOut, Menu, Paperclip, PenLine, PlayCircle, Search, Settings, Share2, Sparkles, User, UserCheck, Users, X } from "lucide-react";
+import { Bot, BookOpenCheck, ScrollText, ShieldCheck, TicketPercent, AtSign, Award, BookOpen, Briefcase, ClipboardList, Compass, CreditCard, FolderOpen, Globe, HelpCircle, History, Home, Image as ImageIcon, Inbox, Layers, LayoutDashboard, LogOut, Menu, Paperclip, PenLine, PlayCircle, Search, Settings, Share2, Sparkles, User, UserCheck, Users, X } from "lucide-react";
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
 import { signOut } from "@/app/auth-actions";
 import { ToastProvider } from "./Toast";
@@ -42,8 +42,11 @@ const groups: { title: string; items: Item[] }[] = [
     { href: "/admin/coupons", label: "Coupons", icon: TicketPercent, perm: "coupons" },
   ] },
   { title: "AI tools", items: [
+    { href: "/admin/ai", label: "AI overview", icon: Bot, exact: true, perm: "ai" },
     { href: "/admin/ai/quiz-generator", label: "Quiz generator", icon: Sparkles, perm: "ai" },
+    { href: "/admin/ai/lesson-assistant", label: "Lesson assistant", icon: BookOpenCheck, perm: "ai" },
     { href: "/admin/ai/content-assistant", label: "Content assistant", icon: PenLine, perm: "ai" },
+    { href: "/admin/ai/logs", label: "AI request log", icon: ScrollText, perm: "ai" },
   ] },
   { title: "System", items: [
     { href: "/admin/media", label: "Media", icon: ImageIcon, perm: "media" },

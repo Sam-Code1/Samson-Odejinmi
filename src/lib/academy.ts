@@ -1,7 +1,7 @@
 import { cache } from "react";
 import data from "@/content/blender-foundations.json";
-import { createClient, supabaseConfigured } from "@/lib/supabase/server";
-import { isPreview } from "@/lib/cms";
+import { supabaseConfigured } from "@/lib/supabase/server";
+import { contentClient, isPreview } from "@/lib/cms";
 
 export type PublicCourse = {
   id: string; slug: string; title: string; subtitle: string | null; description: string | null; level: string | null; instructor: string | null;
@@ -36,7 +36,8 @@ const s = (v: unknown): string | null => (typeof v === "string" && v ? v : null)
 export const getPublishedCourses = cache(async (): Promise<PublicCourse[]> => {
   if (!supabaseConfigured) return [sample()];
   try {
-    const supabase = await createClient();
+    // Cookie-less for visitors so Academy pages can be cached; the admin's own session only in preview.
+    const supabase = await contentClient();
     const preview = await isPreview();
     const { data: rows, error } = await supabase.from("courses").select("*").in("status", preview ? ["published", "draft"] : ["published"]).order("created_at");
     if (error || !rows) return [];

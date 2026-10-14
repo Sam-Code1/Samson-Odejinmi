@@ -1,11 +1,12 @@
 import { defaultPricing, type Currency, type PriceRow } from "@/content/course";
-import { createClient, supabaseConfigured } from "@/lib/supabase/server";
+import { supabaseConfigured } from "@/lib/supabase/server";
+import { contentClient } from "@/lib/cms";
 
 /** Reads configurable pricing from `course_pricing`, falling back to defaults if unavailable. */
 export async function getCoursePricing(courseSlug: string): Promise<PriceRow[]> {
   if (!supabaseConfigured) return defaultPricing;
   try {
-    const supabase = await createClient();
+    const supabase = await contentClient();
     const { data: course } = await supabase.from("courses").select("id").eq("slug", courseSlug).eq("status", "published").maybeSingle();
     if (!course) return [];
     const { data } = await supabase.from("course_pricing").select("currency, amount_minor").eq("course_id", course.id).eq("active", true);

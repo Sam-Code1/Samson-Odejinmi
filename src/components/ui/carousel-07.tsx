@@ -122,7 +122,7 @@ export function CarouselStacked({ slides, className, label = "Carousel" }: { sli
           <p className="text-h4">{current.title}</p>
           <p className="mt-1 text-body-sm text-ink-2">{current.description}</p>
           {current.href && (
-            <Link href={current.href} className="mt-2 inline-block text-label"><span className="link-line pb-0.5">View</span></Link>
+            <Link href={current.href} className="mt-1 inline-flex min-h-[44px] items-center text-label"><span className="link-line pb-0.5">View</span></Link>
           )}
         </div>
         <div className="flex items-center gap-6">

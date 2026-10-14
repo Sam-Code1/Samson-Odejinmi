@@ -31,6 +31,8 @@ export const isPreview = cache(async () => {
 });
 
 const client = cache(async () => ((await isPreview()) ? await createSessionClient() : anon()));
+/** Public content reads: cookie-less (cacheable) for visitors, the admin's session in preview. */
+export const contentClient = client;
 const visible = async () => ((await isPreview()) ? ["published", "draft"] : ["published"]);
 
 /** A missing table / column means the migration hasn't been applied: fall back instead of breaking the page. */

@@ -58,9 +58,9 @@ export default async function ServicesPage() {
                     {s.tools.length > 0 && <p className="mt-6 text-caption text-ink-3">Tools: {s.tools.join(", ")}</p>}
                     <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
                       {s.relatedCategory && (
-                        <Link href={`/portfolio?category=${encodeURIComponent(s.relatedCategory)}`} className="text-label"><span className="link-line pb-1">Related work</span></Link>
+                        <Link href={`/portfolio?category=${encodeURIComponent(s.relatedCategory)}`} className="inline-flex min-h-[44px] items-center text-label"><span className="link-line pb-1">Related work</span></Link>
                       )}
-                      {s.ctaLabel && s.ctaHref && <Link href={s.ctaHref} className="text-label"><span className="link-line pb-1">{s.ctaLabel}</span></Link>}
+                      {s.ctaLabel && s.ctaHref && <Link href={s.ctaHref} className="inline-flex min-h-[44px] items-center text-label"><span className="link-line pb-1">{s.ctaLabel}</span></Link>}
                     </div>
                   </div>
                 </li>

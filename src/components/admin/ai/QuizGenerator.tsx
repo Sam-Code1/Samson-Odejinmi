@@ -62,6 +62,7 @@ export function QuizGenerator({ configured, provider, model, courses, modules, l
   const [target, setTarget] = useState<"bank" | "quiz" | "new">(initial.quiz && quizzes.some((q) => q.id === initial.quiz) ? "quiz" : "bank");
   const [quizId, setQuizId] = useState(initial.quiz ?? "");
   const [newTitle, setNewTitle] = useState("");
+  const [keepPending, setKeepPending] = useState(false);
 
   // Sensible default sources whenever the lesson changes: everything that has content.
   useEffect(() => {
@@ -113,11 +114,15 @@ export function QuizGenerator({ configured, provider, model, courses, modules, l
   };
 
   const save = () => {
-    if (!lesson || !approved.length) return;
+    if (!lesson || !(approved.length || (keepPending && pending))) return;
     const t: SaveTarget = target === "quiz" ? { mode: "quiz", quizId } : target === "new" ? { mode: "new", title: newTitle } : { mode: "bank" };
     if (target === "quiz" && !quizId) { toast("error", "Choose a quiz, or save to the question bank only."); return; }
     startSave(async () => {
-      const res = await saveGeneratedQuestions({ lessonId: lesson.id, generationId: meta?.generationId ?? null, target: t, drafts: approved.map(({ state: _s, editing: _e, busy: _b, ...d }) => d) });
+      const strip = ({ state: _s, editing: _e, busy: _b, ...d }: Review) => d;
+      const res = await saveGeneratedQuestions({
+        lessonId: lesson.id, generationId: meta?.generationId ?? null, target: t, drafts: approved.map(strip),
+        forReview: keepPending ? drafts.filter((d) => d.state === "pending").map(strip) : [],
+      });
       if (!res.ok) { toast("error", res.error); return; }
       setSaved(res);
       toast("success", `${res.saved} ${res.saved === 1 ? "question" : "questions"} saved as approved, unpublished drafts.`);
@@ -283,9 +288,15 @@ export function QuizGenerator({ configured, provider, model, courses, modules, l
                     <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} maxLength={140} className={cn(control, "h-10")} />
                   </label>
                 )}
-                <button type="button" onClick={save} disabled={!approved.length || saving || drafts.some((d) => d.editing)} className="inline-flex h-10 items-center gap-2 rounded bg-ink px-5 text-label text-canvas hover:bg-ink/90 disabled:opacity-50">
+                <button type="button" onClick={save} disabled={!(approved.length || (keepPending && pending)) || saving || drafts.some((d) => d.editing)} className="inline-flex h-10 items-center gap-2 rounded bg-ink px-5 text-label text-canvas hover:bg-ink/90 disabled:opacity-50">
                   {saving ? "Saving…" : `Save ${approved.length} approved`}
                 </button>
+                {pending > 0 && (
+                  <label className="flex w-full items-center gap-2 text-body-sm text-ink-2">
+                    <input type="checkbox" checked={keepPending} onChange={(e) => setKeepPending(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--blue))]" />
+                    Also keep the {pending} unreviewed {pending === 1 ? "question" : "questions"} in the bank as “AI generated” for later review
+                  </label>
+                )}
                 <p className="w-full text-caption text-ink-3">Saved questions stay unpublished. Publish them from the quiz or the question bank when you&apos;re ready.{drafts.some((d) => d.editing) ? " Finish editing first." : ""}</p>
               </div>
             )}
@@ -353,7 +364,11 @@ function ReviewCard({ d, n, onChange, onRegenerate, onDelete }: { d: Review; n: 
         ))}
       </ul>
       {d.explanation && <p className="mt-3 text-body-sm text-ink-2"><span className="font-semibold text-ink">Why: </span>{d.explanation}</p>}
-      {d.source_reference && <p className="mt-2 text-caption text-ink-3">Source: {d.source_reference}</p>}
+      {(d.learning_objective || d.source_reference) && (
+        <p className="mt-2 text-caption text-ink-3">
+          {d.learning_objective && <>Checks: {d.learning_objective}</>}{d.learning_objective && d.source_reference && " · "}{d.source_reference && <>Source: {d.source_reference}</>}
+        </p>
+      )}
       {d.flags && d.flags.length > 0 && <ul className="mt-3 space-y-1">{d.flags.map((f, i) => <li key={i} className="flex items-start gap-2 text-caption text-warm"><AlertTriangle aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" />{f}</li>)}</ul>}
       <div className="mt-4 flex flex-wrap items-center gap-1 border-t border-line pt-3">
         <button type="button" onClick={() => onChange({ state: d.state === "approved" ? "pending" : "approved" })} disabled={d.busy} className={cn(btn, d.state === "approved" ? "bg-ink text-canvas" : "border border-line-strong hover:border-ink")}><Check aria-hidden className="h-3.5 w-3.5" />{d.state === "approved" ? "Approved" : "Approve"}</button>

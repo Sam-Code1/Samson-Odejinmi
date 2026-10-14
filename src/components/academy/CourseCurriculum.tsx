@@ -6,10 +6,10 @@ export function CourseCurriculum({ course, openFirst = true }: { course: PublicC
     <div className="border-t border-line">
       {course.modules.map((m, i) => (
         <details key={m.position} open={openFirst && i === 0} className="group border-b border-line">
-          <summary className="grid cursor-pointer list-none grid-cols-[2.5rem_1fr_auto] items-center gap-4 py-6 [&::-webkit-details-marker]:hidden">
+          <summary className="grid cursor-pointer list-none grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 py-6 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] sm:gap-4 [&::-webkit-details-marker]:hidden">
             <span className="text-caption tabular-nums text-ink-3">{String(i + 1).padStart(2, "0")}</span>
-            <span className="text-h4">{m.title}</span>
-            <span className="flex items-center gap-5 text-caption text-ink-3">
+            <span className="text-h4 [overflow-wrap:anywhere]">{m.title}</span>
+            <span className="flex items-center gap-3 text-caption text-ink-3 sm:gap-5">
               <span>{m.lessons.length} {m.lessons.length === 1 ? "lesson" : "lessons"}</span>
               <span aria-hidden className="relative h-3.5 w-3.5">
                 <span className="absolute left-0 top-1/2 h-px w-3.5 bg-ink" />

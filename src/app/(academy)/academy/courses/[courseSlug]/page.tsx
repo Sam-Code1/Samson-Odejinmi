@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ courseSlu
   const description = c.seoDescription ?? c.subtitle ?? undefined;
   const url = `/academy/courses/${c.slug}`;
   return {
-    title, description, alternates: { canonical: url },
+    title: { absolute: title }, description, alternates: { canonical: url },
     openGraph: { title, description, url, type: "website", ...(c.imageUrl ? { images: [c.imageUrl] } : {}) },
     twitter: { card: c.imageUrl ? "summary_large_image" : "summary", title, description, ...(c.imageUrl ? { images: [c.imageUrl] } : {}) },
   };
@@ -88,7 +88,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
 
       {course.description && (
         <Section>
-          <Container className="grid gap-12 lg:grid-cols-12">
+          <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
             <h2 className="text-h2 lg:col-span-4">About this course</h2>
             <div className="space-y-5 text-body-lg text-ink-2 lg:col-span-7 lg:col-start-6">{course.description.split(/\n{2,}/).map((p) => <p key={p}>{p}</p>)}</div>
           </Container>
@@ -97,7 +97,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
 
       {course.targetAudience.length > 0 && (
         <Section tone="violet">
-          <Container className="grid gap-12 lg:grid-cols-12">
+          <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
             <h2 className="text-h2 lg:col-span-4">Who it&apos;s for</h2>
             <ul className="lg:col-span-7 lg:col-start-6">{course.targetAudience.map((w) => <li key={w} className="border-t border-line py-5 text-body-lg first:border-t-0 first:pt-0">{w}</li>)}</ul>
           </Container>
@@ -115,7 +115,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
 
       {course.requirements.length > 0 && (
         <Section tone="mint">
-          <Container className="grid gap-12 lg:grid-cols-12">
+          <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
             <h2 className="text-h2 lg:col-span-4">Requirements</h2>
             <div className="lg:col-span-7 lg:col-start-6"><Bullets items={course.requirements} /></div>
           </Container>
@@ -124,7 +124,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
 
       {course.modules.length > 0 && (
         <Section tone="blue" id="curriculum">
-          <Container className="grid gap-12 lg:grid-cols-12">
+          <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
             <div className="lg:col-span-4"><SectionHeader title="Curriculum" intro={`${course.moduleCount} ${course.moduleCount === 1 ? "module" : "modules"} and ${course.lessonCount} ${course.lessonCount === 1 ? "lesson" : "lessons"}, in order. Lesson content is available to enrolled students.`} /></div>
             <div className="lg:col-span-7 lg:col-start-6"><CourseCurriculum course={course} /></div>
           </Container>
@@ -146,14 +146,14 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
       )}
 
       <Section>
-        <Container className="grid gap-12 lg:grid-cols-12">
+        <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
           <div className="lg:col-span-4"><h2 className="text-h2">Price</h2><p className="mt-5 text-body text-ink-2">One-time payment, lifetime access. Self-paced.</p></div>
           <div className="lg:col-span-7 lg:col-start-6"><PriceSwitcher prices={prices} defaultCurrency={defaultCurrency} /></div>
         </Container>
       </Section>
 
       <Section tone="violet">
-        <Container className="grid gap-12 lg:grid-cols-12">
+        <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
           <div className="lg:col-span-4"><SectionHeader title="Questions" /></div>
           <div className="lg:col-span-7 lg:col-start-6"><Accordion items={content.faq.map((f) => ({ q: f.q, a: f.a }))} /></div>
         </Container>

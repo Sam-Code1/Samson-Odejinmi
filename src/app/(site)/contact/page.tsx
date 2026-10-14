@@ -28,7 +28,7 @@ export default async function ContactPage() {
           <p className="mt-6 flex items-center gap-3 text-body-sm text-ink-2"><span aria-hidden className="thread-solid h-px w-6" />{settings.availabilityMessage}</p>
         )}
         <p className="mt-10 text-caption text-ink-3">Prefer to write directly?</p>
-        <a href={`mailto:${settings.contactEmail}`} className="mt-1 inline-block text-body"><span className="link-line pb-1">{settings.contactEmail}</span></a>
+        <a href={`mailto:${settings.contactEmail}`} className="mt-1 inline-flex min-h-[44px] max-w-full items-center break-all text-body"><span className="link-line pb-1">{settings.contactEmail}</span></a>
         {settings.locationText && <p className="mt-6 text-body-sm text-ink-3">{settings.locationText}</p>}
         {socials.length > 0 && (
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-label">

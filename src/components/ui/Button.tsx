@@ -19,7 +19,8 @@ const variants = {
 };
 
 export function Button({ href, variant = "primary", size = "md", className, children, ...rest }: Props) {
-  const sizing = variant === "text" ? "" : size === "lg" ? "h-14 px-7 text-[1.0625rem]" : "h-12 px-6 text-[0.9375rem]";
+  // Text buttons keep their editorial look but still get a 44px touch target.
+  const sizing = variant === "text" ? "min-h-[44px]" : size === "lg" ? "h-14 px-7 text-[1.0625rem]" : "h-12 px-6 text-[0.9375rem]";
   const cls = cn(base, variants[variant], sizing, className);
   const inner = (
     <>

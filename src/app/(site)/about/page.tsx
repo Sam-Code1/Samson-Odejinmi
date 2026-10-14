@@ -23,7 +23,7 @@ function Split({ s, tone }: { s: CmsSection; tone?: Tone }) {
   if (!s.title && !s.body) return null;
   return (
     <Section tone={tone} id={s.key}>
-      <Container className="grid gap-12 lg:grid-cols-12">
+      <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
         <div className="lg:col-span-4">
           {s.title && <h2 className="text-h2">{s.title}</h2>}
           {s.eyebrow && <p className="mt-5 text-body text-ink-3">{s.eyebrow}</p>}
@@ -92,7 +92,7 @@ export default async function AboutPage() {
       case "exploring":
         return exploring.length ? (
           <Section key={s.key} tone="mint">
-            <Container className="grid gap-12 lg:grid-cols-12">
+            <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
               <div className="lg:col-span-4">
                 {s.title && <h2 className="text-h2">{s.title}</h2>}
                 {s.body && <p className="mt-5 text-body text-ink-2">{s.body}</p>}

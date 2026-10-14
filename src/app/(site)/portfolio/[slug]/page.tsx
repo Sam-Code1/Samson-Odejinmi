@@ -63,7 +63,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     <>
       <section>
         <Container className="pb-10 pt-14 sm:pt-20 lg:pt-24">
-          <Link href="/portfolio" className="text-label text-ink-3 hover:text-ink"><span className="link-line pb-0.5">All work</span></Link>
+          <Link href="/portfolio" className="inline-flex min-h-[44px] items-center text-label text-ink-3 hover:text-ink"><span className="link-line pb-0.5">All work</span></Link>
           <h1 className="mt-8 max-w-4xl text-h1">{project.title}</h1>
           {project.shortDescription && <p className="mt-6 max-w-prose text-body-lg text-ink-2">{project.shortDescription}</p>}
           <div className="mt-6"><ProjectMeta project={project} /></div>
@@ -142,7 +142,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         <section className="border-t border-line">
           <Container className="py-14">
             <p className="text-caption text-ink-3">Next</p>
-            <Link href={`/portfolio/${next.slug}`} className="group mt-3 inline-block text-h2"><span className="link-line pb-1">{next.title}</span></Link>
+            <Link href={`/portfolio/${next.slug}`} className="group mt-3 inline-block py-2 text-h2"><span className="link-line pb-1">{next.title}</span></Link>
           </Container>
         </section>
       )}

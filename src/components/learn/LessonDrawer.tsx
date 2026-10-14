@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ModuleRef } from "@/lib/learning";
 import { CourseSidebar } from "./CourseSidebar";
 
@@ -38,7 +39,8 @@ export function LessonDrawer({ courseSlug, modules, completed, quizzes }: { cour
         <span aria-hidden className="block h-3 w-4 border-y border-ink" />
         Lessons
       </button>
-      {open && (
+      {/* Portalled to <body>: the lesson header's backdrop-blur would otherwise clip this fixed overlay. */}
+      {open && createPortal(
         <div className="fixed inset-0 z-50">
           <button type="button" aria-label="Close lessons" onClick={close} className="absolute inset-0 bg-canvas/70 backdrop-blur-sm" />
           <div id="lesson-drawer" ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Course lessons" className="absolute inset-y-0 left-0 w-[min(22rem,88vw)] overflow-y-auto border-r border-line bg-canvas p-6 outline-none">
@@ -48,7 +50,8 @@ export function LessonDrawer({ courseSlug, modules, completed, quizzes }: { cour
             </div>
             <CourseSidebar courseSlug={courseSlug} modules={modules} completed={completed} quizzes={quizzes} onNavigate={() => setOpen(false)} />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

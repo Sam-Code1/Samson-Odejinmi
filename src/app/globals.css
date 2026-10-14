@@ -150,8 +150,10 @@
 }
 
 /* Page entrance: one quiet fade, disabled for reduced motion. */
-@keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.page-in { animation: page-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* Opacity only, on purpose: any transform on this page-wide wrapper (even mid-animation, or paused in a background tab)
+   makes it the containing block for every position:fixed descendant, which broke the mobile menu, drawers and chat sheet. */
+@keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
+.page-in { animation: page-in 320ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 
 /* Theme switch: scoped, short, only while switching. */
 html.theme-switching, html.theme-switching *, html.theme-switching *::before, html.theme-switching *::after {
@@ -165,6 +167,9 @@ html.theme-switching, html.theme-switching *, html.theme-switching *::before, ht
   background: linear-gradient(90deg, transparent, rgb(var(--line) / 0.1), transparent);
   animation: shimmer 1.4s infinite;
 }
+
+/* Long words in headings (e.g. on 320px phones) wrap instead of overflowing the page. */
+h1, h2, h3 { overflow-wrap: break-word; }
 
 /* Loader for the Spline scene (and other async media): a thin blue→violet ring. */
 @keyframes loader-spin { to { transform: rotate(360deg); } }

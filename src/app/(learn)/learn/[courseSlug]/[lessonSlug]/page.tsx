@@ -8,6 +8,8 @@ import { LessonBody, type LessonData, type ResourceItem } from "@/components/lea
 import { CompleteButton } from "@/components/learn/CompleteButton";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { StateMessage } from "@/components/ui/States";
+import { TutorLauncher } from "@/components/ai/TutorLauncher";
+import { learnerAiEnabled } from "@/lib/ai/usage";
 
 export const metadata: Metadata = { title: "Lesson", robots: { index: false, follow: false } };
 
@@ -50,7 +52,10 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   return (
     <article className="mx-auto max-w-4xl">
       <p className="text-caption text-ink-3">{data.course.title}{current ? ` · ${current.moduleTitle}` : ""}</p>
-      <h1 className="mt-2 text-h1">{lesson.title}</h1>
+      <div className="mt-2 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+        <h1 className="text-h1">{lesson.title}</h1>
+        {learnerAiEnabled() && <TutorLauncher courseSlug={courseSlug} lessonSlug={lessonSlug} lessonTitle={lesson.title} />}
+      </div>
       {lesson.summary && <p className="mt-4 max-w-prose text-body-lg text-ink-2">{lesson.summary}</p>}
       <div className="mt-5 max-w-xs">
         <ProgressBar value={data.percent} label="Course progress" />

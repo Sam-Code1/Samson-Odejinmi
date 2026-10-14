@@ -18,8 +18,9 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 3. **`supabase/migrations/0003_website_cms.sql`** (website CMS: site settings, page sections, portfolio, services, SEO, social links, contact messages, activity log; reusable question bank; module publishing; AI generation log). Idempotent, and it seeds the site's existing copy so nothing changes visually. Until it's run, the public site falls back to `src/content/defaults.ts` and the website admin pages ask you to run it.
 4. `supabase/migrations/0004_hero_scene.sql` (moves the Spline scene into the homepage hero; safe to re-run).
 5. **`supabase/migrations/0005_batch1_foundation.sql`** (admin roles + Owner, admin management, coupons, Paystack checkout/fulfilment, certificate numbering + quiz rule, role-aware RLS). Idempotent and non-destructive. **The earliest existing admin becomes the Owner**; other existing admins become Super Admins.
-6. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
-7. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
+6. **`supabase/migrations/0006_batch2_ai.sql`** (AI usage log for the student tutor and public chatbot: actor type, hashed visitor key, duration; students read only their own tutor rows; `questions.learning_objective`). Idempotent and non-destructive.
+7. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
+8. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
 8. Make yourself an admin (after registering):
    ```sql
    insert into public.admin_users (user_id) select id from auth.users where email = 'odejinmisamson37@gmail.com';
@@ -34,7 +35,7 @@ Full per-environment guide (Development / Preview / Production, Paystack and ema
 | `SUPABASE_SERVICE_ROLE_KEY` | **Resource file downloads only** | Server-only. Never `NEXT_PUBLIC_`. Without it, file downloads are disabled (links still work) |
 | `RESEND_API_KEY`, `CONTACT_*` | Contact form delivery | Falls back to a mailto link |
 | `PAYSTACK_SECRET_KEY` | Future payments | Server-only. Admin only shows whether it is set |
-| `ANTHROPIC_API_KEY` | AI quiz generator + content assistant | **Server-only.** Never `NEXT_PUBLIC_`. Without it the AI pages say so and generate nothing |
+| `ANTHROPIC_API_KEY` | AI quiz generator, lesson + content assistants, student tutor, public chatbot (tutor + chatbot also need the service-role key) | **Server-only.** Never `NEXT_PUBLIC_`. Without it the AI pages say so and generate nothing |
 | `AI_PROVIDER`, `AI_MODEL` | Optional | `anthropic` (default) and `claude-opus-5-5` (default). Provider code: `src/lib/ai/provider.ts` |
 
 If you already ran `seed.sql` before this update, your Blender course is still **published**. Open Admin → Courses → Blender Foundations → Publishing to unpublish it, or leave it published when you're ready.

@@ -32,7 +32,7 @@ export const course = {
     { q: "Do I need to buy Blender?", a: "No. Blender is free and open source. The course shows you how to install it in Module 2." },
     { q: "Is it live or self-paced?", a: "Self-paced. You pay once, keep lifetime access and move through the lessons at your own speed." },
     { q: "How is this different from a YouTube tutorial?", a: "Each lesson starts with the concept (what it is and why it matters) before showing the steps in Blender. The aim is that you can explain what you did, not only repeat it." },
-    { q: "When does enrolment open?", a: "Payments aren't live yet. Create an account now and you'll be ready when enrolment opens." },
+    { q: "How do I enrol?", a: "Create an account, then use the enrol panel on the course page. When enrolment is open it shows the current price and lets you pay securely with Paystack; you get access as soon as your payment is confirmed. If the panel says enrolment isn't open yet, it opens soon." },
   ],
 };
 
