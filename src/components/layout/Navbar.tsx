@@ -13,10 +13,11 @@ function isActive(pathname: string, href: string) {
   return pathname === base || pathname.startsWith(base + "/");
 }
 
-export function Navbar({ variant = "main", siteName = site.name, logoUrl }: { variant?: "main" | "academy"; siteName?: string; logoUrl?: string | null }) {
+/** `hide`: hrefs to leave out (e.g. the Shop link while the shop is closed in Admin). */
+export function Navbar({ variant = "main", siteName = site.name, logoUrl, hide }: { variant?: "main" | "academy"; siteName?: string; logoUrl?: string | null; hide?: string[] }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const links = variant === "academy" ? academyNav : mainNav;
+  const links = (variant === "academy" ? academyNav : mainNav).filter((l) => !hide?.includes(l.href));
 
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {

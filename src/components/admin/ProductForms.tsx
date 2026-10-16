@@ -146,6 +146,8 @@ export function RelatedProductsForm({ productId, options, selected }: { productI
 export type ShopSettingsRow = {
   title: string; intro: string | null; seo_title: string | null; seo_description: string | null; empty_title: string | null; empty_body: string | null;
   show_newsletter: boolean; newsletter_title: string | null; newsletter_body: string | null;
+  /** Present once migration 0010 has run. */
+  enabled?: boolean; closed_title?: string | null; closed_body?: string | null;
 };
 
 export function ShopSettingsForm({ s }: { s: ShopSettingsRow }) {
@@ -157,6 +159,13 @@ export function ShopSettingsForm({ s }: { s: ShopSettingsRow }) {
         <TextInput label="When there are no products: heading" name="empty_title" defaultValue={s.empty_title ?? ""} maxLength={120} />
         <TextAreaInput label="When there are no products: text" name="empty_body" rows={2} defaultValue={s.empty_body ?? ""} maxLength={400} className="sm:col-span-2" />
       </FormSection>
+      {s.enabled !== undefined && (
+        <FormSection title="When the shop is closed" description="Shown on the shop page and on every product page while the shop is closed. Leave empty for the built-in wording.">
+          <input type="hidden" name="closed_present" value="1" />
+          <TextInput label="Heading" name="closed_title" defaultValue={s.closed_title ?? ""} maxLength={120} placeholder="The shop is closed for now" />
+          <TextAreaInput label="Text" name="closed_body" rows={2} defaultValue={s.closed_body ?? ""} maxLength={400} className="sm:col-span-2" placeholder="Ebooks and guides will be back soon. Everything you've already bought is still in your library." />
+        </FormSection>
+      )}
       <FormSection title="Email sign-up">
         <CheckboxInput label="Show the email sign-up on the shop page" name="show_newsletter" defaultChecked={s.show_newsletter} />
         <TextInput label="Sign-up heading (optional)" name="newsletter_title" defaultValue={s.newsletter_title ?? ""} maxLength={120} />

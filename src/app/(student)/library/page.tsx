@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Download, PlayCircle } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { isAdmin, requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { StateMessage } from "@/components/ui/States";
 import { Badge } from "@/components/ui/Badge";
-import { FILE_TYPES, TYPE_LABELS, type ProductType } from "@/lib/products";
+import { FILE_TYPES, TYPE_LABELS, getShopSettings, type ProductType } from "@/lib/products";
 import { formatMoney } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Library", robots: { index: false, follow: false } };
@@ -16,19 +16,27 @@ type Pay = { reference: string; amount_minor: number; currency: string; status: 
 
 const date = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
-/** Everything this person owns (RLS: own rows only) plus their purchase history. Downloads go through the secure route. */
+/**
+ * Everything this person owns (RLS: own rows only) plus their purchase history. Downloads go through the secure route.
+ * Before migration 0008 there are no products or entitlements yet: students still get a working page (purchases,
+ * courses link) and admins see exactly which migration to run.
+ */
 export default async function LibraryPage() {
   await requireUser("/library");
   const supabase = await createClient();
-  const [ents, pays] = await Promise.all([
+  const [ents, firstPays, shop] = await Promise.all([
     supabase.from("entitlements").select("id, source, granted_at, products(id, name, slug, product_type, courses(slug))").eq("status", "active").order("granted_at", { ascending: false }),
     supabase.from("payments").select("reference, amount_minor, currency, status, created_at, provider, products(name), courses(title)").in("status", ["successful", "refunded"]).order("created_at", { ascending: false }).limit(50),
+    getShopSettings(),
   ]);
-  if (ents.error) {
-    return <StateMessage title="Your library is almost ready" body="Your courses are in My courses. Ebooks and other products will appear here once the shop is switched on." action={{ href: "/courses", label: "My courses" }} />;
-  }
-  const items = ((ents.data ?? []) as unknown as Ent[]).filter((e) => e.products && e.products.product_type !== "bundle");
+  // Before 0008 payments have no product link: list course purchases only.
+  const pays = firstPays.error
+    ? await supabase.from("payments").select("reference, amount_minor, currency, status, created_at, provider, courses(title)").in("status", ["successful", "refunded"]).order("created_at", { ascending: false }).limit(50)
+    : firstPays;
+  const setupNeeded = !!ents.error && (await isAdmin());
+  const items = ents.error ? [] : ((ents.data ?? []) as unknown as Ent[]).filter((e) => e.products && e.products.product_type !== "bundle");
   const payments = (pays.data ?? []) as unknown as Pay[];
+  const shopOpen = shop.enabled && !ents.error;
 
   return (
     <div className="space-y-16">
@@ -37,8 +45,18 @@ export default async function LibraryPage() {
         <p className="mt-4 max-w-prose text-body text-ink-2">Everything you&apos;ve bought or been given. Download links are private to you and expire after a minute, so open them from here each time.</p>
       </div>
 
+      {setupNeeded && (
+        <div role="note" className="rounded-xl border border-warm/40 bg-elevated p-5 text-body-sm">
+          <p className="text-label">Only admins see this: the shop&apos;s database tables aren&apos;t set up yet</p>
+          <p className="mt-2 text-ink-2">Run the migrations 0008, 0009 and 0010 (in that order) in the Supabase SQL editor. Then open the shop from Admin → Products → Shop settings. Students see an ordinary empty library until then.</p>
+          <Link href="/admin/products/shop" className="mt-3 inline-flex min-h-[44px] items-center text-label underline underline-offset-4">Open shop settings</Link>
+        </div>
+      )}
+
       {items.length === 0 ? (
-        <StateMessage title="Nothing here yet" body="Ebooks, guides and templates you buy appear here, ready to download." action={{ href: "/academy/shop", label: "Browse the shop" }} secondary={{ href: "/courses", label: "My courses" }} />
+        shopOpen
+          ? <StateMessage compact title="Nothing here yet" body="Ebooks, guides and templates you buy appear here, ready to download." action={{ href: "/academy/shop", label: "Browse the shop" }} secondary={{ href: "/courses", label: "My courses" }} />
+          : <StateMessage compact title="Nothing here yet" body="Anything you buy or are given will appear here. Your courses are in My courses." action={{ href: "/courses", label: "My courses" }} />
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((e) => {

@@ -22,9 +22,10 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 7. **`supabase/migrations/0007_showcase.sql`** (WhatsApp number/message in site settings, homepage intro words + hero backdrop word, the homepage "Playground" game block, and the "Selected *work*" accent heading if it's still the original text). Idempotent and non-destructive.
 8. **`supabase/migrations/0008_batch3_products_marketing.sql`** (Batch 3: products, entitlements, unified checkout, private product files, advanced coupons, contacts/CRM, segments, email campaigns, automations, affiliates, attribution, abandoned checkout, WhatsApp log, content campaigns, new admin permissions). Idempotent and non-destructive; course checkout keeps working. Existing accounts become CRM contacts with marketing consent **off**.
 9. **`supabase/migrations/0009_batch4_finalization.sql`** (Batch 4: payment provider settings + chosen method on payments, contact inbox with subjects and replies, notifications, security and webhook logs, shop settings and product details). Idempotent and non-destructive; Paystack stays enabled exactly as before.
-10. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
-11. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
-12. Make yourself an admin (after registering):
+10. **`supabase/migrations/0010_shop_switch.sql`** (the shop on/off switch in Admin → Products → Shop settings, plus the "closed" message; closing the shop also makes the database refuse new product checkouts, while past purchases, downloads and course checkout keep working). Idempotent; the shop stays open until you close it. Admin → Products → Shop settings shows which of 0008–0010 are still missing on your database.
+11. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
+12. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
+13. Make yourself an admin (after registering):
    ```sql
    insert into public.admin_users (user_id) select id from auth.users where email = 'odejinmisamson37@gmail.com';
    ```

@@ -18,10 +18,21 @@ import { sendEmail, templates } from "@/lib/email";
 export type ProductQuote = { ok: true; base: number; discount: number; total: number; currency: string; couponCode: string | null } | { ok: false; error: string };
 export type ProductCheckoutState = { error?: string };
 
+/**
+ * Is the shop open (migration 0010)? Read fresh, not from the page cache, so closing the shop takes effect at once.
+ * Before 0010 the function doesn't exist and the shop counts as open. The database also refuses product payments
+ * while closed, so this is the friendly message, not the only guard.
+ */
+async function shopOpen(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data, error } = await supabase.rpc("shop_is_open");
+  return error ? true : data !== false;
+}
+
 export async function quoteProduct(productId: string, currency: string, code: string): Promise<ProductQuote> {
   if (!isUuid(productId)) return { ok: false, error: checkoutMessage("not_available") };
   if (!(await getUser())) return { ok: false, error: checkoutMessage("sign_in") };
   const supabase = await createClient();
+  if (!(await shopOpen(supabase))) return { ok: false, error: checkoutMessage("shop_closed") };
   const { data, error } = await supabase.rpc("product_checkout_quote", { p_product: productId, p_currency: cleanCurrency(currency), p_code: cleanCode(code) || null });
   const q = data as { ok: boolean; error?: string; base: number; discount: number; total: number; currency: string; coupon_code: string | null } | null;
   if (error || !q) return { ok: false, error: checkoutMessage() };
@@ -38,10 +49,12 @@ export async function startProductCheckout(_: ProductCheckoutState, fd: FormData
 
   const { ref, attribution } = await readAttribution();
   const supabase = await createClient();
+  if (!(await shopOpen(supabase))) return { error: checkoutMessage("shop_closed") };
   const { data, error } = await supabase.rpc("create_product_checkout", {
     p_product: productId, p_currency: cleanCurrency(fd.get("currency")), p_code: cleanCode(fd.get("coupon")) || null, p_ref: ref, p_attribution: attribution,
   });
   const r = data as { ok: boolean; error?: string; free?: boolean; reference?: string; total?: number; currency?: string; email?: string; product_name?: string; product_type?: string; course_slug?: string | null } | null;
+  if (error?.message?.includes("shop_closed")) return { error: checkoutMessage("shop_closed") };
   if (error || !r) { console.error("[checkout] create_product_checkout:", error?.code, error?.message); return { error: checkoutMessage() }; }
   if (!r.ok) return { error: checkoutMessage(r.error) };
 

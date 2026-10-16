@@ -10,7 +10,8 @@ import { Paragraphs } from "@/components/cms/RichText";
 import { PlaceholderArt } from "@/components/visual/MediaFrame";
 import { ProductCard } from "@/components/academy/ProductCard";
 import { ProductCheckoutPanel } from "@/components/academy/ProductCheckoutPanel";
-import { getProduct, TYPE_LABELS, FILE_TYPES } from "@/lib/products";
+import { getProduct, getShopSettings, TYPE_LABELS, FILE_TYPES } from "@/lib/products";
+import { StateMessage } from "@/components/ui/States";
 import { canOptimize } from "@/lib/cms/images";
 import { getUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -20,8 +21,9 @@ import { site } from "@/lib/site";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const p = await getProduct(slug);
+  const [p, shop] = await Promise.all([getProduct(slug), getShopSettings()]);
   if (!p) return { title: "Not found", robots: { index: false } };
+  if (!shop.enabled) return { title: { absolute: `${shop.title} — Fola Academy` }, robots: { index: false, follow: true } };
   const title = `${p.seoTitle ?? p.name} — Fola Academy`;
   const description = p.seoDescription ?? p.shortDescription ?? undefined;
   const image = p.ogImage ?? p.coverImage ?? undefined;
@@ -39,6 +41,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!p) notFound();
   // A course has one public page: its course page.
   if (p.type === "course" && p.courseSlug) permanentRedirect(`/academy/courses/${p.courseSlug}`);
+  const shop = await getShopSettings();
+  if (!shop.enabled) {
+    return (
+      <Container className="pb-20 pt-14 sm:pt-20 lg:pt-28">
+        <StateMessage title={shop.closedTitle} body={shop.closedBody} action={{ href: "/library", label: "Go to my library" }} secondary={{ href: "/academy/courses", label: "See courses" }} />
+      </Container>
+    );
+  }
 
   const user = await getUser();
   let owned = false;

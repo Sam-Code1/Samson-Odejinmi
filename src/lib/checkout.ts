@@ -17,6 +17,7 @@ const MESSAGES: Record<string, string> = {
   coupon_minimum: "This purchase doesn't meet that coupon's minimum.",
   coupon_used_up: "That coupon has reached its usage limit.",
   coupon_already_used: "You've already used that coupon.",
+  shop_closed: "The shop is closed for now, so nothing can be bought here. Please check back soon.",
   too_many: "Too many checkout attempts. Please wait a while and try again.",
 };
 export const checkoutMessage = (code?: string) => MESSAGES[code ?? ""] ?? "We couldn't start checkout. Please try again.";

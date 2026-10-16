@@ -213,6 +213,19 @@ export async function setRelatedProducts(_: ActionResult, fd: FormData): Promise
 }
 
 /** Shop page copy and layout (migration 0009, "products" permission). */
+/** Opens or closes the shop (migration 0010). Closing is also enforced by the database: no new product checkouts. */
+export async function setShopOpen(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  return runAdmin("products", async (ctx) => {
+    const open = fd.get("open") === "1";
+    const { data, error } = await ctx.supabase.from("shop_settings").update({ enabled: open }).eq("id", true).select("id");
+    if (error) return dbError(error, "Couldn't change the shop. Run migration 0010_shop_switch.sql first.");
+    if (!data?.length) return { ok: false, message: "Shop settings are missing. Run migrations 0009 and 0010, then try again." };
+    await logActivity(ctx, open ? "shop opened" : "shop closed", "shop_settings", null, "Shop");
+    refresh();
+    return { ok: true, message: open ? "The shop is open." : "The shop is closed. Existing purchases still work." };
+  });
+}
+
 export async function saveShopSettings(_: ActionResult, fd: FormData): Promise<ActionResult> {
   return runAdmin("products", async (ctx) => {
     const title = str(fd, "title", 80);
@@ -221,6 +234,8 @@ export async function saveShopSettings(_: ActionResult, fd: FormData): Promise<A
       title, intro: optStr(fd, "intro", 600), seo_title: optStr(fd, "seo_title", 80), seo_description: optStr(fd, "seo_description", 200),
       empty_title: optStr(fd, "empty_title", 120), empty_body: optStr(fd, "empty_body", 400), show_newsletter: fd.get("show_newsletter") === "on",
       newsletter_title: optStr(fd, "newsletter_title", 120), newsletter_body: optStr(fd, "newsletter_body", 300),
+      // The "closed" message fields exist from migration 0010; the form only sends them then.
+      ...(fd.get("closed_present") === "1" ? { closed_title: optStr(fd, "closed_title", 120), closed_body: optStr(fd, "closed_body", 400) } : {}),
     }).eq("id", true);
     if (error) return dbError(error, "Couldn't save. Run migration 0009.");
     await logActivity(ctx, "shop settings updated", "shop_settings", null, "Shop");

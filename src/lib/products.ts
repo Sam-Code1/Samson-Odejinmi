@@ -109,14 +109,18 @@ export const getProduct = cache(async (slug: string): Promise<PublicProduct | nu
   }
 });
 
-export type ShopSettings = { title: string; intro: string | null; seoTitle: string | null; seoDescription: string | null; emptyTitle: string; emptyBody: string; showNewsletter: boolean; newsletterTitle: string | null; newsletterBody: string | null };
+export type ShopSettings = { enabled: boolean; closedTitle: string; closedBody: string; title: string; intro: string | null; seoTitle: string | null; seoDescription: string | null; emptyTitle: string; emptyBody: string; showNewsletter: boolean; newsletterTitle: string | null; newsletterBody: string | null };
 const SHOP_DEFAULTS: ShopSettings = {
+  enabled: true, closedTitle: "The shop is closed for now", closedBody: "Ebooks and guides will be back soon. Everything you've already bought is still in your library.",
   title: "Shop", intro: "Ebooks, guides, templates and courses. Everything you buy stays in your library.", seoTitle: null, seoDescription: null,
   emptyTitle: "Nothing here yet", emptyBody: "The first guides and ebooks are being prepared. Leave your email below and we'll tell you when they're ready.",
   showNewsletter: true, newsletterTitle: null, newsletterBody: null,
 };
 
-/** Shop page copy from Admin → Products → Shop settings (migration 0009); the built-in copy before that. */
+/**
+ * Shop page copy and the open/closed switch from Admin → Products → Shop settings (0009, switch in 0010); the
+ * built-in copy before that. Closing the shop is also enforced by the database (no new product checkouts).
+ */
 export const getShopSettings = cache(async (): Promise<ShopSettings> => {
   if (!supabaseConfigured) return SHOP_DEFAULTS;
   try {
@@ -125,6 +129,7 @@ export const getShopSettings = cache(async (): Promise<ShopSettings> => {
     if (error || !data) return SHOP_DEFAULTS;
     const r = data as Row;
     return {
+      enabled: r.enabled !== false, closedTitle: s(r.closed_title) ?? SHOP_DEFAULTS.closedTitle, closedBody: s(r.closed_body) ?? SHOP_DEFAULTS.closedBody,
       title: s(r.title) ?? SHOP_DEFAULTS.title, intro: s(r.intro), seoTitle: s(r.seo_title), seoDescription: s(r.seo_description),
       emptyTitle: s(r.empty_title) ?? SHOP_DEFAULTS.emptyTitle, emptyBody: s(r.empty_body) ?? SHOP_DEFAULTS.emptyBody,
       showNewsletter: r.show_newsletter !== false, newsletterTitle: s(r.newsletter_title), newsletterBody: s(r.newsletter_body),
