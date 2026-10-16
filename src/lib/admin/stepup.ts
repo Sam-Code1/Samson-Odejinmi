@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { AdminContext } from "./guard";
+import { recordSecurityEvent } from "@/lib/security";
 
 const WINDOW_MIN = 15;
 const MAX_FAILURES = 5;
@@ -25,5 +26,6 @@ export async function confirmPassword(ctx: AdminContext, password: string): Prom
   const { error } = await temp.auth.signInWithPassword({ email: ctx.user.email, password });
   if (!error) await temp.auth.signOut({ scope: "local" });
   await ctx.supabase.from("security_attempts").insert({ user_id: ctx.user.id, kind: "admin_step_up", success: !error });
+  await recordSecurityEvent(error ? "admin_stepup_failed" : "admin_stepup_success", { userId: ctx.user.id, email: ctx.user.email });
   return error ? { ok: false, error: "That password isn't correct." } : { ok: true };
 }

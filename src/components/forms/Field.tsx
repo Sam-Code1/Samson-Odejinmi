@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { PasswordInput } from "./PasswordInput";
 
 type Common = { label: string; name: string; hint?: string; error?: string; className?: string };
 
@@ -10,7 +11,9 @@ export function Field({ label, name, hint, error, className, ...rest }: Common &
   return (
     <div className={className}>
       <label htmlFor={id} className="mb-2 block text-label text-ink">{label}</label>
-      <input id={id} name={name} aria-invalid={!!error} aria-describedby={error ? `${id}-e` : hint ? `${id}-h` : undefined} className={cn(control, "h-12")} {...rest} />
+      {rest.type === "password"
+        ? <PasswordInput id={id} name={name} aria-invalid={!!error} aria-describedby={error ? `${id}-e` : hint ? `${id}-h` : undefined} inputClassName={cn(control, "h-12")} {...rest} />
+        : <input id={id} name={name} aria-invalid={!!error} aria-describedby={error ? `${id}-e` : hint ? `${id}-h` : undefined} className={cn(control, "h-12")} {...rest} />}
       {hint && !error && <p id={`${id}-h`} className="mt-2 text-caption text-ink-3">{hint}</p>}
       {error && <p id={`${id}-e`} className="mt-2 text-caption text-[rgb(var(--blue-soft))]" role="alert">{error}</p>}
     </div>

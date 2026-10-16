@@ -8,6 +8,7 @@ import { DataTable } from "@/components/admin/DataTable";
 import { ActionButton } from "@/components/admin/ActionButton";
 import { deleteCoupon, setCouponActive } from "@/app/admin/actions/coupons";
 import { requirePermission } from "@/lib/admin/guard";
+import { couponExtras } from "@/lib/admin/coupon-extras";
 import { personName, type Person } from "@/lib/admin/format";
 import { formatDate, formatMoneyMinor, isUuid } from "@/lib/admin/validation";
 
@@ -19,12 +20,13 @@ export default async function CouponPage({ params }: { params: Promise<{ couponI
   if (!isUuid(couponId)) notFound();
   const ctx = await requirePermission("coupons");
   if (!ctx) return null;
-  const [{ data }, { data: courses }, { data: links }, { data: red }] = await Promise.all([
+  const [{ data }, { data: courses }, { data: links }, { data: red }, extras] = await Promise.all([
     ctx.supabase.from("coupons").select("*").eq("id", couponId).maybeSingle(),
     ctx.supabase.from("courses").select("id, title").neq("status", "archived").order("title"),
     ctx.supabase.from("coupon_courses").select("course_id").eq("coupon_id", couponId),
     ctx.supabase.from("coupon_redemptions").select("id, discount_minor, currency, created_at, profiles:user_id(first_name, last_name, email), courses(title), payments(reference, amount_minor, provider)")
       .eq("coupon_id", couponId).order("created_at", { ascending: false }).limit(200),
+    couponExtras(ctx, couponId),
   ]);
   if (!data) notFound();
   const c = data as CouponRow;
@@ -48,7 +50,8 @@ export default async function CouponPage({ params }: { params: Promise<{ couponI
         <StatCard label="Status" value={c.active ? "Active" : "Disabled"} />
       </div>
       <div className="grid gap-8 xl:grid-cols-[1fr_20rem]">
-        <CouponForm coupon={c} courses={(courses ?? []) as { id: string; title: string }[]} selected={((links ?? []) as { course_id: string }[]).map((l) => l.course_id)} />
+        <CouponForm coupon={c} courses={(courses ?? []) as { id: string; title: string }[]} selected={((links ?? []) as { course_id: string }[]).map((l) => l.course_id)}
+          products={extras.products} selectedProducts={extras.selectedProducts} campaigns={extras.campaigns} />
         <div className="space-y-6">
           <Panel title="Status">
             {c.active

@@ -6,9 +6,10 @@ export type ItemFields = { title?: string; body?: string; meta?: string };
 export type SectionDef = {
   help?: string;
   fields: ("eyebrow" | "title" | "body" | "image" | "cta" | "cta2")[];
-  labels?: Partial<Record<"eyebrow" | "title" | "body" | "cta", string>>;
+  labels?: Partial<Record<"eyebrow" | "title" | "body" | "cta" | "image", string>>;
+  imageHint?: string;
   items?: { label: string; fields: ItemFields; max: number; help?: string };
-  settings?: ("scene_url" | "featured_course_slug")[];
+  settings?: ("scene_url" | "featured_course_slug" | "intro_words" | "backdrop_word" | "game_text")[];
   multilineTitle?: boolean;
 };
 
@@ -17,13 +18,14 @@ const generic: SectionDef = { fields: ["eyebrow", "title", "body", "image", "cta
 export const SECTION_DEFS: Record<string, Record<string, SectionDef>> = {
   home: {
     hero: {
-      fields: ["eyebrow", "title", "body", "cta", "cta2"], multilineTitle: true, settings: ["scene_url"],
-      help: "The hero is the interactive 3D card: this text on the left, the Spline scene on the right. Clear the scene URL to show the static 3D artwork instead.",
-      labels: { eyebrow: "Eyebrow (small badge)", title: "Headline", body: "Supporting text" },
+      fields: ["eyebrow", "title", "body", "image", "cta", "cta2"], multilineTitle: true, settings: ["scene_url", "backdrop_word", "intro_words"],
+      help: "The hero is the interactive 3D card: this text on the left, the Spline scene on the right. Add a cut-out portrait to show you in front of a giant word instead. Clear the scene URL to show the static 3D artwork.",
+      labels: { eyebrow: "Eyebrow (small badge)", title: "Headline", body: "Supporting text", image: "Cut-out portrait (optional)" },
+      imageHint: "A PNG or WebP with a transparent background (you, cut out), at least 1000px tall. When set, it replaces the 3D scene and stands in front of the giant word.",
       items: { label: "Capability cards", fields: { title: "Title", body: "Text (*asterisks* = accent)", meta: "Footer label" }, max: 6, help: "The stacked cards over the hero image." },
     },
     statement: { fields: ["title"], labels: { title: "Statement" } },
-    selected_work: { fields: ["title", "body", "cta"], help: "Shows portfolio projects marked “Show on homepage”, in portfolio order. Choose and reorder them in Website → Portfolio." },
+    selected_work: { fields: ["title", "body", "cta"], help: "Shows portfolio projects marked “Show on homepage”, in portfolio order. Choose and reorder them in Website → Portfolio. Wrap a word of the heading in *asterisks* to set it in italic serif." },
     about_preview: { fields: ["title", "body", "image", "cta"] },
     disciplines: {
       fields: ["title", "body", "cta"], labels: { cta: "Link (where each item points)" },
@@ -37,6 +39,10 @@ export const SECTION_DEFS: Record<string, Record<string, SectionDef>> = {
     exploring: {
       fields: ["title", "body"],
       items: { label: "Topics", fields: { title: "Topic", body: "Why it matters" }, max: 12, help: "Also shown on the About page." },
+    },
+    playground: {
+      fields: ["eyebrow", "title", "body"], settings: ["game_text"],
+      help: "A small block-breaking game. The bricks spell the game text. Set this block to Draft to hide it.",
     },
     contact_cta: { fields: ["title", "cta"] },
   },

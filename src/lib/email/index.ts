@@ -1,34 +1,24 @@
 import { site } from "@/lib/site";
+import { getEmailProvider } from "./providers";
 
 /**
- * Transactional email. Provider abstraction with one implementation (Resend, already used by the contact form).
- * Without RESEND_API_KEY nothing is sent and the result says so: emails are never reported as sent when they weren't.
+ * Transactional email through the provider abstraction (./providers). Without a configured provider nothing is sent
+ * and the result says so: emails are never reported as sent when they weren't.
  *
  * Account emails (verify email, reset password, invitations) are sent by Supabase Auth, not here. In production,
  * point Supabase Auth → SMTP at the same provider so they come from your domain (see ENVIRONMENT.md).
+ * Marketing email (campaigns, automations) goes through ./marketing, which adds consent checks and unsubscribe links.
  */
-export type EmailMessage = { to: string; subject: string; text: string; html?: string };
-export type EmailResult = { sent: true } | { sent: false; reason: "not_configured" | "failed" };
+export type EmailMessage = { to: string; subject: string; text: string; html?: string; replyTo?: string; bcc?: string[]; from?: string };
+export type EmailResult = { sent: true; id?: string | null } | { sent: false; reason: "not_configured" | "failed" | "rejected" };
 
 export function emailConfigured() {
-  return Boolean(process.env.RESEND_API_KEY);
+  return getEmailProvider().configured();
 }
 
-export async function sendEmail(msg: EmailMessage): Promise<EmailResult> {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return { sent: false, reason: "not_configured" };
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: process.env.EMAIL_FROM ?? process.env.CONTACT_FROM_EMAIL ?? "Fola Academy <onboarding@resend.dev>", to: [msg.to], subject: msg.subject, text: msg.text, ...(msg.html ? { html: msg.html } : {}) }),
-    });
-    if (!res.ok) { console.error("[email] provider rejected:", res.status); return { sent: false, reason: "failed" }; }
-    return { sent: true };
-  } catch (e) {
-    console.error("[email] send failed:", e instanceof Error ? e.message : e);
-    return { sent: false, reason: "failed" };
-  }
+export async function sendEmail(msg: EmailMessage, category = "transactional"): Promise<EmailResult> {
+  const r = await getEmailProvider().send({ ...msg, tags: [{ name: "category", value: category }] });
+  return r.sent ? { sent: true, id: r.id } : { sent: false, reason: r.reason };
 }
 
 // ───────────── templates (plain text: readable everywhere, nothing to escape) ─────────────
@@ -50,5 +40,14 @@ export const templates = {
   certificate: (o: { name: string; course: string; number: string }) => ({
     subject: `Your certificate for ${o.course}`,
     text: `Congratulations ${o.name || ""},\n\nYou've completed ${o.course}. Your certificate number is ${o.number}.\n\nAnyone can verify it here: ${site.url}/verify/certificate/${o.number}${sign}`,
+  }),
+  /** Paid product (ebook, guide, template, download, bundle). Links to the library, never to the file itself. */
+  productPurchase: (o: { name: string; product: string; amount: string; reference: string; courseSlug: string | null }) => ({
+    subject: `Your purchase: ${o.product}`,
+    text: `Hi ${o.name || "there"},\n\nThank you. Your payment of ${o.amount} was confirmed and ${o.product} is now in your library.\n\n${o.courseSlug ? `Start learning: ${site.url}/learn/${o.courseSlug}\n` : ""}Open your library: ${site.url}/library\nPayment reference: ${o.reference}\n\nDownloads are available after signing in, so your files stay yours.${sign}`,
+  }),
+  productAccess: (o: { name: string; product: string; courseSlug: string | null }) => ({
+    subject: `You now have: ${o.product}`,
+    text: `Hi ${o.name || "there"},\n\n${o.product} is now in your library.\n\n${o.courseSlug ? `Start learning: ${site.url}/learn/${o.courseSlug}\n` : ""}Open your library: ${site.url}/library${sign}`,
   }),
 };

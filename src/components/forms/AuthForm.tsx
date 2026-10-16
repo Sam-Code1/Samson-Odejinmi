@@ -34,6 +34,12 @@ export function AuthForm({ mode, action, next }: { mode: Mode; action: Action; n
         <Field label={mode === "reset" ? "New password" : "Password"} name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} hint={mode !== "login" ? "At least 8 characters." : undefined} required />
       )}
       {(mode === "register" || mode === "reset") && <Field label="Confirm password" name="confirm" type="password" autoComplete="new-password" required />}
+      {mode === "register" && (
+        <label className="flex min-h-[44px] cursor-pointer items-start gap-3 text-body-sm text-ink-2">
+          <input type="checkbox" name="marketing_consent" className="mt-1 h-4 w-4 shrink-0 accent-[rgb(var(--blue))]" />
+          <span>Email me occasionally about new courses and products. Optional; unsubscribe any time.</span>
+        </label>
+      )}
 
       {state.error && <p role="alert" className="border-l-2 border-blue pl-4 text-body-sm">{state.error}</p>}
       {state.message && <p role="status" className="border-l-2 border-violet pl-4 text-body-sm text-ink-2">{state.message}</p>}

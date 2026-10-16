@@ -36,7 +36,7 @@ export default async function CouponsPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Marketing" title="Coupons" subtitle="Discount codes for course checkout. The discount is always calculated on the server; nothing the browser sends can change a price."
+      <PageHeader eyebrow="Marketing" title="Coupons" subtitle="Discount codes for courses and products. The discount is always calculated on the server; nothing the browser sends can change a price. Open a coupon to see its usage, revenue and discount given."
         actions={<Link href="/admin/coupons/new" className="inline-flex h-10 items-center gap-2 rounded bg-ink px-4 text-label text-canvas hover:bg-ink/90"><Plus aria-hidden className="h-4 w-4" />Create coupon</Link>} />
       {error ? <AdminError title="Unable to load coupons" body="Run supabase/migrations/0005_batch1_foundation.sql, then refresh." /> : (
         <DataTable<Row> rows={(data ?? []) as unknown as Row[]} rowKey={(r) => r.id}

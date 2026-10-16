@@ -11,18 +11,16 @@ const Spline = lazy(() => import("@splinetool/react-spline"));
 interface SplineSceneProps {
   scene: string;
   className?: string;
+  /** Called once the scene has finished loading (used to fade it in over the poster). */
+  onLoad?: () => void;
 }
 
-export function SplineScene({ scene, className }: SplineSceneProps) {
+export function SplineScene({ scene, className, onLoad }: SplineSceneProps) {
   return (
     <Suspense
-      fallback={
-        <div className="flex h-full w-full items-center justify-center" role="status" aria-label="Loading 3D scene">
-          <span className="loader" aria-hidden />
-        </div>
-      }
+      fallback={null}
     >
-      <Spline scene={scene} className={className} />
+      <Spline scene={scene} className={className} onLoad={onLoad ? () => onLoad() : undefined} />
     </Suspense>
   );
 }

@@ -9,7 +9,7 @@ export const metadata = { title: "Contact page" };
 
 export default async function ContactAdmin() {
   const { supabase } = (await getAdminContext())!;
-  const { data, error } = await supabase.from("site_settings").select("contact_email, availability_message, response_expectation, location_text").eq("id", true).maybeSingle();
+  const { data, error } = await supabase.from("site_settings").select("*").eq("id", true).maybeSingle();
   return (
     <>
       <PageHeader eyebrow="Website" title="Contact"

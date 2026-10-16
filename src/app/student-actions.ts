@@ -1,5 +1,6 @@
 "use server";
 
+import { recordSecurityEvent } from "@/lib/security";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -21,7 +22,7 @@ export async function updateProfile(_: FormState, fd: FormData): Promise<FormSta
 }
 
 export async function changePassword(_: FormState, fd: FormData): Promise<FormState> {
-  await requireUser();
+  const user = await requireUser();
   const password = String(fd.get("password") ?? "");
   const confirm = String(fd.get("confirm") ?? "");
   if (password.length < 8) return { error: "Use a password with at least 8 characters." };
@@ -29,6 +30,7 @@ export async function changePassword(_: FormState, fd: FormData): Promise<FormSt
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
   if (error) return { error: "We couldn't update your password. Try a different one." };
+  await recordSecurityEvent("password_changed", { userId: user.id, email: user.email, detail: "settings" });
   return { message: "Password updated." };
 }
 

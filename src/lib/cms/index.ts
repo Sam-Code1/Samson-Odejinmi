@@ -3,6 +3,7 @@ import { draftMode } from "next/headers";
 import { createClient as createSupabase } from "@supabase/supabase-js";
 import { createClient as createSessionClient, supabaseConfigured } from "@/lib/supabase/server";
 import { defaultPage, defaultProjects, defaultServices, defaultSettings } from "@/content/defaults";
+import { plainTitle } from "@/lib/showcase";
 import type { PageContent, PageKey, PortfolioProject, Section, SectionItem, SeoEntry, SeoRouteKey, Service, SiteSettings, SocialLink } from "./types";
 
 /**
@@ -67,6 +68,8 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
       availabilityMessage: str(r.availability_message),
       responseExpectation: str(r.response_expectation),
       locationText: str(r.location_text),
+      whatsappNumber: typeof r.whatsapp_number === "string" && /^[1-9]\d{7,14}$/.test(r.whatsapp_number) ? r.whatsapp_number : null,
+      whatsappMessage: str(r.whatsapp_message),
       footerText: str(r.footer_text),
       copyrightText: str(r.copyright_text),
     };
@@ -131,7 +134,7 @@ function toProject(r: Row): PortfolioProject {
     : [];
   const cover = str(r.cover_image_url);
   return {
-    id: r.id as string, slug: r.slug as string, title: r.title as string, shortDescription: str(r.short_description) ?? "",
+    id: r.id as string, slug: r.slug as string, title: plainTitle(r.title as string), titleDisplay: r.title as string, shortDescription: str(r.short_description) ?? "",
     description: str(r.description), challenge: str(r.challenge), approach: str(r.approach), outcome: str(r.outcome), process,
     category: str(r.category), categories: arr(r.categories).length ? arr(r.categories) : str(r.category) ? [r.category as string] : [],
     services: arr(r.services), tools: arr(r.tools),

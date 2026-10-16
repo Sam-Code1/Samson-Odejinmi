@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Container, Section, SectionHeader } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { NewsletterSignup } from "@/components/academy/NewsletterSignup";
 import { Accordion } from "@/components/ui/Accordion";
 import { Badge } from "@/components/ui/Badge";
 import { Rise, Settle, Stagger } from "@/components/ui/Motion";
@@ -190,6 +191,13 @@ export default async function AcademyPage() {
             <h2 className="text-h2">More programmes</h2>
             <p className="mt-5 text-body text-ink-2">More programmes are being developed. When a course is ready, it appears here.</p>
           </div>
+        </Container>
+      </Section>
+
+      <Section tone="mint">
+        <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+          <div className="lg:col-span-4"><SectionHeader title="Stay in the loop" intro="New courses, guides and ebooks, when they're ready." /></div>
+          <div className="lg:col-span-7 lg:col-start-6"><NewsletterSignup title="Get the first look" /></div>
         </Container>
       </Section>
 

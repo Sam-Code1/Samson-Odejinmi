@@ -1,5 +1,8 @@
 "use server";
 
+import { readAttribution } from "@/lib/attribution-server";
+import { createServiceClient } from "@/lib/supabase/admin";
+import { recordSecurityEvent } from "@/lib/security";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient, supabaseConfigured } from "@/lib/supabase/server";
@@ -24,7 +27,8 @@ export async function login(_: FormState, fd: FormData): Promise<FormState> {
   if (!EMAIL.test(email) || !password) return { error: "Enter your email and password.", fields: { email } };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data: signed, error } = await supabase.auth.signInWithPassword({ email, password });
+  await recordSecurityEvent(error ? "login_failed" : "login_success", { email, userId: signed?.user?.id ?? null });
   // One generic message for every failure, so the form doesn't reveal which accounts exist.
   if (error) return { error: "That email and password don't match. Check them and try again.", fields: { email } };
   redirect(safeNext(fd.get("next")));
@@ -49,9 +53,11 @@ export async function register(_: FormState, fd: FormData): Promise<FormState> {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { first_name: first, last_name: last }, emailRedirectTo: `${base}/auth/callback?next=/dashboard` },
+    // marketing_consent only when the person ticked the (unticked by default) box; read by handle_new_user (migration 0008).
+    options: { data: { first_name: first, last_name: last, ...(fd.get("marketing_consent") === "on" ? { marketing_consent: "true" } : {}) }, emailRedirectTo: `${base}/auth/callback?next=/dashboard` },
   });
   if (error) return { error: "We couldn't create your account. Check your details and try again.", fields };
+  if (data.user) { await recordSignupAttribution(data.user.id); await recordSecurityEvent("signup", { email, userId: data.user.id }); }
   // If email confirmation is off, a session exists already.
   if (data.session) redirect("/dashboard");
   return { message: "Check your email for a link to confirm your account." };
@@ -64,6 +70,7 @@ export async function forgotPassword(_: FormState, fd: FormData): Promise<FormSt
   const supabase = await createClient();
   const base = await origin();
   await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${base}/auth/callback?next=/reset-password` });
+  await recordSecurityEvent("password_reset_requested", { email });
   // Same response whether or not the account exists.
   return { message: "If an account exists for that email, a reset link is on its way." };
 }
@@ -79,6 +86,7 @@ export async function resetPassword(_: FormState, fd: FormData): Promise<FormSta
   if (!data.user) return { error: "This reset link has expired. Request a new one." };
   const { error } = await supabase.auth.updateUser({ password });
   if (error) return { error: "We couldn't update your password. Try a different one." };
+  await recordSecurityEvent("password_changed", { userId: data.user.id, email: data.user.email, detail: "reset link" });
   redirect("/dashboard");
 }
 
@@ -88,4 +96,28 @@ export async function signOut() {
     await supabase.auth.signOut();
   }
   redirect("/");
+}
+
+/**
+ * Where a new account came from (UTM / referral cookies set by the middleware), saved on their CRM contact.
+ * Best effort and server-only: it never blocks sign-up, and only fills fields that are still empty.
+ */
+async function recordSignupAttribution(userId: string) {
+  try {
+    const { ref, attribution } = await readAttribution();
+    if (!ref && !attribution.first && !attribution.last) return;
+    const service = createServiceClient();
+    if (!service) return;
+    const { data: c } = await service.from("contacts").select("id, first_touch, referred_by_affiliate").eq("user_id", userId).maybeSingle();
+    if (!c) return;
+    const { data: aff } = ref ? await service.from("affiliates").select("id, user_id").eq("code", ref).eq("status", "active").maybeSingle() : { data: null };
+    const empty = !c.first_touch || Object.keys(c.first_touch as object).length === 0;
+    await service.from("contacts").update({
+      ...(empty && attribution.first ? { first_touch: attribution.first } : {}),
+      ...(attribution.last ? { last_touch: attribution.last } : {}),
+      ...(!c.referred_by_affiliate && aff && aff.user_id !== userId ? { referred_by_affiliate: aff.id } : {}),
+    }).eq("id", c.id);
+  } catch {
+    /* best effort */
+  }
 }

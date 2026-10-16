@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED = ["/dashboard", "/courses", "/profile", "/settings", "/learn", "/admin"];
+const PROTECTED = ["/dashboard", "/courses", "/profile", "/settings", "/learn", "/admin", "/library", "/affiliate"];
 const AUTH_PAGES = ["/login", "/register", "/forgot-password"];
 
 const matches = (path: string, bases: string[]) => bases.some((b) => path === b || path.startsWith(b + "/"));

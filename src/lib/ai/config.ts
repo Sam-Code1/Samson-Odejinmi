@@ -2,7 +2,7 @@
  * Central AI configuration. Every AI feature reads its model, effort and limits from here; no model names are
  * hard-coded elsewhere. Model per feature can be overridden with env vars (AI_MODEL_<FEATURE>), falling back to AI_MODEL.
  */
-export type AiFeature = "quiz" | "regenerate" | "content" | "lesson_assistant" | "tutor" | "chatbot";
+export type AiFeature = "quiz" | "regenerate" | "content" | "lesson_assistant" | "tutor" | "chatbot" | "marketing";
 export type Effort = "low" | "medium" | "high";
 
 type FeatureConfig = {
@@ -26,6 +26,7 @@ export const AI_FEATURES: Record<AiFeature, FeatureConfig> = {
   lesson_assistant: { maxTokens: 4_000,  effort: "medium", limit: 40, windowMinutes: 60,   maxInputChars: 2_000 },
   tutor:            { maxTokens: 1_500,  effort: "low",    limit: 40, windowMinutes: 1440, maxInputChars: 1_000 },
   chatbot:          { maxTokens: 900,    effort: "low",    limit: 15, windowMinutes: 60,   maxInputChars: 600 },
+  marketing:        { maxTokens: 4_000,  effort: "medium", limit: 30, windowMinutes: 60,   maxInputChars: 3_000 },
 };
 
 /** Hard daily ceiling across ALL public chatbot visitors, so a bot farm can't drain the budget. */

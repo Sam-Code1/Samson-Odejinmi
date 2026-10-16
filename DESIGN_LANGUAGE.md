@@ -100,3 +100,11 @@ Designed at 320, 375, 390, 430, 768, 1024, 1280, 1440, 1920. Mobile gets its own
 Same tokens, same fonts, same theme system, only denser: 14px tables, 16px card titles, 13-14px supporting text, content up to 1400px, page padding 16 / 24 / 40px. Surfaces are `canvas` / `elevated` with 14% borders; blue and violet appear only as small active states and the thread. Tinted section colours and grain are public-site tools and are not used in Admin. Motion is limited to hover and focus transitions.
 
 Building blocks live in `src/components/admin/`: `AdminShell` (sidebar + mobile drawer + toasts), `PageHeader`/`Panel`, `StatCard`, `DataTable` (table on desktop, cards on mobile), `Filters` (search + filter), `Pagination`, `StatusBadge`, `AdminForm` + `FormFields` (validation, unsaved-changes warning, toasts), `ActionButton` (one-click server actions with confirm dialogs), `TabNav`, empty/error/loading states.
+
+
+## Motion (Batch 4)
+- **Properties**: opacity and transform (translate, small scale) only. No layout animation, no animated blur, no parallax, no particles.
+- **Timing**: `duration-quick` 180 ms (hover/press), `duration-base` 320 ms (UI state), `duration-slow` 700 ms (entrances, image reveals); easing `ease-quiet` (cubic-bezier(0.22, 1, 0.36, 1)).
+- **Continuous motion** only where the user can stop it (skills ticker has a pause button; carousels pause on hover/focus and when off-screen).
+- **Never animate a page-wide wrapper with transform**: it traps every fixed element (menus, drawers, dialogs). Overlays are portalled to `document.body`.
+- **Reduced motion**: every animation is disabled or reduced to an instant change; the hero shows a still image instead of the live 3D scene.

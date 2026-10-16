@@ -1,3 +1,4 @@
+import { MixTitle } from "@/components/cms/RichText";
 import { cn } from "@/lib/utils";
 
 export function Container({ className, children, as: Tag = "div" }: { className?: string; children: React.ReactNode; as?: "div" | "section" | "header" | "footer" | "nav" }) {
@@ -27,7 +28,7 @@ export function Section({ id, className, children, tone }: { id?: string; classN
 export function SectionHeader({ title, intro, className, as: H = "h2" }: { title: string; intro?: React.ReactNode; className?: string; as?: "h1" | "h2" }) {
   return (
     <div className={cn("max-w-3xl", className)}>
-      <H className={H === "h1" ? "text-h1" : "text-h2"}>{title}</H>
+      <H className={H === "h1" ? "text-h1" : "text-h2"}><MixTitle text={title} /></H>
       {intro && <p className="mt-5 max-w-prose text-body-lg text-ink-2">{intro}</p>}
     </div>
   );

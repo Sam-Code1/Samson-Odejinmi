@@ -27,12 +27,24 @@ export function SectionEditor({ s, def, library, courses }: { s: SectionRow; def
         {has("body") && <TextAreaInput label={L.body ?? "Text"} name="body" rows={6} defaultValue={s.body ?? ""} maxLength={6000} className="sm:col-span-2" hint="Plain text. A blank line starts a new paragraph. HTML isn't rendered." />}
         {has("image") && (
           <>
-            <ImageField name="image" label="Image" current={s.image_url} library={library} />
+            <ImageField name="image" label={L.image ?? "Image"} current={s.image_url} library={library} hint={def.imageHint} />
             <TextInput label="Image description (alt text)" name="image_alt" defaultValue={s.image_alt ?? ""} maxLength={200} className="sm:col-span-2" hint="Describe the image for people using screen readers." />
           </>
         )}
         {def.settings?.includes("scene_url") && (
           <TextInput label="Spline scene URL" name="scene_url" defaultValue={typeof s.settings.scene_url === "string" ? s.settings.scene_url : ""} className="sm:col-span-2" placeholder="https://prod.spline.design/…/scene.splinecode" hint="Leave empty to show the static 3D artwork instead of the live scene." />
+        )}
+        {def.settings?.includes("backdrop_word") && (
+          <TextInput label="Giant word behind the portrait" name="backdrop_word" defaultValue={typeof s.settings.backdrop_word === "string" ? s.settings.backdrop_word : ""} maxLength={12}
+            hint="One short word (up to 12 letters), e.g. your name. Only used with a cut-out portrait." />
+        )}
+        {def.settings?.includes("intro_words") && (
+          <TextAreaInput label="Intro reveal words" name="intro_words" rows={2} defaultValue={typeof s.settings.intro_words === "string" ? s.settings.intro_words : ""} maxLength={60} className="sm:col-span-2"
+            hint="Shown once per visit as a short full-screen reveal before the homepage, one word per line (up to 3). Leave empty to turn the intro off. Visitors can skip it, and it never plays for people who prefer reduced motion." />
+        )}
+        {def.settings?.includes("game_text") && (
+          <TextAreaInput label="Game text" name="game_text" rows={2} defaultValue={typeof s.settings.game_text === "string" ? s.settings.game_text : ""} maxLength={20} className="sm:col-span-2"
+            hint="The bricks spell this. Up to 2 lines of 7 characters: letters, numbers, spaces and ! ? . - only." />
         )}
         {def.settings?.includes("featured_course_slug") && (
           <SelectInput label="Featured course" name="featured_course_slug" defaultValue={typeof s.settings.featured_course_slug === "string" ? s.settings.featured_course_slug : ""}

@@ -20,7 +20,7 @@ const config: Config = {
         line: "rgb(var(--line) / 0.14)",
         "line-strong": "rgb(var(--line) / 0.3)",
       },
-      fontFamily: { sans: ["var(--font-manrope)", "ui-sans-serif", "system-ui", "sans-serif"] },
+      fontFamily: { sans: ["var(--font-manrope)", "ui-sans-serif", "system-ui", "sans-serif"], serif: ["var(--font-serif)", "ui-serif", "Georgia", "serif"] },
       fontSize: {
         // Spec: Display 40/52/64, H1 32-36/40-44/48-56, H2 26-30/30-34/36-42, H3 22-24/24-28/26-32, H4 20-24
         display: ["clamp(2.5rem, 1.6rem + 2.8vw, 4rem)", { lineHeight: "1.06", letterSpacing: "-0.035em", fontWeight: "700" }],

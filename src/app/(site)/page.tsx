@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,7 +9,11 @@ import { CarouselStacked, type Slide } from "@/components/ui/carousel-07";
 import { HeroPreviewWalls } from "@/components/ui/hero-preview-walls";
 import { AcademyVisual } from "@/components/visual/AcademyVisual";
 import { WorkflowStack } from "@/components/sections/StepStack";
-import { Paragraphs } from "@/components/cms/RichText";
+import { Paragraphs, plainTitle } from "@/components/cms/RichText";
+import { IntroReveal } from "@/components/showcase/IntroReveal";
+import { Playground } from "@/components/showcase/Playground";
+import { WhatsAppButton } from "@/components/showcase/WhatsAppButton";
+import { backdropWord, gameLines, introWords, whatsappHref } from "@/lib/showcase";
 import { getPage, getProjects, getSiteSettings } from "@/lib/cms";
 import { buildMetadata } from "@/lib/cms/seo";
 import { DEFAULT_HERO_SCENE, canOptimize, safeImageSrc, splineSceneUrl } from "@/lib/cms/images";
@@ -17,6 +23,9 @@ import { site } from "@/lib/site";
 
 export const revalidate = 3600;
 
+/** Still frame of the hero robot (public/images/hero-robot.png): instant paint, and the reduced-motion fallback. */
+const HERO_POSTER = existsSync(join(process.cwd(), "public/images/hero-robot.png")) ? "/images/hero-robot.png" : null;
+
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("home", { path: "/", absoluteTitle: true });
 }
@@ -25,6 +34,7 @@ export default async function HomePage() {
   const [page, projects, services, settings] = await Promise.all([getPage("home"), getProjects(), getPage("services"), getSiteSettings()]);
   const featured = projects.filter((p) => p.featured);
   const steps = services.process?.items ?? [];
+  const whatsapp = whatsappHref(settings.whatsappNumber, settings.whatsappMessage);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -42,7 +52,9 @@ export default async function HomePage() {
         // An explicitly empty URL means "use the static artwork". Older databases keep the URL on the retired interactive_3d row.
         const own = s.settings.scene_url;
         const scene = typeof own === "string" ? splineSceneUrl(own) : splineSceneUrl(page.interactive_3d?.settings.scene_url) ?? DEFAULT_HERO_SCENE;
-        return <HeroPreviewWalls key={s.key} hero={s} scene={scene} />;
+        const src = safeImageSrc(s.imageUrl);
+        const portrait = src ? { src, alt: s.imageAlt ?? `Portrait of ${settings.fullName}`, optimize: canOptimize(src), word: backdropWord(s.settings.backdrop_word) } : null;
+        return <HeroPreviewWalls key={s.key} hero={s} scene={scene} portrait={portrait} poster={HERO_POSTER} />;
       }
 
       case "statement":
@@ -68,7 +80,7 @@ export default async function HomePage() {
                 <SectionHeader title={s.title ?? "Selected work"} intro={s.body ?? undefined} />
                 {s.cta?.label && <Button href={s.cta.href} variant="text">{s.cta.label}</Button>}
               </div>
-              <div className="mt-10"><CarouselStacked slides={slides} label={s.title ?? "Selected work"} /></div>
+              <div className="mt-10"><CarouselStacked slides={slides} label={plainTitle(s.title ?? "Selected work")} /></div>
             </Container>
           </Section>
         );
@@ -197,13 +209,21 @@ export default async function HomePage() {
           </Section>
         ) : null;
 
+      case "playground": {
+        const lines = gameLines(s.settings.game_text);
+        return lines ? <Playground key={s.key} section={s} lines={lines} /> : null;
+      }
+
       case "contact_cta":
         return s.title ? (
           <Section key={s.key} tone="night">
             <Container>
               <div className="flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-end">
                 <h2 className="max-w-3xl text-h1">{s.title}</h2>
-                {s.cta?.label && <Button href={s.cta.href} size="lg">{s.cta.label}</Button>}
+                <div className="flex flex-wrap items-center gap-4">
+                  {s.cta?.label && <Button href={s.cta.href} size="lg">{s.cta.label}</Button>}
+                  {whatsapp && <WhatsAppButton href={whatsapp} size="lg" />}
+                </div>
               </div>
             </Container>
           </Section>
@@ -215,9 +235,11 @@ export default async function HomePage() {
   };
 
   const blocks = await Promise.all(Object.values(page).map(render));
+  const intro = introWords(page.hero?.settings.intro_words);
 
   return (
     <>
+      {intro.length > 0 && <IntroReveal words={intro} />}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       {blocks}
     </>

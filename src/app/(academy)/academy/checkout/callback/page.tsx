@@ -9,7 +9,10 @@ import { formatMoney } from "@/lib/utils";
 export const metadata: Metadata = { title: "Payment", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-type Pay = { reference: string; status: string; amount_minor: number; currency: string; failure_reason: string | null; courses: { title: string; slug: string } | null };
+type Pay = {
+  reference: string; status: string; amount_minor: number; currency: string; failure_reason: string | null;
+  courses: { title: string; slug: string } | null; products: { name: string; slug: string; product_type: string } | null;
+};
 
 /**
  * Where Paystack sends the student after paying. The `reference` in the URL is only a lookup key:
@@ -26,7 +29,13 @@ export default async function CheckoutCallback({ searchParams }: { searchParams:
   }
 
   const supabase = await createClient();
-  const load = async () => (await supabase.from("payments").select("reference, status, amount_minor, currency, failure_reason, courses(title, slug)").eq("reference", reference).maybeSingle()).data as unknown as Pay | null;
+  // Products need migration 0008; before it, fall back to the course-only query so course checkout keeps working.
+  const load = async () => {
+    const full = await supabase.from("payments").select("reference, status, amount_minor, currency, failure_reason, courses(title, slug), products(name, slug, product_type)").eq("reference", reference).maybeSingle();
+    if (!full.error) return full.data as unknown as Pay | null;
+    const basic = await supabase.from("payments").select("reference, status, amount_minor, currency, failure_reason, courses(title, slug)").eq("reference", reference).maybeSingle();
+    return basic.data ? ({ ...(basic.data as object), products: null } as unknown as Pay) : null;
+  };
   let pay = await load();
   if (!pay) return wrap(<StateMessage title="We couldn't find that payment" body="It may belong to a different account. Make sure you're signed in with the account you paid from." action={{ href: "/dashboard", label: "Go to your dashboard" }} />);
 
@@ -37,6 +46,15 @@ export default async function CheckoutCallback({ searchParams }: { searchParams:
     pay = (await load()) ?? pay;
   }
   const course = pay.courses;
+  const product = pay.products;
+
+  if (product && pay.status === "successful") {
+    const learn = product.product_type === "course" && course;
+    return wrap(<StateMessage title="Payment confirmed. It's yours." body={`Thank you. ${formatMoney(pay.amount_minor, pay.currency)} was received for ${product.name}. Reference ${pay.reference}. A confirmation is on its way to your email.`} action={learn ? { href: `/learn/${course.slug}`, label: "Start learning" } : { href: "/library", label: "Open your library" }} secondary={{ href: "/dashboard", label: "Dashboard" }} />);
+  }
+  if (product && (pay.status === "failed" || pay.status === "refunded")) {
+    return wrap(<StateMessage title="Your payment could not be completed." body={`Please try again. If you were charged, contact us with your reference: ${pay.reference}`} action={{ href: `/academy/shop/${product.slug}`, label: "Try again" }} secondary={{ href: "/contact", label: "Contact" }} />);
+  }
 
   if (pay.status === "successful") {
     return wrap(<StateMessage title="Payment confirmed. You're enrolled." body={`Thank you. ${formatMoney(pay.amount_minor, pay.currency)} was received for ${course?.title ?? "your course"}. Reference ${pay.reference}.`} action={course ? { href: `/learn/${course.slug}`, label: "Start learning" } : { href: "/dashboard", label: "Go to your dashboard" }} secondary={{ href: "/dashboard", label: "Dashboard" }} />);

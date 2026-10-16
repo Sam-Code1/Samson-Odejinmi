@@ -21,6 +21,8 @@ export const defaultSettings: SiteSettings = {
   availabilityMessage: null,
   responseExpectation: "I'll reply by email.",
   locationText: null,
+  whatsappNumber: null,
+  whatsappMessage: null,
   footerText: "A 3D artist, designer and creative technologist exploring the space between visual storytelling and technology.",
   copyrightText: "Samson Afolabi Odejinmi",
 };
@@ -43,8 +45,7 @@ const pages: Record<PageKey, Section[]> = {
       eyebrow: "3D artist, designer & creative technologist",
       title: "Creating worlds.\nDesigning experiences.\nBuilding what's next.",
       body: "I'm Samson Odejinmi, exploring the space between visual storytelling and technology.",
-      cta: ["Explore my work", "/portfolio"], cta2: ["Explore Fola Academy", "/academy"],
-      settings: { scene_url: "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode" },
+      cta: ["Explore my work", "/portfolio"], cta2: ["Explore Fola Academy", "/academy"],      settings: { scene_url: "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode", intro_words: "Samson\nOdejinmi", backdrop_word: "Fola" },
       items: [
         { title: "3D Animation", meta: "Core practice", body: "Objects, cameras and scenes brought to life with *deliberate timing* and movement." },
         { title: "Environment Design", meta: "Core practice", body: "Spaces with a sense of place, built for *mood, scale and depth*." },
@@ -53,7 +54,7 @@ const pages: Record<PageKey, Section[]> = {
       ],
     }),
     s("statement", { title: "I create visual experiences, and I'm increasingly exploring how technology can extend what creativity can do." }),
-    s("selected_work", { title: "Selected work", body: "Drag, or use the arrows. Personal studies are labelled as such.", cta: ["All work", "/portfolio"] }),
+    s("selected_work", { title: "Selected *work*", body: "Drag, or use the arrows. Personal studies are labelled as such.", cta: ["All work", "/portfolio"] }),
     s("about_preview", {
       title: "Creative by instinct. Technical by curiosity.",
       body: "I got interested in 3D and animation around 2020, then trained in 3D Animation and Video Production in Lagos. I care about how things look, and how they're made.\n\nAlongside the creative work I'm studying Computer Science and exploring Python, procedural 3D and Unreal Engine, with Technical Direction as the long-term goal.",
@@ -79,6 +80,11 @@ const pages: Record<PageKey, Section[]> = {
         { title: "Advanced VFX", body: "Going deeper on effects and integration." },
         { title: "Technical direction", body: "The long-term direction: connecting creative intent to technical systems." },
       ],
+    }),
+    s("playground", {
+      eyebrow: "Playground", title: "Break it if you can.",
+      body: "A small game for the curious. Move with your mouse, finger or the arrow keys.",
+      settings: { game_text: "MAKE\nWORLDS" },
     }),
     s("contact_cta", { title: "Have something in mind? Let's talk about it.", cta: ["Get in touch", "/contact"] }),
   ],

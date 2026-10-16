@@ -12,7 +12,7 @@ type Row = {
   id: string; kind: string; actor_type: string; status: string; model: string; input_tokens: number | null; output_tokens: number | null; duration_ms: number | null;
   error: string | null; created_at: string; profiles: { email: string | null } | null; courses: { title: string } | null; lessons: { title: string } | null;
 };
-const KINDS = ["quiz", "regenerate", "content", "lesson_assistant", "tutor", "chatbot"];
+const KINDS = ["quiz", "regenerate", "content", "lesson_assistant", "tutor", "chatbot", "marketing"];
 
 export default async function AiLogsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const ctx = await requirePermission("ai");

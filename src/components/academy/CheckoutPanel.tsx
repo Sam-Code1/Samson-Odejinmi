@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useState, useTransition } from "react";
 import { quoteCheckout, startCheckout, type CheckoutState, type Quote } from "@/app/checkout-actions";
 import { Button } from "@/components/ui/Button";
+import { MethodPicker, type MethodChoice } from "./MethodPicker";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -12,12 +13,13 @@ type Price = { currency: string; amountMinor: number };
  * Enrol / buy panel. Shows the server's own quote (base, discount, total). Submitting starts a server-side checkout;
  * access is granted only after Paystack verification.
  */
-export function CheckoutPanel({ courseId, slug, prices, payable, signedIn, enrolled, paymentsReady }: {
-  courseId: string; slug: string; prices: Price[]; payable: string[]; signedIn: boolean; enrolled: boolean; paymentsReady: boolean;
+export function CheckoutPanel({ courseId, slug, prices, methods, signedIn, enrolled }: {
+  courseId: string; slug: string; prices: Price[]; methods: Record<string, MethodChoice[]>; signedIn: boolean; enrolled: boolean;
 }) {
-  const options = prices.filter((p) => p.amountMinor === 0 || (paymentsReady && payable.includes(p.currency)));
+  const options = prices.filter((p) => p.amountMinor === 0 || (methods[p.currency]?.length ?? 0) > 0);
   const [currency, setCurrency] = useState(options[0]?.currency ?? "");
   const [code, setCode] = useState("");
+  const [method, setMethod] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [checking, startCheck] = useTransition();
   const [state, action, pending] = useActionState<CheckoutState, FormData>(startCheckout, {});
@@ -56,7 +58,7 @@ export function CheckoutPanel({ courseId, slug, prices, payable, signedIn, enrol
       {options.length > 1 && (
         <div role="radiogroup" aria-label="Currency" className="flex gap-2">
           {options.map((o) => (
-            <button key={o.currency} type="button" role="radio" aria-checked={o.currency === currency} onClick={() => { setCurrency(o.currency); setQuote(null); }}
+            <button key={o.currency} type="button" role="radio" aria-checked={o.currency === currency} onClick={() => { setCurrency(o.currency); setQuote(null); setMethod(""); }}
               className={cn("h-9 rounded border px-3 text-label", o.currency === currency ? "border-ink bg-ink text-canvas" : "border-line-strong text-ink-2 hover:text-ink")}>{o.currency}</button>
           ))}
         </div>
@@ -71,13 +73,14 @@ export function CheckoutPanel({ courseId, slug, prices, payable, signedIn, enrol
         {quote && !quote.ok && <p role="alert" className="mt-2 text-caption text-warm">{quote.error}</p>}
         {applied && applied.discount > 0 && <p role="status" className="mt-2 text-caption text-blue">{applied.couponCode} applied: {formatMoney(applied.discount, currency)} off.</p>}
       </div>
+      {total > 0 && <MethodPicker methods={methods[currency] ?? []} value={method || methods[currency]?.[0]?.method || ""} onChange={setMethod} />}
       <dl className="space-y-1 border-t border-line pt-4 text-body-sm">
         {applied && applied.discount > 0 && <div className="flex justify-between text-ink-3"><dt>Price</dt><dd className="tabular-nums line-through">{formatMoney(applied.base, currency)}</dd></div>}
         <div className="flex justify-between text-h4"><dt>Total</dt><dd className="tabular-nums">{total === 0 ? "Free" : formatMoney(total, currency)}</dd></div>
       </dl>
       {state.error && <p role="alert" className="border-l-2 border-warm pl-3 text-body-sm text-ink-2">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={pending}>{pending ? "Starting…" : total === 0 ? "Enrol for free" : `Pay ${formatMoney(total, currency)}`}</Button>
-      {total > 0 && <p className="text-caption text-ink-3">Secure payment by Paystack. You get access as soon as your payment is confirmed.</p>}
+      {total > 0 && <p className="text-caption text-ink-3">Secure payment through our payment provider. You get access as soon as your payment is confirmed.</p>}
     </form>
   );
 }

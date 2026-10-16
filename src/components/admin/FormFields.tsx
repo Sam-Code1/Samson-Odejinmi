@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { useFieldError } from "./FormContext";
+import { PasswordInput } from "@/components/forms/PasswordInput";
 
 const control =
   "w-full rounded border border-line-strong bg-transparent px-3 text-body-sm text-ink placeholder:text-ink-3 transition-colors hover:border-ink/40 focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30 disabled:opacity-60";
@@ -27,7 +28,9 @@ export function TextInput({ label, name, hint, className, ...rest }: Base & Omit
   const error = useFieldError(name);
   return (
     <Wrap label={label} name={name} hint={hint} className={className} required={rest.required}>
-      <input id={`f-${name}`} name={name} aria-invalid={!!error} aria-describedby={describe(name, error, hint)} className={cn(control, "h-10")} {...rest} />
+      {rest.type === "password"
+        ? <PasswordInput id={`f-${name}`} name={name} aria-invalid={!!error} aria-describedby={describe(name, error, hint)} inputClassName={cn(control, "h-11")} {...rest} />
+        : <input id={`f-${name}`} name={name} aria-invalid={!!error} aria-describedby={describe(name, error, hint)} className={cn(control, "h-10")} {...rest} />}
     </Wrap>
   );
 }

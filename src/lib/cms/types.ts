@@ -14,6 +14,9 @@ export type SiteSettings = {
   availabilityMessage: string | null;
   responseExpectation: string | null;
   locationText: string | null;
+  /** International format, digits only (e.g. 2348012345678). Null hides every WhatsApp button. */
+  whatsappNumber: string | null;
+  whatsappMessage: string | null;
   footerText: string | null;
   copyrightText: string | null;
 };
@@ -47,7 +50,10 @@ export type ImageRef = { src: string; alt: string };
 export type PortfolioProject = {
   id: string;
   slug: string;
+  /** Plain title (no accent markers): metadata, alt text, labels. */
   title: string;
+  /** Title as typed, with *accent* markers, for display headings. */
+  titleDisplay?: string;
   shortDescription: string;
   description: string | null;
   challenge: string | null;

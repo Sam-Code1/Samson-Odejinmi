@@ -20,6 +20,13 @@ server code (server actions, route handlers, server components). Never prefix a 
 | `AI_MODEL_<FEATURE>` | No | optional | optional | optional | Per-feature model override: `QUIZ`, `REGENERATE`, `CONTENT`, `LESSON_ASSISTANT`, `TUTOR`, `CHATBOT` |
 | `AI_PUBLIC_DAILY_CAP` | No | optional | optional | recommended | Daily ceiling on public chatbot requests across all visitors (default 500) |
 | `AI_RATE_SALT` | **Yes** | optional | optional | recommended | Salt for hashing visitor IPs in the AI log (falls back to the service-role key) |
+| `EMAIL_PROVIDER` | No | optional | optional | optional | `resend` (default) or `none` |
+| `MARKETING_EMAIL_FROM` | No | optional | optional | recommended | Verified sender for campaigns/automations (defaults to `EMAIL_FROM`) |
+| `MARKETING_POSTAL_ADDRESS` | No | optional | optional | recommended | Address in marketing email footers |
+| `RESEND_WEBHOOK_SECRET` | **Yes** | optional | optional | recommended | Verifies `/api/webhooks/email` (delivery, opens, clicks, bounces, complaints) |
+| `CRON_SECRET` | **Yes** | optional | for testing | **required for scheduled sends/automations** | Protects `/api/cron/marketing` |
+| `AFFILIATE_CLICK_SALT` | **Yes** | optional | optional | optional | Salt for de-duplicating referral clicks |
+| `WHATSAPP_PROVIDER`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | token/secret: **Yes** | optional | optional | optional | WhatsApp Cloud API foundation (off unless all set) |
 
 The student tutor and the public chatbot appear only when **both** `ANTHROPIC_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY`
 are set, because their per-user/per-visitor limits are counted server-side. `/academy` is statically cached, so redeploy
@@ -44,3 +51,27 @@ point at a separate Supabase project (or the same one only if you accept that te
 - App emails (purchase, enrolment, certificate, welcome after confirmation) use Resend: set `RESEND_API_KEY` and a verified `EMAIL_FROM`.
 - Account emails (confirm email, reset password, admin invitations) are sent by **Supabase Auth**. In Supabase → Authentication → SMTP Settings, use the same provider so they come from your domain. In Supabase → Authentication → URL Configuration add `https://<your-domain>/auth/callback` to Redirect URLs.
 - Without a provider, nothing is reported as sent.
+
+
+## Batch 3: products, email marketing, affiliates
+- **Products and downloads** need `SUPABASE_SERVICE_ROLE_KEY` (signed download links) and migration 0008 (creates the private `product-files` bucket).
+- **Email campaigns and automations** need `RESEND_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` and a verified sender. Marketing email only ever goes to contacts who opted in; every message has a one-click unsubscribe.
+- **Delivery, opens, clicks, bounces**: in Resend → Webhooks add `https://<your-domain>/api/webhooks/email` with the events email.delivered, email.opened, email.clicked, email.bounced, email.complained; put the signing secret in `RESEND_WEBHOOK_SECRET`. Without it, only "sent" is known (nothing is guessed).
+- **Scheduled campaigns, automations, abandoned-checkout follow-ups** run from `/api/cron/marketing`. `vercel.json` schedules it once a day (the most the Vercel Hobby plan allows). On Pro you can change the schedule to e.g. `*/15 * * * *`, or call the URL from any scheduler with `Authorization: Bearer <CRON_SECRET>`. "Send now" and Admin → Marketing → "Run marketing queue now" work without cron.
+- **Affiliate links**: `?ref=<code>` on any page. The middleware stores the code in a first-party cookie for 30 days; commissions are calculated by the database when the payment is verified.
+
+
+## Batch 4: payment providers, messaging, security
+| Variable | Secret? | Purpose |
+|---|---|---|
+| `FLUTTERWAVE_SECRET_KEY` | **Yes** | Flutterwave (secondary provider). Test keys start `FLWSECK_TEST-`. Off unless set **and** enabled in Admin → Settings → Payment settings |
+| `FLUTTERWAVE_WEBHOOK_HASH` | **Yes** | The "secret hash" you set in Flutterwave → Settings → Webhooks; verified on `/api/webhooks/flutterwave` |
+| `SECURITY_LOG_SALT` | **Yes** | Optional salt for hashing emails/IPs in the security log |
+| `CONTACT_TO_EMAIL` | No | Where website messages are emailed (falls back to the site's contact email). Also the Reply-To and BCC on dashboard replies |
+| `CONTACT_FROM_EMAIL` | No | Verified sender for message notifications and replies (falls back to `EMAIL_FROM`) |
+
+- **Paystack** (primary) needs only `PAYSTACK_SECRET_KEY` and the webhook `https://<domain>/api/webhooks/paystack`. Methods offered (card, bank, bank transfer, USSD, QR) are chosen in Admin → Settings → Payment settings; tick only what's activated on your Paystack account.
+- **Flutterwave**: add the key and secret hash, set the webhook `https://<domain>/api/webhooks/flutterwave`, then enable it in Payment settings with its currencies and methods. **OPay** and **NQR** are offered through Flutterwave and must be activated on your Flutterwave account first.
+- **PalmPay**: listed as a future provider only. It stays disabled until an official, documented merchant checkout API is confirmed for this business.
+- Checkout shows a method only if an enabled, configured provider can process it in that currency; local Nigerian methods appear only for buyers in Nigeria (Vercel's `x-vercel-ip-country`).
+- **Website messages**: saved in the database, emailed to `CONTACT_TO_EMAIL` with Reply-To set to the visitor. Replies from Admin → Messages go To the visitor, Reply-To and BCC your inbox. The BCC copy lands in your inbox, not your mail app's Sent folder.

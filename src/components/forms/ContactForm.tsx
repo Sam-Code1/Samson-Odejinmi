@@ -28,6 +28,7 @@ export function ContactForm({ services, responseExpectation }: { services: strin
       </div>
       <Field label="Name" name="name" autoComplete="name" required error={state.errors?.name} />
       <Field label="Email" name="email" type="email" autoComplete="email" required error={state.errors?.email} />
+      <Field label="Subject" name="subject" maxLength={160} required error={state.errors?.subject} />
       {services.length > 0 && <Select label="Service (optional)" name="service" options={services} />}
       <TextArea label="Project or message" name="message" required hint="What are you making, and where will it be seen?" error={state.errors?.message} />
 

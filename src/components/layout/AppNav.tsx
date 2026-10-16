@@ -7,8 +7,10 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/courses", label: "My courses" },
+  { href: "/library", label: "Library" },
   { href: "/profile", label: "Profile" },
   { href: "/settings", label: "Settings" },
+  { href: "/affiliate", label: "Affiliate" },
 ];
 
 export function AppNav() {

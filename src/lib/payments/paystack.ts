@@ -37,10 +37,14 @@ async function call(path: string, init?: RequestInit) {
 
 const InitResponse = z.object({ status: z.literal(true), data: z.object({ authorization_url: z.string().url(), reference: z.string() }) });
 
-export async function initializeTransaction(o: { email: string; amountMinor: number; currency: string; reference: string; callbackUrl: string; metadata: Record<string, string> }) {
+export async function initializeTransaction(o: { email: string; amountMinor: number; currency: string; reference: string; callbackUrl: string; metadata: Record<string, string>; channels?: string[] }) {
   const r = await call("/transaction/initialize", {
     method: "POST",
-    body: JSON.stringify({ email: o.email, amount: String(o.amountMinor), currency: o.currency, reference: o.reference, callback_url: o.callbackUrl, metadata: JSON.stringify(o.metadata) }),
+    body: JSON.stringify({
+      email: o.email, amount: String(o.amountMinor), currency: o.currency, reference: o.reference, callback_url: o.callbackUrl, metadata: JSON.stringify(o.metadata),
+      // Restricts Paystack's checkout to the method the buyer chose (omitted = Paystack shows everything enabled on the account).
+      ...(o.channels?.length ? { channels: o.channels } : {}),
+    }),
   });
   const parsed = InitResponse.safeParse(r.body);
   if (!r.ok || !parsed.success) {

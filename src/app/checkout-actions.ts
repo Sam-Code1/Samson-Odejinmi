@@ -1,13 +1,13 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/admin/validation";
-import { initializeTransaction, payableCurrencies, paystackConfigured } from "@/lib/payments/paystack";
+import { startPayment } from "@/lib/checkout";
 import { sendEmail, templates } from "@/lib/email";
+import { readAttribution } from "@/lib/attribution-server";
 
 /**
  * Course checkout. The browser sends only: which course, which currency, and an optional coupon code.
@@ -64,6 +64,15 @@ export async function startCheckout(_: CheckoutState, fd: FormData): Promise<Che
   if (error || !r) { console.error("[checkout] create_checkout:", error?.code, error?.message); return { error: message() }; }
   if (!r.ok) return { error: message(r.error) };
 
+  // Referral + UTM data (our own httpOnly cookies, cleaned again by the database). Best effort: never blocks checkout.
+  if (!r.free && r.reference) {
+    const { ref, attribution } = await readAttribution();
+    if (ref || attribution.first || attribution.last) {
+      const { error: ae } = await supabase.rpc("attach_checkout_attribution", { p_reference: r.reference, p_ref: ref, p_attribution: attribution });
+      if (ae && ae.code !== "PGRST202") console.warn("[checkout] attribution not attached:", ae.code);
+    }
+  }
+
   if (r.free) {
     // Enrolled by the database (free price or 100% coupon). Confirmation email is best-effort.
     const { data: p } = await supabase.from("profiles").select("first_name").eq("id", user.id).maybeSingle();
@@ -72,20 +81,10 @@ export async function startCheckout(_: CheckoutState, fd: FormData): Promise<Che
     redirect(`/learn/${slug}`);
   }
 
-  if (!paystackConfigured() || !payableCurrencies().includes(r.currency ?? "")) {
+  const started = await startPayment(supabase, { email: r.email ?? user.email ?? "", total: r.total ?? 0, currency: r.currency ?? "NGN", reference: r.reference!, metadata: { course_id: courseId, user_id: user.id }, method: fd.get("method") });
+  if ("error" in started) {
     await supabase.rpc("cancel_my_pending_payment", { p_reference: r.reference });
-    return { error: "Online payment isn't available in this currency yet." };
+    return { error: started.error };
   }
-  const h = await headers();
-  const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
-  const url = await initializeTransaction({
-    email: r.email ?? user.email ?? "", amountMinor: r.total ?? 0, currency: r.currency ?? "NGN", reference: r.reference!,
-    callbackUrl: `${base}/academy/checkout/callback?reference=${encodeURIComponent(r.reference!)}`,
-    metadata: { course_id: courseId, user_id: user.id, reference: r.reference! },
-  });
-  if (!url) {
-    await supabase.rpc("cancel_my_pending_payment", { p_reference: r.reference });
-    return { error: "Your payment could not be started. Please try again in a moment." };
-  }
-  redirect(url);
+  redirect(started.url);
 }

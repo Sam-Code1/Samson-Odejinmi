@@ -12,7 +12,7 @@ import { learnerAiEnabled } from "@/lib/ai/usage";
 export const metadata = { title: "AI tools" };
 
 const LABELS: Record<AiFeature, string> = {
-  quiz: "Quiz generator", regenerate: "Question regenerate", content: "Content assistant", lesson_assistant: "Lesson assistant", tutor: "Student tutor", chatbot: "Public assistant",
+  quiz: "Quiz generator", regenerate: "Question regenerate", content: "Content assistant", lesson_assistant: "Lesson assistant", tutor: "Student tutor", chatbot: "Public assistant", marketing: "Marketing assistant",
 };
 type Row = { kind: AiFeature; status: string; input_tokens: number | null; output_tokens: number | null; duration_ms: number | null; created_at: string };
 

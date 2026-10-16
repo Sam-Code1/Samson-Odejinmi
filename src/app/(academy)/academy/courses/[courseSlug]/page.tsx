@@ -13,7 +13,7 @@ import { getCoursePricing, guessCurrency } from "@/lib/pricing";
 import { CheckoutPanel } from "@/components/academy/CheckoutPanel";
 import { getUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { payableCurrencies, paystackConfigured } from "@/lib/payments/paystack";
+import { getPaymentOptions, publicMethods } from "@/lib/payments/options";
 
 export async function generateMetadata({ params }: { params: Promise<{ courseSlug: string }> }): Promise<Metadata> {
   const { courseSlug } = await params;
@@ -45,7 +45,8 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     const { data: e } = await supabase.from("enrolments").select("id").eq("user_id", user.id).eq("course_id", course.id).in("status", ["active", "completed"]).maybeSingle();
     enrolled = !!e;
   }
-  const checkout = <CheckoutPanel courseId={course.id} slug={course.slug} prices={prices} payable={payableCurrencies()} signedIn={!!user} enrolled={enrolled} paymentsReady={paystackConfigured()} />;
+  const payOpts = await getPaymentOptions();
+  const checkout = <CheckoutPanel courseId={course.id} slug={course.slug} prices={prices} methods={publicMethods(payOpts)} signedIn={!!user} enrolled={enrolled} />;
   const defaultCurrency = guessCurrency(h.get("x-vercel-ip-country"));
   const outcomes = [...course.learningOutcomes, ...course.objectives];
 

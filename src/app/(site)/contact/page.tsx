@@ -4,6 +4,8 @@ import { ContactForm } from "@/components/forms/ContactForm";
 import { Paragraphs } from "@/components/cms/RichText";
 import { getPage, getServices, getSiteSettings, getSocialLinks } from "@/lib/cms";
 import { buildMetadata } from "@/lib/cms/seo";
+import { whatsappHref } from "@/lib/showcase";
+import { WhatsAppButton } from "@/components/showcase/WhatsAppButton";
 
 export const revalidate = 3600;
 
@@ -18,6 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ContactPage() {
   const [page, settings, services, socials] = await Promise.all([getPage("contact"), getSiteSettings(), getServices(), getSocialLinks()]);
   const intro = page.intro;
+  const whatsapp = whatsappHref(settings.whatsappNumber, settings.whatsappMessage);
 
   return (
     <Container className="grid gap-16 pb-8 pt-14 sm:pt-20 lg:grid-cols-12 lg:pt-28">
@@ -29,6 +32,9 @@ export default async function ContactPage() {
         )}
         <p className="mt-10 text-caption text-ink-3">Prefer to write directly?</p>
         <a href={`mailto:${settings.contactEmail}`} className="mt-1 inline-flex min-h-[44px] max-w-full items-center break-all text-body"><span className="link-line pb-1">{settings.contactEmail}</span></a>
+        {whatsapp && (
+          <div className="mt-5"><WhatsAppButton href={whatsapp} /></div>
+        )}
         {settings.locationText && <p className="mt-6 text-body-sm text-ink-3">{settings.locationText}</p>}
         {socials.length > 0 && (
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-label">

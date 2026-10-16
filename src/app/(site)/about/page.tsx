@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Container, Section, SectionHeader, type Tone } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { Paragraphs } from "@/components/cms/RichText";
+import { Paragraphs, plainTitle } from "@/components/cms/RichText";
+import { SkillsMarquee } from "@/components/showcase/SkillsMarquee";
 import { getPage, getSocialLinks } from "@/lib/cms";
 import { buildMetadata } from "@/lib/cms/seo";
 import { canOptimize, safeImageSrc } from "@/lib/cms/images";
@@ -83,10 +84,14 @@ export default async function AboutPage() {
           <Section key={s.key}>
             <Container>
               {s.title && <SectionHeader title={s.title} intro={s.body ?? undefined} />}
-              <ul className="mt-10 flex flex-wrap gap-x-3 gap-y-3">
-                {disciplines.map((d, i) => <li key={`${d.title}-${i}`} className="rounded-sm border border-line-strong px-4 py-2 text-label text-ink-2">{d.title}</li>)}
-              </ul>
             </Container>
+            {/* Full-bleed rows: what I work across, then what I'm exploring. */}
+            <div className="mt-10">
+              <SkillsMarquee
+                label={plainTitle(s.title ?? "Skills")}
+                rows={[disciplines.map((d) => d.title ?? "").filter(Boolean), exploring.map((e) => e.title ?? "").filter(Boolean)]}
+              />
+            </div>
           </Section>
         ) : null;
       case "exploring":

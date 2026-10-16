@@ -15,6 +15,7 @@ export const mainNav = [
 
 export const academyNav = [
   { href: "/academy/courses", label: "Courses" },
+  { href: "/academy/shop", label: "Shop" },
   { href: "/academy#resources", label: "Resources" },
   { href: "/academy#instructor", label: "About" },
   { href: "/dashboard", label: "Student portal" },

@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { cn } from "@/lib/utils";
+export { plainTitle } from "@/lib/showcase";
 
 /**
  * CMS text is plain text, never HTML (no XSS surface). Two tiny conventions:
@@ -28,6 +29,23 @@ export function Paragraphs({ text, className }: { text: string | null | undefine
     <div className={className}>
       {ps.map((p, i) => <p key={i}><Emph text={p} /></p>)}
     </div>
+  );
+}
+
+/**
+ * Display titles: heavy sans with *marked words* in italic serif ("Selected *work*", "Habit *flow* tracker").
+ * `caps` upper-cases the sans parts only, for the product-shot cards.
+ */
+export function MixTitle({ text, caps = false }: { text: string; caps?: boolean }) {
+  const parts = text.split(/\*([^*]+)\*/g);
+  return (
+    <>
+      {parts.map((p, i) =>
+        i % 2 === 1
+          ? <span key={i} className="font-serif text-[1.08em] font-normal normal-case italic tracking-normal">{p}</span>
+          : caps ? <span key={i} className="uppercase">{p}</span> : <Fragment key={i}>{p}</Fragment>,
+      )}
+    </>
   );
 }
 

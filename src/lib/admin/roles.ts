@@ -1,5 +1,5 @@
 /**
- * Admin roles and permissions. The DATABASE is the authority (public.has_admin_permission in migration 0005, enforced
+ * Admin roles and permissions. The DATABASE is the authority (public.has_admin_permission, latest in migration 0008, enforced
  * by RLS and checked again in every server action). This mirror exists only so the UI can hide what a role can't use.
  * Keep the two in sync.
  */
@@ -7,7 +7,8 @@ export const ADMIN_ROLES = ["owner", "super_admin", "academy_admin", "content_ma
 export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 export type Permission =
-  | "website" | "media" | "academy" | "ai" | "students" | "enrolments" | "certificates" | "payments" | "coupons" | "settings" | "activity" | "admins";
+  | "website" | "media" | "academy" | "ai" | "students" | "enrolments" | "certificates" | "payments" | "coupons" | "settings" | "activity" | "admins"
+  | "products" | "marketing" | "customers" | "affiliates";
 
 export const ROLE_LABELS: Record<AdminRole, string> = {
   owner: "Owner",
@@ -20,18 +21,18 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
 export const ROLE_DESCRIPTIONS: Record<AdminRole, string> = {
   owner: "Everything, including admins, payments, integrations and security.",
   super_admin: "Everything except managing admins and ownership.",
-  academy_admin: "Courses, modules, lessons, quizzes, AI tools, students, enrolments, certificates and media.",
-  content_manager: "Website content, portfolio, services, media and coupons.",
-  support: "Students and enrolments.",
+  academy_admin: "Courses, modules, lessons, quizzes, AI tools, products, students, enrolments, certificates and media.",
+  content_manager: "Website content, portfolio, services, media, products, coupons and marketing (campaigns, email, automations).",
+  support: "Students, enrolments and customer records.",
 };
 
 export function can(role: AdminRole | null | undefined, p: Permission): boolean {
   switch (role) {
     case "owner": return true;
     case "super_admin": return p !== "admins";
-    case "academy_admin": return ["academy", "media", "ai", "students", "enrolments", "certificates"].includes(p);
-    case "content_manager": return ["website", "media", "coupons"].includes(p);
-    case "support": return ["students", "enrolments"].includes(p);
+    case "academy_admin": return ["academy", "media", "ai", "students", "enrolments", "certificates", "products"].includes(p);
+    case "content_manager": return ["website", "media", "coupons", "marketing", "products"].includes(p);
+    case "support": return ["students", "enrolments", "customers"].includes(p);
     default: return false;
   }
 }
@@ -47,7 +48,14 @@ const ROUTE_PERMS: [string, Permission][] = [
   ["/admin/enrolments", "enrolments"],
   ["/admin/certificates", "certificates"],
   ["/admin/payments", "payments"],
+  ["/admin/settings/payments", "payments"],
+  ["/admin/system/health", "settings"],
+  ["/admin/system/security", "activity"],
   ["/admin/coupons", "coupons"],
+  ["/admin/products", "products"],
+  ["/admin/marketing/customers", "customers"],
+  ["/admin/marketing/affiliates", "affiliates"],
+  ["/admin/marketing", "marketing"],
   ["/admin/admins", "admins"],
   ["/admin/activity", "activity"],
   ["/admin/settings", "settings"],

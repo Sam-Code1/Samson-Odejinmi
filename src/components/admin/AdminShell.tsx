@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bot, BookOpenCheck, ScrollText, ShieldCheck, TicketPercent, AtSign, Award, BookOpen, Briefcase, ClipboardList, Compass, CreditCard, FolderOpen, Globe, HelpCircle, History, Home, Image as ImageIcon, Inbox, Layers, LayoutDashboard, LogOut, Menu, Paperclip, PenLine, PlayCircle, Search, Settings, Share2, Sparkles, User, UserCheck, Users, X } from "lucide-react";
+import { HeartPulse, ShieldAlert, ChartLine, Contact, Gauge, Handshake, Mail, Megaphone, MessageCircle, Package, Target, WandSparkles, Workflow, Bot, BookOpenCheck, ScrollText, ShieldCheck, TicketPercent, AtSign, Award, BookOpen, Briefcase, ClipboardList, Compass, CreditCard, FolderOpen, Globe, HelpCircle, History, Home, Image as ImageIcon, Inbox, Layers, LayoutDashboard, LogOut, Menu, Paperclip, PenLine, PlayCircle, Search, Settings, Share2, Sparkles, User, UserCheck, Users, X } from "lucide-react";
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
+import { CommandPalette } from "@/components/app/CommandPalette";
+import { NotificationBell } from "@/components/app/NotificationBell";
 import { signOut } from "@/app/auth-actions";
 import { ToastProvider } from "./Toast";
 import { cn } from "@/lib/utils";
@@ -38,8 +40,19 @@ const groups: { title: string; items: Item[] }[] = [
     { href: "/admin/payments", label: "Payments", icon: CreditCard, perm: "payments" },
     { href: "/admin/certificates", label: "Certificates", icon: Award, perm: "certificates" },
   ] },
-  { title: "Marketing", items: [
+  { title: "Sales & marketing", items: [
+    { href: "/admin/marketing", label: "Overview", icon: Gauge, exact: true, perm: "marketing" },
+    { href: "/admin/products", label: "Products", icon: Package, perm: "products" },
+    { href: "/admin/marketing/campaigns", label: "Campaigns", icon: Megaphone, perm: "marketing" },
+    { href: "/admin/marketing/email", label: "Email", icon: Mail, perm: "marketing" },
+    { href: "/admin/marketing/automations", label: "Automations", icon: Workflow, perm: "marketing" },
+    { href: "/admin/marketing/customers", label: "Customers", icon: Contact, perm: "customers" },
+    { href: "/admin/marketing/affiliates", label: "Affiliates", icon: Handshake, perm: "affiliates" },
     { href: "/admin/coupons", label: "Coupons", icon: TicketPercent, perm: "coupons" },
+    { href: "/admin/marketing/attribution", label: "Attribution", icon: Target, perm: "marketing" },
+    { href: "/admin/marketing/analytics", label: "Analytics", icon: ChartLine, perm: "marketing" },
+    { href: "/admin/marketing/assistant", label: "AI marketing assistant", icon: WandSparkles, perm: "marketing" },
+    { href: "/admin/marketing/whatsapp", label: "WhatsApp", icon: MessageCircle, perm: "marketing" },
   ] },
   { title: "AI tools", items: [
     { href: "/admin/ai", label: "AI overview", icon: Bot, exact: true, perm: "ai" },
@@ -52,6 +65,9 @@ const groups: { title: string; items: Item[] }[] = [
     { href: "/admin/media", label: "Media", icon: ImageIcon, perm: "media" },
     { href: "/admin/settings/site", label: "Site settings", icon: Globe, perm: "settings" },
     { href: "/admin/settings", label: "Academy settings", icon: Settings, exact: true, perm: "settings" },
+    { href: "/admin/settings/payments", label: "Payment settings", icon: CreditCard, perm: "payments" },
+    { href: "/admin/system/health", label: "System health", icon: HeartPulse, perm: "settings" },
+    { href: "/admin/system/security", label: "Security", icon: ShieldAlert, perm: "activity" },
     { href: "/admin/admins", label: "Admins", icon: ShieldCheck, perm: "admins" },
     { href: "/admin/activity", label: "Activity log", icon: History, perm: "activity" },
   ] },
@@ -130,7 +146,9 @@ export function AdminShell({ email, role, children }: { email?: string; role: Ad
               <span className="text-label lg:hidden">Fola Academy</span>
             </div>
             <div className="flex items-center gap-2">
-              {email && <span className="hidden max-w-[16rem] truncate text-caption text-ink-3 sm:inline">{email} · {ROLE_LABELS[role]}</span>}
+              <CommandPalette placeholder="Search students, products, payments, messages…" />
+              <NotificationBell />
+              {email && <span className="hidden max-w-[16rem] truncate text-caption text-ink-3 xl:inline">{email} · {ROLE_LABELS[role]}</span>}
               <ThemeSwitcher />
             </div>
           </header>

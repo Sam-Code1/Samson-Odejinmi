@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { dbError, runAdmin, type AdminContext } from "@/lib/admin/guard";
 import type { ActionResult } from "@/lib/admin/result";
+import { GAME_CHARS, introWords } from "@/lib/showcase";
 import { EMAIL_RE, SLUG_RE, bool, httpUrl, isUuid, lines, list, optStr, parseYouTubeId, safeHref, safeImageUrl, slugify, str } from "@/lib/admin/validation";
 import { resolveImageField } from "@/lib/admin/storage";
 import { logActivity, revalidateSite } from "@/lib/admin/activity";
@@ -33,6 +34,24 @@ function parseItems(raw: string, allowed: { title?: string; body?: string; meta?
     items.push(out);
   }
   return { items };
+}
+
+/**
+ * WhatsApp number, normalised to international digits (wa.me format). Only read when the form sent the field, which it
+ * does only once migration 0007 has added the columns, so saving still works on databases without them.
+ */
+function whatsappPatch(fd: FormData, errors: FieldErrors): Record<string, unknown> {
+  if (!fd.has("whatsapp_number")) return {};
+  const raw = str(fd, "whatsapp_number", 40);
+  const digits = raw.replace(/[\s().-]/g, "").replace(/^\+/, "").replace(/^00/, "");
+  let whatsapp_number: string | null = null;
+  if (raw) {
+    if (!/^\d+$/.test(digits)) errors.whatsapp_number = "Use digits only, e.g. +234 801 234 5678.";
+    else if (digits.startsWith("0")) errors.whatsapp_number = "Include the country code, e.g. +234 801 234 5678 instead of 0801 234 5678.";
+    else if (!/^[1-9]\d{7,14}$/.test(digits)) errors.whatsapp_number = "That doesn't look like a full international number.";
+    else whatsapp_number = digits;
+  }
+  return { whatsapp_number, whatsapp_message: optStr(fd, "whatsapp_message", 300) };
 }
 
 function parseCta(fd: FormData, prefix: "cta" | "cta2", errors: FieldErrors) {
@@ -81,6 +100,26 @@ export async function saveSection(_: ActionResult, fd: FormData): Promise<Action
         const v = str(fd, "featured_course_slug", 80);
         if (v && !SLUG_RE.test(v)) errors.featured_course_slug = "Choose a course from the list.";
         settings.featured_course_slug = v;
+      }
+      if (def.settings.includes("backdrop_word")) {
+        const v = str(fd, "backdrop_word", 40);
+        if (v && (/\s/.test(v) || v.length > 12)) errors.backdrop_word = "Use one word of up to 12 letters.";
+        settings.backdrop_word = v;
+      }
+      if (def.settings.includes("intro_words")) {
+        const v = str(fd, "intro_words", 200);
+        const words = introWords(v);
+        if (v && v.split(/\r?\n/).filter((w) => w.trim()).length > 3) errors.intro_words = "Use up to 3 lines.";
+        else if (words.some((w) => w.length > 13)) errors.intro_words = "Keep each word to 13 characters or fewer so it fits on phones.";
+        settings.intro_words = words.join("\n");
+      }
+      if (def.settings.includes("game_text")) {
+        const v = str(fd, "game_text", 60);
+        const lines = v.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+        if (!v) errors.game_text = "Enter the text the bricks should spell.";
+        else if (lines.length > 2 || lines.some((l) => l.length > 7)) errors.game_text = "Up to 2 lines of 7 characters.";
+        else if (lines.some((l) => [...l.toUpperCase()].some((c) => !GAME_CHARS.includes(c)))) errors.game_text = "Use letters, numbers, spaces and ! ? . - only.";
+        settings.game_text = lines.join("\n").toUpperCase();
       }
       patch.settings = settings;
     }
@@ -133,6 +172,7 @@ export async function saveSiteSettings(_: ActionResult, fd: FormData): Promise<A
       footer_text: optStr(fd, "footer_text", 300), copyright_text: optStr(fd, "copyright_text", 120),
       availability_message: optStr(fd, "availability_message", 200), response_expectation: optStr(fd, "response_expectation", 200),
       location_text: optStr(fd, "location_text", 120),
+      ...whatsappPatch(fd, errors),
     };
     for (const [field, kind] of [["logo_url", "logo"], ["favicon_url", "logo"], ["default_og_image", "og_image"]] as const) {
       const r = await resolveImageField(ctx, fd, field, kind);
@@ -151,10 +191,13 @@ export async function saveSiteSettings(_: ActionResult, fd: FormData): Promise<A
 export async function saveContactSettings(_: ActionResult, fd: FormData): Promise<ActionResult> {
   return runAdmin("website", async (ctx) => {
     const contact_email = str(fd, "contact_email", 200);
-    if (!EMAIL_RE.test(contact_email)) return { ok: false, fieldErrors: { contact_email: "Enter a valid email address." } };
+    const errors: FieldErrors = {};
+    if (!EMAIL_RE.test(contact_email)) errors.contact_email = "Enter a valid email address.";
+    const wa = whatsappPatch(fd, errors);
+    if (Object.keys(errors).length) return { ok: false, fieldErrors: errors };
     const { error } = await ctx.supabase.from("site_settings").update({
       contact_email, availability_message: optStr(fd, "availability_message", 200), response_expectation: optStr(fd, "response_expectation", 200),
-      location_text: optStr(fd, "location_text", 120),
+      location_text: optStr(fd, "location_text", 120), ...wa,
     }).eq("id", true);
     if (error) return dbError(error);
     await logActivity(ctx, "contact details updated", "site_settings", null, "Contact details");
@@ -267,7 +310,7 @@ export async function saveSeoEntry(_: ActionResult, fd: FormData): Promise<Actio
 export async function setMessageStatus(_: ActionResult, fd: FormData): Promise<ActionResult> {
   return runAdmin("website", async (ctx) => {
     const id = str(fd, "messageId", 40), to = str(fd, "to", 10);
-    if (!isUuid(id) || !["new", "read", "archived"].includes(to)) return { ok: false, error: "That change isn't valid." };
+    if (!isUuid(id) || !["new", "read", "replied", "archived"].includes(to)) return { ok: false, error: "That change isn't valid." };
     const { error } = await ctx.supabase.from("contact_messages").update({ status: to, read_at: to === "new" ? null : new Date().toISOString() }).eq("id", id);
     if (error) return dbError(error);
     revalidatePath("/admin/website/messages");

@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
+import { Instrument_Serif, Manrope } from "next/font/google";
 import { site } from "@/lib/site";
 import { themeScript } from "@/lib/theme-script";
+import { introScript } from "@/lib/intro-script";
 import { getSiteSettings } from "@/lib/cms";
 import "./globals.css";
 
 const manrope = Manrope({ subsets: ["latin"], display: "swap", variable: "--font-manrope", weight: ["400", "500", "600", "700", "800"] });
+// Italic accent words in big headings ("Selected *work*"). One weight, italic only.
+const serif = Instrument_Serif({ subsets: ["latin"], display: "swap", variable: "--font-serif", weight: "400", style: "italic" });
 
 /** Site-wide defaults come from Admin → System → Site settings. Pages override them from Admin → Website → SEO. */
 export async function generateMetadata(): Promise<Metadata> {
@@ -34,10 +37,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={manrope.variable} suppressHydrationWarning>
+    <html lang="en" className={`${manrope.variable} ${serif.variable}`} suppressHydrationWarning>
       <head>
         {/* Blocking by design: sets the theme before first paint. */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: introScript }} />
       </head>
       <body>
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-ink focus:px-4 focus:py-3 focus:text-canvas">

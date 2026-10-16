@@ -9,7 +9,24 @@ import { ImageField, type LibraryImage } from "./ImageField";
 import { RepeaterField } from "./RepeaterField";
 
 // ───────────── contact + site settings ─────────────
-export type ContactSettings = { contact_email: string | null; availability_message: string | null; response_expectation: string | null; location_text: string | null };
+export type ContactSettings = {
+  contact_email: string | null; availability_message: string | null; response_expectation: string | null; location_text: string | null;
+  /** Present only once migration 0007 has run. */
+  whatsapp_number?: string | null; whatsapp_message?: string | null;
+};
+
+/** WhatsApp fields, rendered only when the columns exist (migration 0007). */
+function WhatsappFields({ s }: { s: ContactSettings }) {
+  if (!("whatsapp_number" in s)) return <p className="text-caption text-ink-3 sm:col-span-2">WhatsApp button: run supabase/migrations/0007_showcase.sql to turn this on.</p>;
+  return (
+    <>
+      <TextInput label="WhatsApp number (optional)" name="whatsapp_number" type="tel" defaultValue={s.whatsapp_number ? `+${s.whatsapp_number}` : ""} maxLength={40}
+        hint="With country code, e.g. +234 801 234 5678. Leave empty to hide every WhatsApp button." />
+      <TextInput label="WhatsApp starting message (optional)" name="whatsapp_message" defaultValue={s.whatsapp_message ?? ""} maxLength={300}
+        hint="Pre-filled in the chat, e.g. “Hi Samson, I'd like to talk about a project.”" />
+    </>
+  );
+}
 
 export function ContactSettingsForm({ s }: { s: ContactSettings }) {
   return (
@@ -19,6 +36,7 @@ export function ContactSettingsForm({ s }: { s: ContactSettings }) {
         <TextInput label="Availability message" name="availability_message" defaultValue={s.availability_message ?? ""} maxLength={200} hint="Optional, e.g. “Taking on new projects from March”. Leave empty to hide." />
         <TextInput label="Response expectation" name="response_expectation" defaultValue={s.response_expectation ?? ""} maxLength={200} hint="Shown after someone sends a message." />
         <TextInput label="General location (optional)" name="location_text" defaultValue={s.location_text ?? ""} maxLength={120} hint="Only if you want it public, e.g. a city or “Remote”." />
+        <WhatsappFields s={s} />
       </div>
     </AdminForm>
   );
@@ -50,6 +68,7 @@ export function SiteSettingsForm({ s, library }: { s: SiteSettingsRow; library: 
         <TextInput label="Response expectation" name="response_expectation" defaultValue={s.response_expectation ?? ""} maxLength={200} />
         <TextInput label="Availability message" name="availability_message" defaultValue={s.availability_message ?? ""} maxLength={200} />
         <TextInput label="General location" name="location_text" defaultValue={s.location_text ?? ""} maxLength={120} />
+        <WhatsappFields s={s} />
       </FormSection>
       <FormSection title="Footer">
         <TextAreaInput label="Footer text" name="footer_text" rows={2} defaultValue={s.footer_text ?? ""} maxLength={300} className="sm:col-span-2" />
@@ -109,7 +128,7 @@ export function NewProjectForm() {
   return (
     <AdminForm action={createProject} submitLabel="Create draft project">
       <FormSection title="New project" description="Start with a title. It's saved as a draft, so nothing is public until you publish it.">
-        <TextInput label="Title" name="title" required maxLength={140} className="sm:col-span-2" />
+        <TextInput label="Title" name="title" required maxLength={140} className="sm:col-span-2" hint="Wrap a word in *asterisks* to set it in italic serif on the site, e.g. Habit *flow* tracker." />
         <TextInput label="Slug" name="slug" maxLength={80} hint="Used in the URL. Generated from the title if empty." />
         <SelectInput label="Project type" name="project_type" options={PROJECT_TYPES} hint="Be honest: “Client Work” only if it was." />
         <SelectInput label="Status label" name="project_status" defaultValue="Personal Study" options={PROJECT_STATUS} />
@@ -134,7 +153,7 @@ export function ProjectForm({ p, library, categorySuggestions }: { p: ProjectRow
         : <button type="submit" name="intent" value="publish" className="h-10 rounded border border-blue/50 px-4 text-label text-blue hover:bg-blue/10">Save and publish</button>}>
       <input type="hidden" name="projectId" value={p.id} />
       <FormSection title="Basics">
-        <TextInput label="Title" name="title" required defaultValue={p.title} maxLength={140} className="sm:col-span-2" />
+        <TextInput label="Title" name="title" required defaultValue={p.title} maxLength={140} className="sm:col-span-2" hint="Wrap a word in *asterisks* to set it in italic serif on the site, e.g. Habit *flow* tracker." />
         <TextInput label="Slug" name="slug" required defaultValue={p.slug} maxLength={80} hint={`Public URL: /portfolio/${p.slug}`} />
         <TextInput label="Categories" name="categories" defaultValue={p.categories.join(", ")} hint={`Comma-separated. The first is the main category.${categorySuggestions.length ? ` In use: ${categorySuggestions.join(", ")}.` : ""}`} />
         <TextAreaInput label="Short description" name="short_description" rows={2} defaultValue={p.short_description ?? ""} maxLength={300} className="sm:col-span-2" hint="One or two lines, shown on cards." />

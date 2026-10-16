@@ -1,58 +1,61 @@
-import { Archive, Mail, MailOpen, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { ActionButton } from "@/components/admin/ActionButton";
 import { AdminEmpty, AdminError } from "@/components/admin/AdminStates";
-import { FilterSelect } from "@/components/admin/Filters";
+import { FilterSelect, SearchInput } from "@/components/admin/Filters";
 import { Pagination } from "@/components/admin/Pagination";
-import { deleteMessage, setMessageStatus } from "@/app/admin/actions/website";
 import { getAdminContext } from "@/lib/admin/guard";
 import { PAGE_SIZE, first, formatDate, pageParam } from "@/lib/admin/validation";
 
 export const metadata = { title: "Messages" };
-type Row = { id: string; name: string; email: string; service: string | null; message: string; status: string; created_at: string };
+type Row = { id: string; name: string; email: string; subject?: string | null; service: string | null; message: string; status: string; created_at: string };
+const LABEL: Record<string, string> = { new: "unread" };
 
-/** Contact form submissions. Only admins can read these (RLS); the public form can only insert through a function. */
+/** Website inbox. Only admins with website access can read messages (RLS); the public form can only insert. */
 export default async function MessagesAdmin({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const status = first(sp.status), page = pageParam(sp.page);
+  const status = first(sp.status), page = pageParam(sp.page), qText = first(sp.q)?.slice(0, 80).replace(/[%,()]/g, "");
   const { supabase } = (await getAdminContext())!;
   let q = supabase.from("contact_messages").select("*", { count: "exact" }).order("created_at", { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
-  if (status && ["new", "read", "archived"].includes(status)) q = q.eq("status", status);
+  if (status && ["new", "read", "replied", "archived"].includes(status)) q = q.eq("status", status);
   else q = q.neq("status", "archived");
+  if (qText) q = q.or(`name.ilike.%${qText}%,email.ilike.%${qText}%,message.ilike.%${qText}%`);
   const { data, count, error } = await q;
   const rows = (data ?? []) as Row[];
+  const unread = rows.filter((r) => r.status === "new").length;
 
   return (
     <>
-      <PageHeader eyebrow="Website" title="Messages" subtitle="Enquiries sent through the contact form. Reply from your own email app." />
-      <div className="mb-5"><FilterSelect param="status" label="Show" options={[{ value: "new", label: "New" }, { value: "read", label: "Read" }, { value: "archived", label: "Archived" }]} /></div>
-      {error ? <AdminError title="Unable to load messages" body="Run supabase/migrations/0003_website_cms.sql, then refresh this page." /> : rows.length === 0 ? (
-        <AdminEmpty title={status ? "No messages here" : "No messages yet"} body="When someone uses the contact form, their message appears here." />
+      <PageHeader eyebrow="Website" title="Messages" subtitle="Your contact-form inbox. Open a message to read the whole conversation and reply from here; replies are emailed to the sender and saved in the thread." />
+      <div className="mb-5 flex flex-wrap gap-3">
+        <SearchInput placeholder="Search name, email or text" />
+        <FilterSelect param="status" label="Show" options={[{ value: "new", label: "Unread" }, { value: "read", label: "Read" }, { value: "replied", label: "Replied" }, { value: "archived", label: "Archived" }]} />
+      </div>
+      {error ? <AdminError title="Unable to load messages" body="Run the latest migrations in supabase/migrations, then refresh this page." /> : rows.length === 0 ? (
+        <AdminEmpty title={status || qText ? "No messages match" : "No messages yet"} body="When someone uses the contact form, their message appears here." />
       ) : (
         <>
-          <ul className="space-y-3">
+          {unread > 0 && !status && <p className="mb-3 text-caption text-ink-3">{unread} unread on this page</p>}
+          <ul className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-elevated">
             {rows.map((m) => (
-              <li key={m.id} className={`rounded-lg border bg-elevated p-5 ${m.status === "new" ? "border-blue/40" : "border-line"}`}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-body font-semibold">{m.name}</p>
-                    <p className="text-caption text-ink-3"><a href={`mailto:${m.email}`} className="underline underline-offset-4 hover:text-ink">{m.email}</a>{m.service ? ` · ${m.service}` : ""} · {formatDate(m.created_at, true)}</p>
-                  </div>
-                  <StatusBadge status={m.status} />
-                </div>
-                <p className="mt-4 whitespace-pre-line text-body-sm text-ink-2">{m.message}</p>
-                <div className="mt-4 flex flex-wrap items-center gap-1 border-t border-line pt-3">
-                  {m.status === "new"
-                    ? <ActionButton action={setMessageStatus} fields={{ messageId: m.id, to: "read" }}><MailOpen aria-hidden className="h-3.5 w-3.5" />Mark read</ActionButton>
-                    : <ActionButton action={setMessageStatus} fields={{ messageId: m.id, to: "new" }}><Mail aria-hidden className="h-3.5 w-3.5" />Mark unread</ActionButton>}
-                  {m.status !== "archived" && <ActionButton action={setMessageStatus} fields={{ messageId: m.id, to: "archived" }}><Archive aria-hidden className="h-3.5 w-3.5" />Archive</ActionButton>}
-                  <ActionButton action={deleteMessage} fields={{ messageId: m.id }} variant="danger" className="ml-auto" ariaLabel="Delete message" confirm={{ title: "Delete this message?", body: "It's removed permanently.", label: "Delete" }}><Trash2 aria-hidden className="h-3.5 w-3.5" /></ActionButton>
-                </div>
+              <li key={m.id}>
+                <Link href={`/admin/website/messages/${m.id}`} className="flex flex-col gap-1 px-4 py-4 transition-colors hover:bg-surface/60 sm:flex-row sm:items-center sm:gap-4 sm:px-5">
+                  <span className="flex min-w-0 flex-1 items-center gap-3">
+                    {m.status === "new" && <span aria-label="Unread" className="h-2 w-2 shrink-0 rounded-full bg-blue" />}
+                    <span className="min-w-0">
+                      <span className={`block truncate text-body-sm ${m.status === "new" ? "font-semibold" : ""}`}>{m.name} <span className="font-normal text-ink-3">· {m.email}</span></span>
+                      <span className="block truncate text-caption text-ink-2">{m.subject ? <strong className="font-semibold text-ink">{m.subject}</strong> : null}{m.subject ? " — " : ""}{m.message}</span>
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-3 pl-5 sm:pl-0">
+                    <StatusBadge status={LABEL[m.status] ?? m.status} />
+                    <span className="text-caption text-ink-3">{formatDate(m.created_at, true)}</span>
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>
-          <Pagination page={page} pageSize={PAGE_SIZE} total={count ?? 0} params={{ status }} />
+          <Pagination page={page} pageSize={PAGE_SIZE} total={count ?? 0} params={{ status, q: qText }} />
         </>
       )}
     </>

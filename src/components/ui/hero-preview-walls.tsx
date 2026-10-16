@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { motion, useInView, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -132,7 +133,35 @@ export function CardSlide({
  * a cursor spotlight, and the blue→violet thread on the top edge. The card is a `.theme-night` band, so it stays dark
  * in both themes using the project tokens. Capability cards stack just below it. All text comes from the CMS.
  */
-export function HeroPreviewWalls({ hero, scene }: { hero: Section; scene: string | null }) {
+export type HeroPortrait = { src: string; alt: string; optimize: boolean; word: string | null };
+
+/** You, cut out, standing in front of one giant chrome word. Replaces the 3D scene when a portrait is set. */
+function PortraitStage({ p, reduce }: { p: HeroPortrait; reduce: boolean | null }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden [container-type:size]">
+      <span aria-hidden className="pointer-events-none absolute left-1/2 top-[30%] h-[90%] w-[90%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(var(--ink)/0.16),transparent)]" />
+      {p.word && (
+        <motion.span
+          aria-hidden
+          initial={reduce ? false : { opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="text-chrome pointer-events-none absolute inset-x-0 top-[16%] select-none whitespace-nowrap text-center font-extrabold uppercase leading-none tracking-[-0.05em]"
+          style={{ fontSize: `min(${Math.round(150 / Math.max(p.word.length, 3))}cqw, 46cqh)` }}
+        >
+          {p.word}
+        </motion.span>
+      )}
+      <motion.div
+        initial={reduce ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute inset-x-0 bottom-0 top-[8%]"
+      >
+        <Image src={p.src} alt={p.alt} fill priority sizes="(min-width: 768px) 46vw, 100vw" unoptimized={!p.optimize} className="object-contain object-bottom drop-shadow-[0_30px_40px_rgb(0_0_0/0.45)]" />
+      </motion.div>
+      <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-canvas to-transparent" />
+    </div>
+  );
+}
+
+export function HeroPreviewWalls({ hero, scene, portrait, poster }: { hero: Section; scene: string | null; portrait?: HeroPortrait | null; poster?: string | null }) {
   const reduce = useReducedMotion();
   const tints = ["blue", "violet", "peach", "mint"] as const;
   const cards: StackCard[] = hero.items.map((it, i) => ({
@@ -152,24 +181,27 @@ export function HeroPreviewWalls({ hero, scene }: { hero: Section; scene: string
           <Card className="theme-night relative w-full overflow-hidden border-line bg-canvas shadow-[0_40px_80px_-40px_rgb(var(--ink)/0.55)] md:min-h-[min(82vh,660px)]">
             <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" size={260} />
             <span aria-hidden className="thread absolute inset-x-0 top-0 h-px" />
-            <div className="flex h-full flex-col md:min-h-[min(82vh,660px)] md:flex-row">
-              <div className="relative z-10 flex flex-col justify-center px-6 pb-4 pt-10 sm:px-10 sm:pt-14 md:w-[54%] md:py-12 lg:pl-14">
-                {hero.eyebrow && <motion.div {...rise(0.1)}><Badge className="mb-6 rounded-full border-line-strong bg-elevated/60 px-3 py-1.5 text-xs text-ink-2 backdrop-blur">{hero.eyebrow}</Badge></motion.div>}
+            {/* Two columns at every size: text ~55%, robot ~45% on phones (never stacked), 54/46 from md up. */}
+            <div className="flex h-full flex-row md:min-h-[min(82vh,660px)]">
+              <div className="relative z-10 flex w-[55%] min-w-0 flex-col justify-center py-8 pl-4 pr-1 xs:pl-5 sm:py-12 sm:pl-8 md:w-[54%] md:py-12 md:pl-10 md:pr-4 lg:pl-14">
+                {hero.eyebrow && <motion.div {...rise(0.1)}><Badge className="mb-4 max-w-full rounded-full border-line-strong bg-elevated/60 px-2.5 py-1 text-[0.6875rem] leading-tight text-ink-2 backdrop-blur sm:mb-6 sm:px-3 sm:py-1.5 sm:text-xs">{hero.eyebrow}</Badge></motion.div>}
                 {hero.title && (
-                  <motion.h1 {...rise(0.16)} className="bg-gradient-to-b from-ink to-ink-2 bg-clip-text text-display text-transparent">
+                  <motion.h1 {...rise(0.16)} className="bg-gradient-to-b from-ink to-ink-2 bg-clip-text text-[clamp(1.125rem,5.4vw,2.25rem)] font-bold leading-[1.08] tracking-[-0.03em] text-transparent [overflow-wrap:anywhere] md:text-display">
                     <Lines text={hero.title} />
                   </motion.h1>
                 )}
-                {hero.body && <motion.p {...rise(0.24)} className="mt-6 max-w-[32rem] text-body-lg text-ink-2">{hero.body}</motion.p>}
+                {hero.body && <motion.p {...rise(0.24)} className="mt-3 max-w-[32rem] text-[0.8125rem] leading-snug text-ink-2 sm:mt-5 sm:text-body md:mt-6 md:text-body-lg">{hero.body}</motion.p>}
                 {(hero.cta || hero.cta2) && (
-                  <motion.div {...rise(0.32)} className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
-                    {hero.cta?.label && <Button href={hero.cta.href} size="lg">{hero.cta.label}</Button>}
-                    {hero.cta2 && <Button href={hero.cta2.href} variant="text">{hero.cta2.label}</Button>}
+                  <motion.div {...rise(0.32)} className="mt-5 flex flex-col items-stretch gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-4 md:mt-9">
+                    {hero.cta?.label && <Button href={hero.cta.href} size="lg" className="!h-11 !px-4 !text-[0.875rem] sm:!h-14 sm:!px-7 sm:!text-[1.0625rem]">{hero.cta.label}</Button>}
+                    {hero.cta2 && <Button href={hero.cta2.href} variant="text" className="justify-start !whitespace-normal text-left text-[0.875rem] sm:!whitespace-nowrap sm:text-base">{hero.cta2.label}</Button>}
                   </motion.div>
                 )}
               </div>
-              <div className="relative h-80 flex-none sm:h-[26rem] md:h-auto md:flex-1">
-                {scene ? <LazySpline scene={scene} className="h-full w-full" /> : <HeroVisual className="absolute inset-0 h-full w-full" />}
+              <div className="relative min-h-[18rem] w-[45%] min-w-0 xs:min-h-[20rem] md:h-auto md:w-auto md:flex-1">
+                {portrait ? <PortraitStage p={portrait} reduce={reduce} />
+                  : scene ? <LazySpline scene={scene} poster={poster} className="absolute inset-0 h-full w-full" fallback={<HeroVisual className="absolute inset-0 h-full w-full" />} />
+                  : <HeroVisual className="absolute inset-0 h-full w-full" />}
               </div>
             </div>
           </Card>

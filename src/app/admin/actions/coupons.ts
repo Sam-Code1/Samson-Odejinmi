@@ -61,22 +61,27 @@ function parse(fd: FormData) {
   const usage_limit = limitOf("usage_limit"), per_user_limit = limitOf("per_user_limit");
   const appliesToAll = str(fd, "applies", 10) !== "selected";
   const courseIds = fd.getAll("course_ids").map(String).filter(isUuid).slice(0, 100);
-  if (!appliesToAll && !courseIds.length) e.course_ids = "Choose at least one course, or apply it to all courses.";
+  const productIds = fd.getAll("product_ids").map(String).filter(isUuid).slice(0, 100);
+  if (!appliesToAll && !courseIds.length && !productIds.length) e.course_ids = "Choose at least one course or product, or apply it to everything.";
+  const campaign = str(fd, "campaign_id", 40);
   return {
     errors: e,
     row: {
       code, description: optStr(fd, "description", 300), discount_type: type, discount_value: value, currency,
       min_amount_minor: min !== null && !Number.isNaN(min) ? min : null, starts_at: starts === "invalid" ? null : starts, expires_at: expires === "invalid" ? null : expires,
       usage_limit, per_user_limit, applies_to_all: appliesToAll, active: bool(fd, "active"),
+      // Present only when the form offers campaigns (migration 0008).
+      ...(fd.has("campaign_id") ? { campaign_id: isUuid(campaign) ? campaign : null } : {}),
     },
     courseIds: appliesToAll ? [] : courseIds,
+    productIds: appliesToAll ? [] : productIds,
   };
 }
 
 export async function saveCoupon(_: ActionResult, fd: FormData): Promise<ActionResult> {
   return runAdmin("coupons", async (ctx) => {
     const id = str(fd, "couponId", 40);
-    const { errors, row, courseIds } = parse(fd);
+    const { errors, row, courseIds, productIds } = parse(fd);
     if (Object.keys(errors).length) return { ok: false, fieldErrors: errors };
 
     let couponId = id;
@@ -94,6 +99,13 @@ export async function saveCoupon(_: ActionResult, fd: FormData): Promise<ActionR
     if (courseIds.length) {
       const { error } = await ctx.supabase.from("coupon_courses").insert(courseIds.map((c) => ({ coupon_id: couponId, course_id: c })));
       if (error) return dbError(error);
+    }
+    if (fd.has("product_ids_present")) {
+      await ctx.supabase.from("coupon_products").delete().eq("coupon_id", couponId);
+      if (productIds.length) {
+        const { error } = await ctx.supabase.from("coupon_products").insert(productIds.map((p) => ({ coupon_id: couponId, product_id: p })));
+        if (error) return dbError(error);
+      }
     }
     await logActivity(ctx, isUuid(id) ? "coupon updated" : "coupon created", "coupon", couponId, row.code,
       { type: row.discount_type, value: row.discount_value, currency: row.currency });
