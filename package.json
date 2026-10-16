@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "check:queries": "node scripts/check-queries.mjs",
     "seed:generate": "python3 scripts/generate-seed.py"
   },
   "dependencies": {

@@ -31,7 +31,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ conta
   const c = data as Contact;
   const uid = c.user_id;
   const [ents, pays, enrols, notes, products, aff, downloads] = await Promise.all([
-    uid ? ctx.supabase.from("entitlements").select("id, status, source, granted_at, products(name, product_type)").eq("user_id", uid).order("granted_at", { ascending: false }) : null,
+    uid ? ctx.supabase.from("entitlements").select("id, status, source, granted_at, products!entitlements_product_id_fkey(name, product_type)").eq("user_id", uid).order("granted_at", { ascending: false }) : null,
     uid && ctx.can("payments") ? ctx.supabase.from("payments").select("reference, amount_minor, currency, status, provider, created_at, products(name), courses(title), coupons(code)").eq("user_id", uid).order("created_at", { ascending: false }).limit(50) : null,
     uid ? ctx.supabase.from("enrolments").select("status, granted_at, courses(title)").eq("user_id", uid) : null,
     ctx.supabase.from("contact_notes").select("id, body, created_at, profiles:author_id(email)").eq("contact_id", contactId).order("created_at", { ascending: false }),
