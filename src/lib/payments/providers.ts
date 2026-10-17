@@ -27,6 +27,11 @@ export type TxStatus = "success" | "failed" | "pending" | "abandoned" | "reverse
 export type NormalizedTx = { status: TxStatus; reference: string; amountMinor: number; currency: string; paidAt: string | null; channel: string | null; transactionId: string | null };
 export type InitOptions = { email: string; amountMinor: number; currency: string; reference: string; callbackUrl: string; metadata: Record<string, string>; methods: MethodId[] };
 export type WebhookResult = { event: string; reference: string | null };
+/**
+ * Result of starting a hosted payment. `unsupported_currency` = the merchant ACCOUNT refused this currency (recorded as a
+ * capability and routed to another provider); `unavailable` = anything else (provider down, bad response).
+ */
+export type InitResult = { ok: true; url: string } | { ok: false; reason: "unsupported_currency" | "unavailable"; detail: string };
 
 export interface PaymentProvider {
   id: ProviderId;
@@ -35,8 +40,8 @@ export interface PaymentProvider {
   mode(): "test" | "live" | null;
   /** What the provider can process, per currency (from the provider's documentation). Account settings may narrow it. */
   supports: Partial<Record<string, MethodId[]>>;
-  /** Returns the provider's hosted checkout URL, or null. */
-  initialize(o: InitOptions): Promise<string | null>;
+  /** Starts a hosted payment: the provider's checkout URL, or why it couldn't. */
+  initialize(o: InitOptions): Promise<InitResult>;
   verify(reference: string): Promise<NormalizedTx | null>;
   verifyWebhook(raw: string, headers: Headers): boolean;
   parseWebhook(body: unknown): WebhookResult | null;
@@ -128,25 +133,31 @@ const flutterwave: PaymentProvider = {
   supports: { NGN: ["card", "bank_transfer", "ussd", "opay", "qr", "bank"], USD: ["card"], GBP: ["card"], EUR: ["card"], GHS: ["card", "mobile_money"], KES: ["card", "mobile_money"] },
   async initialize(o) {
     const key = flwKey();
-    if (!key) return null;
+    if (!key) return { ok: false, reason: "unavailable", detail: "not configured" };
     const options = [...new Set(o.methods.map((m) => flwOption(m, o.currency)).filter(Boolean))].join(",");
     try {
       const res = await fetch(`${FLW_API}/payments`, {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          tx_ref: o.reference, amount: o.amountMinor / 100, currency: o.currency, redirect_url: o.callbackUrl, payment_options: options || "card",
+          // Flutterwave's API takes major units; the integer minor amount is only formatted here, never computed with.
+          tx_ref: o.reference, amount: (o.amountMinor / 100).toFixed(2), currency: o.currency, redirect_url: o.callbackUrl, payment_options: options || "card",
           customer: { email: o.email }, customizations: { title: "Fola Academy" }, meta: o.metadata,
         }),
         cache: "no-store", signal: AbortSignal.timeout(20_000),
       });
-      const parsed = FlwInit.safeParse(await res.json().catch(() => null));
-      if (!res.ok || !parsed.success) { console.error("[flutterwave] initialize failed:", res.status); return null; }
+      const body = await res.json().catch(() => null) as { message?: string } | null;
+      const parsed = FlwInit.safeParse(body);
+      if (!res.ok || !parsed.success) {
+        console.error("[flutterwave] initialize failed:", res.status, body?.message);
+        const unsupported = /currency/i.test(body?.message ?? "") && /(not|un)\s*(supported|allowed|enabled|available)|invalid/i.test(body?.message ?? "");
+        return { ok: false, reason: unsupported ? "unsupported_currency" : "unavailable", detail: body?.message ?? `HTTP ${res.status}` };
+      }
       const url = new URL(parsed.data.data.link);
       // Only ever send buyers to Flutterwave's own checkout.
-      if (url.protocol !== "https:" || !/(^|\.)flutterwave\.com$/.test(url.hostname)) return null;
-      return url.toString();
-    } catch { return null; }
+      if (url.protocol !== "https:" || !/(^|\.)flutterwave\.com$/.test(url.hostname)) return { ok: false, reason: "unavailable", detail: "unexpected checkout host" };
+      return { ok: true, url: url.toString() };
+    } catch { return { ok: false, reason: "unavailable", detail: "request failed" }; }
   },
   async verify(reference) {
     const key = flwKey();
@@ -193,7 +204,7 @@ const flutterwave: PaymentProvider = {
 // and credentials for this business. No unofficial APIs, no scraping.
 const palmpay: PaymentProvider = {
   id: "palmpay", name: "PalmPay", configured: () => false, mode: () => null, supports: {},
-  initialize: async () => null, verify: async () => null, verifyWebhook: () => false, parseWebhook: () => null, ping: async () => false,
+  initialize: async () => ({ ok: false, reason: "unavailable", detail: "PalmPay is not integrated" }), verify: async () => null, verifyWebhook: () => false, parseWebhook: () => null, ping: async () => false,
 };
 
 export const PROVIDERS: Record<ProviderId, PaymentProvider> = { paystack, flutterwave, palmpay };

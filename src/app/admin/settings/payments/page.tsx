@@ -5,6 +5,10 @@ import { requirePermission } from "@/lib/admin/guard";
 import { formatDate } from "@/lib/admin/validation";
 import { METHOD_LABELS, PROVIDERS, isProviderId, type MethodId, type ProviderId } from "@/lib/payments/providers";
 import { site } from "@/lib/site";
+import { ActionButton } from "@/components/admin/ActionButton";
+import { checkCapabilities, clearCapability } from "@/app/admin/actions/payment-settings";
+
+type Cap = { provider: string; mode: string; currency: string; status: string; detail: string | null; checked_at: string };
 
 export const metadata = { title: "Payment settings" };
 
@@ -24,10 +28,13 @@ function mask(name: string) {
 export default async function PaymentSettingsPage() {
   const ctx = await requirePermission("payments");
   if (!ctx) return null;
-  const [{ data, error }, { data: hooks }] = await Promise.all([
+  const [{ data, error }, { data: hooks }, { data: capRows }] = await Promise.all([
     ctx.supabase.from("payment_providers").select("id, enabled, priority, currencies, methods, updated_at").order("priority"),
     ctx.supabase.from("webhook_events").select("provider, outcome, received_at").order("received_at", { ascending: false }).limit(200),
+    // What each merchant account actually accepted/refused (migration 0012). Missing table = nothing learned yet.
+    ctx.supabase.from("payment_provider_capabilities").select("provider, mode, currency, status, detail, checked_at").order("currency"),
   ]);
+  const caps = (capRows ?? []) as Cap[];
   const last = (id: string, outcome?: string) => ((hooks ?? []) as { provider: string; outcome: string; received_at: string }[]).find((h) => h.provider === id && (!outcome || h.outcome === outcome));
 
   return (
@@ -57,6 +64,29 @@ export default async function PaymentSettingsPage() {
                     {id !== "palmpay" && <div><dt className="text-caption text-ink-3">Webhook URL</dt><dd className="break-all font-mono text-caption">{site.url}/api/webhooks/{id}</dd></div>}
                     {id !== "palmpay" && <div><dt className="text-caption text-ink-3">Last webhook</dt><dd>{lastAny ? `${formatDate(lastAny.received_at, true)} · ${lastAny.outcome}` : "None received yet"}{lastOk && lastOk !== lastAny ? <span className="block text-caption text-ink-3">Last processed {formatDate(lastOk.received_at, true)}</span> : null}</dd></div>}
                   </dl>
+                  {id !== "palmpay" && (
+                    <div className="mt-5 border-t border-line pt-4">
+                      <p className="text-caption text-ink-3">Account capability ({p.mode() ?? "no key"})</p>
+                      <p className="mt-1 text-caption text-ink-3">What this merchant account actually accepted or refused. A refused currency is not offered through {p.name} until you re-check it (for example after the provider enables it).</p>
+                      <ul className="mt-3 space-y-2 text-body-sm">
+                        {r.currencies.map((cur) => {
+                          const c = caps.find((x) => x.provider === id && x.mode === p.mode() && x.currency === cur);
+                          return (
+                            <li key={cur} className="flex flex-wrap items-center justify-between gap-2">
+                              <span><span className="font-medium">{cur}</span>{" "}
+                                {!c ? <span className="text-ink-3">· not checked yet</span> : c.status === "supported" ? <span className="text-blue">· accepted</span> : <span className="text-warm">· refused{c.detail ? `: ${c.detail}` : ""}</span>}
+                                {c && <span className="block text-caption text-ink-3">{formatDate(c.checked_at, true)}</span>}
+                              </span>
+                              {c && <ActionButton action={clearCapability} fields={{ provider: id, mode: c.mode, currency: cur }} variant="outline">Re-check</ActionButton>}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      {p.configured() && p.mode() === "test" && r.currencies.length > 0 && (
+                        <div className="mt-3"><ActionButton action={checkCapabilities} fields={{ provider: id }} variant="outline">Check now (test account)</ActionButton></div>
+                      )}
+                    </div>
+                  )}
                 </Panel>
               </section>
             );

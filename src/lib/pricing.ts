@@ -1,6 +1,7 @@
 import { defaultPricing, type Currency, type PriceRow } from "@/content/course";
 import { supabaseConfigured } from "@/lib/supabase/server";
 import { contentClient } from "@/lib/cms";
+import { regionalCurrency } from "@/lib/currency";
 
 /** Reads configurable pricing from `course_pricing`, falling back to defaults if unavailable. */
 export async function getCoursePricing(courseSlug: string): Promise<PriceRow[]> {
@@ -19,7 +20,7 @@ export async function getCoursePricing(courseSlug: string): Promise<PriceRow[]> 
   }
 }
 
+/** @deprecated Use getShopperCurrency / regionalCurrency from lib/currency (one rule for the whole site). */
 export function guessCurrency(countryHeader: string | null): Currency {
-  const c = countryHeader?.toUpperCase();
-  return c === "NG" ? "NGN" : c === "GB" ? "GBP" : "USD";
+  return regionalCurrency(countryHeader);
 }

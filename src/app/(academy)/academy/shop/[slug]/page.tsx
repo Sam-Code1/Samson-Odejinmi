@@ -15,7 +15,9 @@ import { StateMessage } from "@/components/ui/States";
 import { canOptimize } from "@/lib/cms/images";
 import { getUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getPaymentOptions, publicMethods } from "@/lib/payments/options";
+import { getPaymentOptions, publicPayment } from "@/lib/payments/options";
+import { getShopperCurrency, pickCurrency } from "@/lib/currency";
+import { CurrencySelector } from "@/components/academy/CurrencySelector";
 import { formatMoney } from "@/lib/utils";
 import { site } from "@/lib/site";
 
@@ -57,7 +59,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     const { data } = await supabase.rpc("can_access_product", { p_product: p.id });
     owned = data === true;
   }
-  const payOpts = await getPaymentOptions();
+  const [payOpts, shopper] = await Promise.all([getPaymentOptions(), getShopperCurrency()]);
+  // ONE currency for the headline price and the checkout (see lib/currency).
+  const currency = shopper.chosen ? shopper.currency : pickCurrency(p.prices.map((x) => x.currency), shopper.currency, shopper.country) ?? shopper.currency;
+  const shown = p.prices.find((x) => x.currency === currency);
   const isFile = FILE_TYPES.includes(p.type);
   const jsonLd = {
     "@context": "https://schema.org", "@type": "Product", name: p.name, description: p.shortDescription ?? undefined, ...(p.coverImage ? { image: p.coverImage } : {}),
@@ -65,7 +70,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     offers: p.prices.map((pr) => ({ "@type": "Offer", price: (pr.amountMinor / 100).toFixed(2), priceCurrency: pr.currency, availability: "https://schema.org/InStock", url: `${site.url}/academy/shop/${p.slug}` })),
   };
   const panel = (
-    <ProductCheckoutPanel productId={p.id} slug={p.slug} prices={p.prices} methods={publicMethods(payOpts)} signedIn={!!user} owned={owned} ownedHref="/library" />
+    <ProductCheckoutPanel productId={p.id} slug={p.slug} prices={p.prices} currency={currency} payment={publicPayment(payOpts)} signedIn={!!user} owned={owned} ownedHref="/library" />
   );
 
   return (
@@ -87,7 +92,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="lg:col-span-5">
             <div className="rounded-xl border border-line bg-elevated/80 p-6 shadow-[0_30px_60px_-34px_rgb(var(--ink)/0.45)] backdrop-blur lg:sticky lg:top-24">
               <div className="thread -mx-6 -mt-6 mb-6 h-px" aria-hidden />
-              {p.prices[0] && <p className="text-h2 tabular-nums">{p.prices[0].amountMinor === 0 ? "Free" : formatMoney(p.prices[0].amountMinor, p.prices[0].currency)}</p>}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {shown
+                  ? <p className="text-h2 tabular-nums">{shown.amountMinor === 0 ? "Free" : formatMoney(shown.amountMinor, shown.currency)}</p>
+                  : <p className="text-h4 text-ink-2">Not available in {currency}</p>}
+                {p.prices.length > 0 && <CurrencySelector current={currency} size="sm" />}
+              </div>
+              {shown?.compareAtMinor && shown.compareAtMinor > shown.amountMinor && (
+                <p className="mt-1 text-body-sm text-ink-3"><span className="sr-only">Was </span><span className="line-through tabular-nums">{formatMoney(shown.compareAtMinor, shown.currency)}</span></p>
+              )}
               <p className="mt-1 text-caption text-ink-3">{isFile ? "Instant download after payment · Kept in your library" : p.type === "bundle" ? "Everything below, in one purchase" : "One-time payment"}</p>
               <div className="mt-6">{panel}</div>
             </div>
@@ -130,7 +143,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <Section tone="violet">
           <Container>
             <h2 className="text-h2">In this bundle</h2>
-            <ul className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">{p.items.map((it, i) => <li key={it.id}><ProductCard product={it} index={i} /></li>)}</ul>
+            <ul className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">{p.items.map((it, i) => <li key={it.id}><ProductCard product={it} index={i} currency={currency} /></li>)}</ul>
           </Container>
         </Section>
       )}
@@ -139,7 +152,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <Section>
           <Container>
             <h2 className="text-h2">Recommended next</h2>
-            <ul className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">{p.related.map((r, i) => <li key={r.id}><ProductCard product={r} index={i + 1} /></li>)}</ul>
+            <ul className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">{p.related.map((r, i) => <li key={r.id}><ProductCard product={r} index={i + 1} currency={currency} /></li>)}</ul>
           </Container>
         </Section>
       )}

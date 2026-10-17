@@ -1,28 +1,31 @@
 "use client";
 
-import { startTransition, useActionState, useState, useTransition } from "react";
+import { startTransition, useActionState, useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { quoteCheckout, startCheckout, type CheckoutState, type Quote } from "@/app/checkout-actions";
 import { Button } from "@/components/ui/Button";
-import { MethodPicker, type MethodChoice } from "./MethodPicker";
+import { PaymentPicker } from "./PaymentPicker";
+import { CurrencyUnavailable } from "./CurrencySelector";
+import type { PublicPayment } from "@/lib/payments/options";
 import { formatMoney } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 
 type Price = { currency: string; amountMinor: number };
 
 /**
- * Enrol / buy panel. Shows the server's own quote (base, discount, total). Submitting starts a server-side checkout;
- * access is granted only after Paystack verification.
+ * Enrol / buy panel for a course, in the shopper's ONE selected currency (the same value the price display uses).
+ * Shows the server's own quote (base, discount, total). Submitting starts a server-side checkout; access is granted
+ * only after provider verification.
  */
-export function CheckoutPanel({ courseId, slug, prices, methods, signedIn, enrolled }: {
-  courseId: string; slug: string; prices: Price[]; methods: Record<string, MethodChoice[]>; signedIn: boolean; enrolled: boolean;
+export function CheckoutPanel({ courseId, slug, prices, currency, payment, signedIn, enrolled }: {
+  courseId: string; slug: string; prices: Price[]; currency: string; payment: PublicPayment; signedIn: boolean; enrolled: boolean;
 }) {
-  const options = prices.filter((p) => p.amountMinor === 0 || (methods[p.currency]?.length ?? 0) > 0);
-  const [currency, setCurrency] = useState(options[0]?.currency ?? "");
+  const router = useRouter();
   const [code, setCode] = useState("");
-  const [method, setMethod] = useState("");
+  const [provider, setProvider] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [checking, startCheck] = useTransition();
   const [state, action, pending] = useActionState<CheckoutState, FormData>(startCheckout, {});
+  useEffect(() => { if (state.code === "currency_unavailable") router.refresh(); }, [state, router]);
 
   if (enrolled) {
     return (
@@ -32,9 +35,15 @@ export function CheckoutPanel({ courseId, slug, prices, methods, signedIn, enrol
       </div>
     );
   }
-  if (!options.length) {
+  const payable = (c: string) => prices.some((p) => p.currency === c && (p.amountMinor === 0 || (payment.providers[c]?.length ?? 0) > 0));
+  const offered = prices.filter((p) => payable(p.currency)).map((p) => p.currency);
+  if (!offered.length) {
     return <p className="text-body-sm text-ink-2">Enrolment for this course isn&apos;t open yet. {signedIn ? "We'll show it here when it opens." : "Create an account now and you'll be ready when it opens."}</p>;
   }
+  const price = prices.find((p) => p.currency === currency);
+  if (!price) return <CurrencyUnavailable currency={currency} alternatives={offered} reason="price" />;
+  if (!payable(currency)) return <CurrencyUnavailable currency={currency} alternatives={offered} reason="payment" />;
+
   if (!signedIn) {
     return (
       <div className="space-y-3">
@@ -44,10 +53,10 @@ export function CheckoutPanel({ courseId, slug, prices, methods, signedIn, enrol
     );
   }
 
-  const base = options.find((o) => o.currency === currency)?.amountMinor ?? 0;
+  const providers = payment.providers[currency] ?? [];
+  const chosen = providers.some((p) => p.id === provider) ? provider : providers[0]?.id ?? "";
   const applied = quote?.ok && quote.currency === currency ? quote : null;
-  const total = applied ? applied.total : base;
-
+  const total = applied ? applied.total : price.amountMinor;
   const apply = () => startCheck(async () => setQuote(await quoteCheckout(courseId, currency, code)));
 
   return (
@@ -55,32 +64,26 @@ export function CheckoutPanel({ courseId, slug, prices, methods, signedIn, enrol
       <input type="hidden" name="courseId" value={courseId} />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="currency" value={currency} />
-      {options.length > 1 && (
-        <div role="radiogroup" aria-label="Currency" className="flex gap-2">
-          {options.map((o) => (
-            <button key={o.currency} type="button" role="radio" aria-checked={o.currency === currency} onClick={() => { setCurrency(o.currency); setQuote(null); setMethod(""); }}
-              className={cn("h-9 rounded border px-3 text-label", o.currency === currency ? "border-ink bg-ink text-canvas" : "border-line-strong text-ink-2 hover:text-ink")}>{o.currency}</button>
-          ))}
-        </div>
-      )}
       <div>
         <label htmlFor="coupon" className="mb-1.5 block text-caption text-ink-3">Coupon code (optional)</label>
         <div className="flex gap-2">
           <input id="coupon" name="coupon" value={code} onChange={(e) => { setCode(e.target.value.toUpperCase()); setQuote(null); }} maxLength={32} autoComplete="off"
-            className="h-11 min-w-0 flex-1 rounded border border-line-strong bg-transparent px-3 text-body-sm uppercase tracking-wide focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30" />
+            className="h-11 min-w-0 flex-1 rounded border border-line-strong bg-transparent px-3 text-base uppercase tracking-wide focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30 sm:text-body-sm" />
           <button type="button" onClick={apply} disabled={!code || checking} className="h-11 rounded border border-line-strong px-4 text-label hover:border-ink disabled:opacity-50">{checking ? "Checking…" : "Apply"}</button>
         </div>
         {quote && !quote.ok && <p role="alert" className="mt-2 text-caption text-warm">{quote.error}</p>}
         {applied && applied.discount > 0 && <p role="status" className="mt-2 text-caption text-blue">{applied.couponCode} applied: {formatMoney(applied.discount, currency)} off.</p>}
       </div>
-      {total > 0 && <MethodPicker methods={methods[currency] ?? []} value={method || methods[currency]?.[0]?.method || ""} onChange={setMethod} />}
+      {total > 0 && <PaymentPicker providers={providers} value={chosen} onChange={setProvider} />}
       <dl className="space-y-1 border-t border-line pt-4 text-body-sm">
         {applied && applied.discount > 0 && <div className="flex justify-between text-ink-3"><dt>Price</dt><dd className="tabular-nums line-through">{formatMoney(applied.base, currency)}</dd></div>}
         <div className="flex justify-between text-h4"><dt>Total</dt><dd className="tabular-nums">{total === 0 ? "Free" : formatMoney(total, currency)}</dd></div>
       </dl>
-      {state.error && <p role="alert" className="border-l-2 border-warm pl-3 text-body-sm text-ink-2">{state.error}</p>}
+      {state.error && (state.code === "currency_unavailable"
+        ? <CurrencyUnavailable currency={currency} alternatives={(state.alternatives ?? []).filter((c) => prices.some((p) => p.currency === c))} reason="payment" />
+        : <p role="alert" className="border-l-2 border-warm pl-3 text-body-sm text-ink-2">{state.error}</p>)}
       <Button type="submit" className="w-full" disabled={pending}>{pending ? "Starting…" : total === 0 ? "Enrol for free" : `Pay ${formatMoney(total, currency)}`}</Button>
-      {total > 0 && <p className="text-caption text-ink-3">Secure payment through our payment provider. You get access as soon as your payment is confirmed.</p>}
+      {total > 0 && <p className="text-caption text-ink-3">You&apos;ll pay in {currency} on the provider&apos;s secure page. You get access as soon as your payment is confirmed.</p>}
     </form>
   );
 }

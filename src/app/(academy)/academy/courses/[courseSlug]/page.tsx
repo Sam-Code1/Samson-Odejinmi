@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Container, Section, SectionHeader } from "@/components/ui/Container";
@@ -9,11 +8,12 @@ import { PriceSwitcher } from "@/components/academy/PriceSwitcher";
 import { CourseCurriculum } from "@/components/academy/CourseCurriculum";
 import { course as content } from "@/content/course";
 import { getPublishedCourse } from "@/lib/academy";
-import { getCoursePricing, guessCurrency } from "@/lib/pricing";
+import { getCoursePricing } from "@/lib/pricing";
+import { getShopperCurrency, pickCurrency } from "@/lib/currency";
 import { CheckoutPanel } from "@/components/academy/CheckoutPanel";
 import { getUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getPaymentOptions, publicMethods } from "@/lib/payments/options";
+import { getPaymentOptions, publicPayment } from "@/lib/payments/options";
 
 export async function generateMetadata({ params }: { params: Promise<{ courseSlug: string }> }): Promise<Metadata> {
   const { courseSlug } = await params;
@@ -38,7 +38,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   const course = await getPublishedCourse(courseSlug);
   if (!course) notFound();
 
-  const [prices, h, user] = await Promise.all([getCoursePricing(course.slug), headers(), getUser()]);
+  const [prices, shopper, user] = await Promise.all([getCoursePricing(course.slug), getShopperCurrency(), getUser()]);
   let enrolled = false;
   if (user && course.id) {
     const supabase = await createClient();
@@ -46,8 +46,10 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     enrolled = !!e;
   }
   const payOpts = await getPaymentOptions();
-  const checkout = <CheckoutPanel courseId={course.id} slug={course.slug} prices={prices} methods={publicMethods(payOpts)} signedIn={!!user} enrolled={enrolled} />;
-  const defaultCurrency = guessCurrency(h.get("x-vercel-ip-country"));
+  // ONE currency for the price shown and the checkout. A shopper's own choice is respected (if unavailable, alternatives
+  // are offered); the regional default falls back to a currency this course is actually priced in.
+  const currency = shopper.chosen ? shopper.currency : pickCurrency(prices.map((p) => p.currency), shopper.currency, shopper.country) ?? shopper.currency;
+  const checkout = <CheckoutPanel courseId={course.id} slug={course.slug} prices={prices} currency={currency} payment={publicPayment(payOpts)} signedIn={!!user} enrolled={enrolled} />;
   const outcomes = [...course.learningOutcomes, ...course.objectives];
 
   const jsonLd = { "@context": "https://schema.org", "@type": "Course", name: course.title, description: course.subtitle ?? undefined, provider: { "@type": "Person", name: "Samson Afolabi Odejinmi" } };
@@ -74,7 +76,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
           <div className="lg:col-span-4">
             <div className="rounded-xl border border-line bg-elevated/80 p-6 shadow-[0_30px_60px_-34px_rgb(var(--ink)/0.45)] backdrop-blur">
               <div className="thread -mx-6 -mt-6 mb-6 h-px" aria-hidden />
-              <PriceSwitcher prices={prices} defaultCurrency={defaultCurrency} size="md" />
+              <PriceSwitcher prices={prices} currency={currency} size="md" />
               <div className="mt-7">{checkout}</div>
             </div>
           </div>
@@ -149,7 +151,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
       <Section>
         <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
           <div className="lg:col-span-4"><h2 className="text-h2">Price</h2><p className="mt-5 text-body text-ink-2">One-time payment, lifetime access. Self-paced.</p></div>
-          <div className="lg:col-span-7 lg:col-start-6"><PriceSwitcher prices={prices} defaultCurrency={defaultCurrency} /></div>
+          <div className="lg:col-span-7 lg:col-start-6"><PriceSwitcher prices={prices} currency={currency} /></div>
         </Container>
       </Section>
 

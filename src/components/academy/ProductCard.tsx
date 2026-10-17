@@ -12,8 +12,13 @@ export function productHref(p: Pick<Card, "type" | "slug" | "courseSlug">) {
   return p.type === "course" && p.courseSlug ? `/academy/courses/${p.courseSlug}` : `/academy/shop/${p.slug}`;
 }
 
-export function ProductCard({ product: p, index = 0 }: { product: Card; index?: number }) {
-  const price = p.prices[0];
+/**
+ * `currency`: the shopper's selected currency. The card shows that price; if this item isn't priced in it, the card
+ * says so and shows what it IS priced in (never silently a different currency as if it were the selected one).
+ */
+export function ProductCard({ product: p, index = 0, currency }: { product: Card; index?: number; currency?: string }) {
+  const exact = currency ? p.prices.find((x) => x.currency === currency) : p.prices[0];
+  const price = exact ?? p.prices[0];
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-line bg-elevated transition-colors hover:border-line-strong">
       <div className="theme-night spot-stage relative aspect-[4/3] overflow-hidden">
@@ -29,7 +34,11 @@ export function ProductCard({ product: p, index = 0 }: { product: Card; index?: 
         </h3>
         {p.shortDescription && <p className="mt-2 line-clamp-3 text-body-sm text-ink-2">{p.shortDescription}</p>}
         <div className="mt-auto flex items-center justify-between gap-4 pt-5">
-          <p className="text-label tabular-nums">{price ? (price.amountMinor === 0 ? "Free" : formatMoney(price.amountMinor, price.currency)) : "Coming soon"}</p>
+          <p className="text-label tabular-nums">
+            {!price ? "Coming soon" : price.amountMinor === 0 ? "Free" : formatMoney(price.amountMinor, price.currency)}
+            {price && exact && exact.compareAtMinor ? <span className="ml-2 text-caption text-ink-3 line-through"><span className="sr-only">was </span>{formatMoney(exact.compareAtMinor, exact.currency)}</span> : null}
+            {price && !exact && currency ? <span className="mt-0.5 block text-caption font-normal text-ink-3">Not priced in {currency}</span> : null}
+          </p>
           <ArrowUpRight aria-hidden className="h-4 w-4 text-ink-3 transition-transform duration-base ease-quiet group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-ink" />
         </div>
       </div>

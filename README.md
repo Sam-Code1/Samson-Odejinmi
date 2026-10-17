@@ -24,9 +24,10 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 9. **`supabase/migrations/0009_batch4_finalization.sql`** (Batch 4: payment provider settings + chosen method on payments, contact inbox with subjects and replies, notifications, security and webhook logs, shop settings and product details). Idempotent and non-destructive; Paystack stays enabled exactly as before.
 10. **`supabase/migrations/0010_shop_switch.sql`** (the shop on/off switch in Admin → Products → Shop settings, plus the "closed" message; closing the shop also makes the database refuse new product checkouts, while past purchases, downloads and course checkout keep working). Idempotent; the shop stays open until you close it. Admin → Products → Shop settings shows which of 0008–0010 are still missing on your database.
 11. **`supabase/migrations/0011_library_access.sql`** (buyers keep seeing products they own in their Library even after the product is unpublished or archived). Idempotent, read access only.
-12. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
-13. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
-14. Make yourself an admin (after registering):
+12. **`supabase/migrations/0012_currency_capabilities.sql`** (records what each payment provider's merchant account actually accepts per currency, so checkout never sends a currency to a provider that refused it and routes to another capable provider; optional "was" prices). Idempotent, non-destructive.
+13. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
+14. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
+15. Make yourself an admin (after registering):
    ```sql
    insert into public.admin_users (user_id) select id from auth.users where email = 'odejinmisamson37@gmail.com';
    ```

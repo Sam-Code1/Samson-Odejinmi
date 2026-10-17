@@ -47,7 +47,8 @@ export async function quoteCheckout(courseId: string, currency: string, code: st
   return { ok: true, base: q.base, discount: q.discount, total: q.total, currency: q.currency, couponCode: q.coupon_code };
 }
 
-export type CheckoutState = { error?: string };
+/** `code`/`alternatives` let the panel offer payable currencies instead of a generic failure. */
+export type CheckoutState = { error?: string; code?: string; alternatives?: string[] };
 
 export async function startCheckout(_: CheckoutState, fd: FormData): Promise<CheckoutState> {
   const courseId = String(fd.get("courseId") ?? "");
@@ -81,10 +82,12 @@ export async function startCheckout(_: CheckoutState, fd: FormData): Promise<Che
     redirect(`/learn/${slug}`);
   }
 
-  const started = await startPayment(supabase, { email: r.email ?? user.email ?? "", total: r.total ?? 0, currency: r.currency ?? "NGN", reference: r.reference!, metadata: { course_id: courseId, user_id: user.id }, method: fd.get("method") });
+  // The currency is the one the database priced and locked on the payment; never a default.
+  if (!r.currency || !r.reference) return { error: message() };
+  const started = await startPayment(supabase, { email: r.email ?? user.email ?? "", total: r.total ?? 0, currency: r.currency, reference: r.reference, metadata: { course_id: courseId, user_id: user.id }, provider: fd.get("provider") });
   if ("error" in started) {
     await supabase.rpc("cancel_my_pending_payment", { p_reference: r.reference });
-    return { error: started.error };
+    return { error: started.error, code: started.code, alternatives: started.alternatives };
   }
   redirect(started.url);
 }

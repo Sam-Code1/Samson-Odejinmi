@@ -48,13 +48,16 @@ export async function initializeTransaction(o: { email: string; amountMinor: num
   });
   const parsed = InitResponse.safeParse(r.body);
   if (!r.ok || !parsed.success) {
-    console.error("[paystack] initialize failed:", r.status, (r.body as { message?: string } | null)?.message);
-    return null;
+    const b = r.body as { message?: string; code?: string } | null;
+    console.error("[paystack] initialize failed:", r.status, b?.code, b?.message);
+    // Paystack answers 403 `unsupported_currency` ("Currency not supported by merchant") when the ACCOUNT can't take it.
+    const unsupported = b?.code === "unsupported_currency" || /currency not supported/i.test(b?.message ?? "");
+    return { ok: false as const, reason: unsupported ? ("unsupported_currency" as const) : ("unavailable" as const), detail: b?.message ?? `HTTP ${r.status}` };
   }
   const url = new URL(parsed.data.data.authorization_url);
   // Only ever send students to Paystack's own checkout.
-  if (url.protocol !== "https:" || !/(^|\.)paystack\.(com|co)$/.test(url.hostname)) return null;
-  return url.toString();
+  if (url.protocol !== "https:" || !/(^|\.)paystack\.(com|co)$/.test(url.hostname)) return { ok: false as const, reason: "unavailable" as const, detail: "unexpected checkout host" };
+  return { ok: true as const, url: url.toString() };
 }
 
 const VerifyResponse = z.object({

@@ -1,7 +1,8 @@
 import data from "./blender-foundations.json";
 
 export type Currency = "NGN" | "USD" | "GBP";
-export type PriceRow = { currency: Currency; amountMinor: number };
+/** compareAtMinor: optional "was" price (display only; never used to compute a charge). */
+export type PriceRow = { currency: Currency; amountMinor: number; compareAtMinor?: number | null };
 
 /**
  * Fallback pricing used when Supabase isn't configured or has no rows.

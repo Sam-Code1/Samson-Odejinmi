@@ -3,10 +3,14 @@ export function cn(...parts: Array<string | false | null | undefined>) {
 }
 
 export function formatMoney(amountMinor: number, currency: string) {
-  return new Intl.NumberFormat(currency === "NGN" ? "en-NG" : "en-US", {
+  // Integer minor units in, no float arithmetic on money: only the display divides. Whole amounts show no decimals
+  // (₦5,000, $5); others show two ($4.99).
+  const whole = amountMinor % 100 === 0;
+  return new Intl.NumberFormat(currency === "NGN" ? "en-NG" : currency === "GBP" ? "en-GB" : "en-US", {
     style: "currency",
     currency,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: whole ? 0 : 2,
   }).format(amountMinor / 100);
 }
 

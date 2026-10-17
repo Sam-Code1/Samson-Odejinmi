@@ -38,3 +38,47 @@ export async function savePaymentProvider(_: ActionResult, fd: FormData): Promis
     return { ok: true, message: enabled && !p.configured() ? `Saved. ${p.name} is enabled but its keys aren't set on the server yet, so checkout won't offer it.` : "Saved." };
   });
 }
+
+/** Forgets what a provider's account answered for a currency, so checkout offers and tries it again. */
+export async function clearCapability(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  return runAdmin("payments", async (ctx) => {
+    const provider = str(fd, "provider", 20), mode = str(fd, "mode", 4), currency = str(fd, "currency", 3);
+    if (!isProviderId(provider) || !["test", "live"].includes(mode) || !/^[A-Z]{3}$/.test(currency)) return { ok: false, message: "Invalid request." };
+    const { error } = await ctx.supabase.from("payment_provider_capabilities").delete().eq("provider", provider).eq("mode", mode).eq("currency", currency);
+    if (error) return dbError(error, "Couldn't clear. Run migration 0012 first.");
+    await logActivity(ctx, "payment capability cleared", "payment_provider", provider, `${PROVIDERS[provider].name} ${currency} (${mode})`);
+    revalidateTag("cms");
+    revalidatePath("/admin/settings/payments");
+    return { ok: true, message: `${currency} will be tried again on ${PROVIDERS[provider].name} at the next checkout.` };
+  });
+}
+
+/**
+ * TEST MODE ONLY: asks the provider's test account, for each currency allowed in settings, whether it would start a
+ * transaction (nothing can be charged in test mode). Live accounts are learned from real checkouts instead, so no
+ * abandoned transactions are created on the live dashboard.
+ */
+export async function checkCapabilities(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  return runAdmin("payments", async (ctx) => {
+    const provider = str(fd, "provider", 20);
+    if (!isProviderId(provider)) return { ok: false, message: "Invalid provider." };
+    const p = PROVIDERS[provider];
+    if (!p.configured()) return { ok: false, message: `${p.name}'s keys aren't set on the server.` };
+    if (p.mode() !== "test") return { ok: false, message: "Live accounts are checked at real checkouts (a test transaction would show on your live dashboard). Use Re-check to retry a currency." };
+    const { data: row } = await ctx.supabase.from("payment_providers").select("currencies").eq("id", provider).maybeSingle();
+    const currencies = ((row?.currencies as string[] | null) ?? []).filter((c) => c in p.supports);
+    if (!currencies.length) return { ok: false, message: "No currencies are allowed for this provider in settings." };
+    const { recordCapability } = await import("@/lib/payments/capabilities");
+    const results: string[] = [];
+    for (const currency of currencies) {
+      const reference = `FA-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
+      const r = await p.initialize({ email: "capability-check@example.com", amountMinor: 10000, currency, reference, callbackUrl: "https://example.com/capability-check", metadata: { purpose: "capability_check" }, methods: [...(p.supports[currency] ?? []).slice(0, 1)] });
+      if (r.ok) { await recordCapability(provider, "test", currency, "supported"); results.push(`${currency} accepted`); }
+      else if (r.reason === "unsupported_currency") { await recordCapability(provider, "test", currency, "unsupported", r.detail); results.push(`${currency} refused`); }
+      else results.push(`${currency} couldn't be checked`);
+    }
+    await logActivity(ctx, "payment capabilities checked", "payment_provider", provider, p.name, { results: results.join(", ") });
+    revalidatePath("/admin/settings/payments");
+    return { ok: true, message: `${p.name} (test account): ${results.join(", ")}.` };
+  });
+}

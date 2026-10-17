@@ -16,7 +16,8 @@ import { sendEmail, templates } from "@/lib/email";
  * cleaned again by the database. Access is granted only after Paystack verification (or a server-side free checkout).
  */
 export type ProductQuote = { ok: true; base: number; discount: number; total: number; currency: string; couponCode: string | null } | { ok: false; error: string };
-export type ProductCheckoutState = { error?: string };
+/** `code`/`alternatives` let the panel offer payable currencies instead of a generic failure. */
+export type ProductCheckoutState = { error?: string; code?: string; alternatives?: string[] };
 
 /**
  * Is the shop open (migration 0010)? Read fresh, not from the page cache, so closing the shop takes effect at once.
@@ -65,10 +66,12 @@ export async function startProductCheckout(_: ProductCheckoutState, fd: FormData
     redirect(r.product_type === "course" && r.course_slug ? `/learn/${r.course_slug}` : "/library");
   }
 
-  const started = await startPayment(supabase, { email: r.email ?? user.email ?? "", total: r.total ?? 0, currency: r.currency ?? "NGN", reference: r.reference!, metadata: { product_id: productId, user_id: user.id }, method: fd.get("method") });
+  // The currency is the one the database priced and locked on the payment; never a default.
+  if (!r.currency || !r.reference) return { error: checkoutMessage() };
+  const started = await startPayment(supabase, { email: r.email ?? user.email ?? "", total: r.total ?? 0, currency: r.currency, reference: r.reference, metadata: { product_id: productId, user_id: user.id }, provider: fd.get("provider") });
   if ("error" in started) {
     await supabase.rpc("cancel_my_pending_payment", { p_reference: r.reference });
-    return { error: started.error };
+    return { error: started.error, code: started.code, alternatives: started.alternatives };
   }
   redirect(started.url);
 }

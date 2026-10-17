@@ -1,23 +1,26 @@
 import { cache } from "react";
-import { headers } from "next/headers";
 import { contentClient } from "@/lib/cms";
 import { supabaseConfigured } from "@/lib/supabase/server";
+import { visitorCountry } from "@/lib/currency";
 import { payableCurrencies } from "./paystack";
+import { capKey, getUnsupported } from "./capabilities";
 import { METHOD_LABELS, NIGERIA_ONLY, PROVIDERS, isMethod, isProviderId, type MethodId, type ProviderId } from "./providers";
 
 /**
- * Payment method discovery. A method is offered only when ALL of these hold:
- *   - its provider is enabled and prioritised in Admin → Settings → Payments (payment_providers),
- *   - the provider is configured on the server (its secret key exists),
- *   - the provider can process that method in that currency (provider capability list),
- *   - the admin allowed that method and currency for the provider,
+ * Which providers can take payment, per currency. A provider is offered for a currency only when ALL of these hold:
+ *   - it is enabled and prioritised in Admin → Settings → Payments (payment_providers),
+ *   - it is configured on the server (its secret key exists),
+ *   - its documentation says it can process that currency (provider capability list),
+ *   - the admin allowed that currency and at least one method for it,
+ *   - the merchant account has NOT refused that currency (payment_provider_capabilities, learned from real answers),
  *   - local Nigerian rails (bank transfer, USSD, QR, OPay, bank account) only for buyers in Nigeria (or unknown country).
- * If several providers can take the same method, the one with the lowest priority number wins.
- * The same function is used to render checkout AND to re-check the buyer's choice on the server.
+ * Lower priority number = offered first. The same function renders checkout AND re-checks the buyer's choice on the
+ * server, so the browser can never pick something that isn't on this list.
  */
 export type ProviderConfig = { id: ProviderId; enabled: boolean; priority: number; currencies: string[]; methods: MethodId[] };
 export type MethodOption = { method: MethodId; label: string; provider: ProviderId };
-export type PaymentOptions = { currencies: string[]; methods: Record<string, MethodOption[]> };
+export type ProviderOption = { provider: ProviderId; name: string; methods: MethodId[] };
+export type PaymentOptions = { currencies: string[]; methods: Record<string, MethodOption[]>; providers: Record<string, ProviderOption[]> };
 
 /** Pre-0009 databases: Paystack only, currencies from PAYSTACK_CURRENCIES, every Paystack method. */
 function legacyConfig(): ProviderConfig[] {
@@ -39,44 +42,55 @@ export const getProviderConfig = cache(async (): Promise<ProviderConfig[]> => {
   }
 });
 
-export function computeOptions(config: ProviderConfig[], country: string | null): PaymentOptions {
+export function computeOptions(config: ProviderConfig[], country: string | null, unsupported: Set<string> = new Set()): PaymentOptions {
   const inNigeria = !country || country === "NG";
   const methods: Record<string, MethodOption[]> = {};
+  const providers: Record<string, ProviderOption[]> = {};
   for (const cfg of [...config].sort((a, b) => a.priority - b.priority)) {
     const p = PROVIDERS[cfg.id];
     if (!cfg.enabled || !p.configured()) continue;
     for (const cur of cfg.currencies) {
-      for (const m of p.supports[cur] ?? []) {
-        if (!cfg.methods.includes(m)) continue;
-        if (!inNigeria && NIGERIA_ONLY.includes(m)) continue;
-        const list = (methods[cur] ??= []);
-        if (!list.some((x) => x.method === m)) list.push({ method: m, label: METHOD_LABELS[m], provider: cfg.id });
-      }
+      if (unsupported.has(capKey(cfg.id, p.mode(), cur))) continue; // the merchant account refused it
+      const usable = (p.supports[cur] ?? []).filter((m) => cfg.methods.includes(m) && (inNigeria || !NIGERIA_ONLY.includes(m)));
+      if (!usable.length) continue;
+      (providers[cur] ??= []).push({ provider: cfg.id, name: p.name, methods: usable });
+      const list = (methods[cur] ??= []);
+      for (const m of usable) if (!list.some((x) => x.method === m)) list.push({ method: m, label: METHOD_LABELS[m], provider: cfg.id });
     }
   }
   // Card first, then the order above.
   for (const cur of Object.keys(methods)) methods[cur].sort((a, b) => (a.method === "card" ? -1 : b.method === "card" ? 1 : 0));
-  return { currencies: Object.keys(methods).filter((c) => methods[c].length), methods };
+  return { currencies: Object.keys(providers).filter((c) => providers[c].length), methods, providers };
 }
 
-export async function buyerCountry(): Promise<string | null> {
-  const c = (await headers()).get("x-vercel-ip-country")?.toUpperCase() ?? null;
-  return c && /^[A-Z]{2}$/.test(c) ? c : null;
-}
+/** @deprecated use visitorCountry from lib/currency. */
+export const buyerCountry = visitorCountry;
 
 export async function getPaymentOptions(): Promise<PaymentOptions> {
-  return computeOptions(await getProviderConfig(), await buyerCountry());
+  const [config, country, unsupported] = await Promise.all([getProviderConfig(), visitorCountry(), getUnsupported()]);
+  return computeOptions(config, country, unsupported);
 }
 
-/** Server-side re-check of what the browser asked for. */
-export async function resolveMethod(currency: string, method: unknown): Promise<MethodOption | null> {
-  const opts = await getPaymentOptions();
-  const list = opts.methods[currency] ?? [];
-  if (!isMethod(method)) return list[0] ?? null; // no choice sent: first available (card when offered)
-  return list.find((o) => o.method === method) ?? null;
+/**
+ * Server-side choice of who processes a payment, in the order to try them: the buyer's chosen provider first (if it is
+ * really on offer for this currency), then every other capable provider by priority. Empty = the currency can't be
+ * paid right now.
+ */
+export function orderCandidates(o: PaymentOptions, currency: string, chosen: unknown): ProviderOption[] {
+  const list = o.providers[currency] ?? [];
+  const first = isProviderId(chosen) ? list.find((p) => p.provider === chosen) : undefined;
+  return first ? [first, ...list.filter((p) => p !== first)] : list;
 }
 
-/** What the browser needs: method ids and labels per currency (which provider handles it stays on the server). */
-export function publicMethods(o: PaymentOptions): Record<string, { method: string; label: string }[]> {
-  return Object.fromEntries(Object.entries(o.methods).map(([c, list]) => [c, list.map(({ method, label }) => ({ method, label }))]));
+export async function resolveProviders(currency: string, chosen: unknown): Promise<ProviderOption[]> {
+  return orderCandidates(await getPaymentOptions(), currency, chosen);
+}
+
+/** What the browser needs: per currency, the providers it may choose and the methods each offers (labels only). */
+export type PublicPayment = { currencies: string[]; providers: Record<string, { id: ProviderId; name: string; methods: string[] }[]> };
+export function publicPayment(o: PaymentOptions): PublicPayment {
+  return {
+    currencies: o.currencies,
+    providers: Object.fromEntries(Object.entries(o.providers).map(([c, list]) => [c, list.map((p) => ({ id: p.provider, name: p.name, methods: p.methods.map((m) => METHOD_LABELS[m]) }))])),
+  };
 }

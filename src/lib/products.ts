@@ -45,12 +45,15 @@ async function coursePrices(supabase: Awaited<ReturnType<typeof contentClient>>,
   return m;
 }
 
-function toCard(r: Row, cp: Map<string, PriceRow[]>): ProductCard | null {
+function toCard(r: Row, cp: Map<string, PriceRow[]>, was: Map<string, number>): ProductCard | null {
   if (!isType(r.product_type)) return null;
   const own = Array.isArray(r.product_prices) ? (r.product_prices as Row[]) : [];
   const prices = r.product_type === "course"
     ? cp.get(r.course_id as string) ?? []
-    : own.filter((p) => p.active !== false && CURRENCIES.includes(p.currency as Currency)).map((p) => ({ currency: p.currency as Currency, amountMinor: Number(p.amount_minor) }));
+    : own.filter((p) => p.active !== false && CURRENCIES.includes(p.currency as Currency)).map((p) => {
+      const compare = was.get(`${r.id}:${p.currency}`);
+      return { currency: p.currency as Currency, amountMinor: Number(p.amount_minor), ...(compare && compare > Number(p.amount_minor) ? { compareAtMinor: compare } : {}) };
+    });
   const course = r.courses as { slug?: string } | null;
   return {
     id: r.id as string, slug: r.slug as string, name: r.name as string, type: r.product_type, shortDescription: s(r.short_description),
@@ -59,10 +62,23 @@ function toCard(r: Row, cp: Map<string, PriceRow[]>): ProductCard | null {
   };
 }
 
+/** "Was" prices (migration 0012). Separate, optional read: before 0012 the column is missing and nothing is shown. */
+async function compareAt(supabase: Awaited<ReturnType<typeof contentClient>>, ids: string[]) {
+  const m = new Map<string, number>();
+  if (!ids.length) return m;
+  const { data, error } = await supabase.from("product_prices").select("product_id, currency, compare_at_minor").in("product_id", ids).not("compare_at_minor", "is", null);
+  if (error) return m;
+  for (const r of (data ?? []) as Row[]) m.set(`${r.product_id}:${r.currency}`, Number(r.compare_at_minor));
+  return m;
+}
+
 async function cards(rows: Row[]) {
   const supabase = await contentClient();
-  const cp = await coursePrices(supabase, rows.filter((r) => r.product_type === "course").map((r) => r.course_id as string));
-  return rows.map((r) => toCard(r, cp)).filter((c): c is ProductCard => c !== null);
+  const [cp, was] = await Promise.all([
+    coursePrices(supabase, rows.filter((r) => r.product_type === "course").map((r) => r.course_id as string)),
+    compareAt(supabase, rows.filter((r) => r.product_type !== "course").map((r) => r.id as string)),
+  ]);
+  return rows.map((r) => toCard(r, cp, was)).filter((c): c is ProductCard => c !== null);
 }
 
 export const getPublishedProducts = cache(async (): Promise<ProductCard[]> => {
