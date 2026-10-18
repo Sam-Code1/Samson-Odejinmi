@@ -10,6 +10,7 @@ export const mainNav = [
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
   { href: "/academy", label: "Academy" },
+  { href: "/shop", label: "Shop" },
   { href: "/contact", label: "Contact" },
 ];
 

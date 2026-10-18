@@ -35,7 +35,11 @@ export async function fulfilByReference(reference: string): Promise<FulfilOutcom
     const r = data as { ok: boolean; already?: boolean; error?: string; course_id?: string; user_id?: string; payment_id?: string; product_id?: string | null } | null;
     if (error || !r) { console.error("[payments] fulfill_payment error:", error?.code, error?.message); return { state: "unavailable", reason: "verify_failed" }; }
     if (!r.ok) return { state: "failed", reason: r.error ?? "unknown" };
-    if (!r.already && r.user_id && r.product_id) await sendProductEmail(service, r.user_id, r.product_id, reference);
+    // Shop orders (line items: carts, guests) get the order confirmation with a private receipt link; older
+    // single-item checkouts keep their original emails.
+    const { count: lines } = r.already || !r.payment_id ? { count: 0 } : await service.from("payment_items").select("id", { count: "exact", head: true }).eq("payment_id", r.payment_id);
+    if (!r.already && r.payment_id && (lines ?? 0) > 0) { const { sendOrderConfirmation } = await import("@/lib/order-email"); await sendOrderConfirmation(r.payment_id); }
+    else if (!r.already && r.user_id && r.product_id) await sendProductEmail(service, r.user_id, r.product_id, reference);
     else if (!r.already && r.user_id && r.course_id) await sendPurchaseEmail(service, r.user_id, r.course_id, reference);
     return { state: "fulfilled", already: Boolean(r.already), courseId: r.course_id ?? null };
   }

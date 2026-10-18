@@ -25,9 +25,11 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 10. **`supabase/migrations/0010_shop_switch.sql`** (the shop on/off switch in Admin → Products → Shop settings, plus the "closed" message; closing the shop also makes the database refuse new product checkouts, while past purchases, downloads and course checkout keep working). Idempotent; the shop stays open until you close it. Admin → Products → Shop settings shows which of 0008–0010 are still missing on your database.
 11. **`supabase/migrations/0011_library_access.sql`** (buyers keep seeing products they own in their Library even after the product is unpublished or archived). Idempotent, read access only.
 12. **`supabase/migrations/0012_currency_capabilities.sql`** (records what each payment provider's merchant account actually accepts per currency, so checkout never sends a currency to a provider that refused it and routes to another capable provider; optional "was" prices). Idempotent, non-destructive.
-13. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
-14. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
-15. Make yourself an admin (after registering):
+13. **`supabase/migrations/0013_guest_commerce.sql`** (guest checkout without an account, cart orders with line items, FOLA order numbers, hashed expiring order links for guest downloads, claiming a guest order into an account, commerce switches, commerce events). Idempotent, non-destructive; existing checkouts keep working. Needs `SUPABASE_SERVICE_ROLE_KEY` on the server.
+14. **`supabase/migrations/0014_product_reviews.sql`** (verified-buyer product reviews and ratings with moderation). Idempotent.
+15. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
+16. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
+17. Make yourself an admin (after registering):
    ```sql
    insert into public.admin_users (user_id) select id from auth.users where email = 'odejinmisamson37@gmail.com';
    ```
@@ -38,7 +40,7 @@ Full per-environment guide (Development / Preview / Production, Paystack and ema
 | Variable | Needed for | Notes |
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Everything backed by Supabase | Public, protected by RLS |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Resource file downloads only** | Server-only. Never `NEXT_PUBLIC_`. Without it, file downloads are disabled (links still work) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Payment confirmation, guest checkout, order links, downloads, AI usage logs | Server-only. Never `NEXT_PUBLIC_`. **Required for the shop**: without it, payments can't be confirmed, guests can't buy and files can't be downloaded |
 | `RESEND_API_KEY`, `CONTACT_*` | Contact form delivery | Falls back to a mailto link |
 | `PAYSTACK_SECRET_KEY` | Future payments | Server-only. Admin only shows whether it is set |
 | `ANTHROPIC_API_KEY` | AI quiz generator, lesson + content assistants, student tutor, public chatbot (tutor + chatbot also need the service-role key) | **Server-only.** Never `NEXT_PUBLIC_`. Without it the AI pages say so and generate nothing |

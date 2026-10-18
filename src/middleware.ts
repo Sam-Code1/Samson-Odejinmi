@@ -2,7 +2,7 @@ import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server
 import { updateSession } from "@/lib/supabase/middleware";
 import { ATTR_COOKIE, ATTR_MAX_AGE, REF_COOKIE, REF_MAX_AGE, mergeAttribution, parseAttribution, serializeAttribution, touchFromUrl } from "@/lib/attribution";
 
-const SESSION_PATHS = ["/dashboard", "/courses", "/profile", "/settings", "/learn", "/admin", "/library", "/affiliate", "/login", "/register", "/forgot-password"];
+const SESSION_PATHS = ["/dashboard", "/courses", "/profile", "/settings", "/learn", "/admin", "/library", "/affiliate", "/login", "/register", "/forgot-password", "/checkout", "/claim", "/order"];
 const needsSession = (path: string) => SESSION_PATHS.some((b) => path === b || path.startsWith(b + "/"));
 
 async function sha256Hex(s: string) {
@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
 export const config = {
   matcher: [
     "/dashboard/:path*", "/courses/:path*", "/profile/:path*", "/settings/:path*", "/learn/:path*", "/admin/:path*",
-    "/library/:path*", "/affiliate/:path*", "/login", "/register", "/forgot-password",
+    "/library/:path*", "/affiliate/:path*", "/login", "/register", "/forgot-password", "/checkout", "/claim", "/order/:path*",
     // Tagged links only (referral or UTM), on any page. Ordinary page views never run middleware.
     { source: "/((?!_next/|api/|.*\\..*).*)", has: [{ type: "query", key: "ref" }] },
     { source: "/((?!_next/|api/|.*\\..*).*)", has: [{ type: "query", key: "utm_source" }] },

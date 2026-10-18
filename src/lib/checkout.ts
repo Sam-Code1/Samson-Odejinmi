@@ -18,6 +18,10 @@ const MESSAGES: Record<string, string> = {
   coupon_minimum: "This purchase doesn't meet that coupon's minimum.",
   coupon_used_up: "That coupon has reached its usage limit.",
   coupon_already_used: "You've already used that coupon.",
+  empty: "Your cart is empty.",
+  too_many_items: "That's more items than one order can hold. Please split it into two orders.",
+  invalid_email: "Please enter a valid email address. Your receipt and download link go there.",
+  already_owned_email: "You've already bought this with that email. We can send your download link again.",
   currency_unavailable: "This currency is currently unavailable for payment. Please choose another currency.",
   provider_unavailable: "This payment provider is temporarily unavailable. Please choose another method or try again in a moment.",
   shop_closed: "The shop is closed for now, so nothing can be bought here. Please check back soon.",
@@ -32,7 +36,6 @@ export async function siteBaseUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
 }
 
-type Rpc = { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { code?: string } | null }> };
 
 /** Why a payment couldn't start. `alternatives` = currencies that CAN be paid right now (the caller filters by price). */
 export type StartFailure = { error: string; code: "currency_unavailable" | "provider_unavailable" | "failed"; alternatives: string[] };
@@ -47,27 +50,24 @@ export type StartFailure = { error: string; code: "currency_unavailable" | "prov
  *     pending payment only), so verification later asks the right provider.
  * Nothing is ever sent to a provider for a currency it isn't offered for.
  */
-export async function startPayment(supabase: Rpc, o: { email: string; total: number; currency: string; reference: string; metadata: Record<string, string>; provider: unknown }): Promise<{ url: string } | StartFailure> {
+/** `record`: stores the chosen provider + method on the pending order; returns false if it may not be used. */
+export async function startPayment(o: { email: string; total: number; currency: string; reference: string; metadata: Record<string, string>; provider: unknown; returnUrl: string; record: (provider: string, method: string) => Promise<boolean> }): Promise<{ url: string; provider: string } | StartFailure> {
   const opts = await getPaymentOptions();
   const alternatives = opts.currencies.filter((c) => c !== o.currency);
   const candidates = orderCandidates(opts, o.currency, o.provider);
   if (!candidates.length) return { error: checkoutMessage("currency_unavailable"), code: "currency_unavailable", alternatives };
 
-  const base = await siteBaseUrl();
   let refused = 0;
   for (const c of candidates) {
-    const { data, error } = await supabase.rpc("set_payment_provider", { p_reference: o.reference, p_provider: c.provider, p_method: c.methods[0] });
-    // Before migration 0009 the function doesn't exist; Paystack (the default provider on the row) still works.
-    const legacyOk = error?.code === "PGRST202" && c.provider === "paystack";
-    if (!legacyOk && (error || data !== true)) continue;
+    if (!(await o.record(c.provider, c.methods[0]))) continue;
     const res = await PROVIDERS[c.provider].initialize({
       email: o.email, amountMinor: o.total, currency: o.currency, reference: o.reference, methods: c.methods,
-      callbackUrl: `${base}/academy/checkout/callback?reference=${encodeURIComponent(o.reference)}`,
+      callbackUrl: o.returnUrl,
       metadata: { ...o.metadata, reference: o.reference },
     });
     if (res.ok) {
       await recordCapability(c.provider, PROVIDERS[c.provider].mode(), o.currency, "supported");
-      return { url: res.url };
+      return { url: res.url, provider: c.provider };
     }
     if (res.reason === "unsupported_currency") {
       refused++;

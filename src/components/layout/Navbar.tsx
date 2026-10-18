@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { academyNav, mainNav, site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { CartLink } from "@/components/shop/CartClient";
 
 function isActive(pathname: string, href: string) {
   const base = href.split("#")[0];
@@ -66,10 +67,12 @@ export function Navbar({ variant = "main", siteName = site.name, logoUrl, hide }
               <Link href="/" className="text-label text-ink-3 transition-colors hover:text-ink">Main site</Link>
             </li>
           )}
+          <li><CartLink className="-mx-2" /></li>
           <li><ThemeSwitcher /></li>
         </ul>
 
         <div className="flex items-center gap-1 lg:hidden">
+          <CartLink />
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}

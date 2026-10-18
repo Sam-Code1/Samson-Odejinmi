@@ -38,6 +38,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
   const tab = CATEGORIES.some((c) => c.id === one(sp.tab)) ? one(sp.tab) : "all";
   const q = one(sp.q).slice(0, 80);
   const bundle = isUuid(one(sp.bundle)) ? one(sp.bundle) : null;
+  const claimed = one(sp.claimed) === "1";
 
   const user = await requireUser("/library");
   const supabase = await createClient();
@@ -86,6 +87,8 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
         <h1 className="text-h1">Library</h1>
         <p className="mt-4 max-w-prose text-body text-ink-2">Your courses and everything you&apos;ve bought or been given. Download links are private to you and expire after a minute, so open them from here each time.</p>
       </div>
+
+      {claimed && <p role="status" className="rounded-xl border border-blue/30 bg-elevated p-5 text-body-sm">Your purchase is now in your Library. Courses in it are ready to start.</p>}
 
       {admin && productsMissing && (
         <div role="note" className="rounded-xl border border-warm/40 bg-elevated p-5 text-body-sm">
@@ -191,6 +194,7 @@ function LibraryCard({ item }: { item: LibraryItem }) {
           ) : (
             <Link href={item.action.href} className={cn("inline-flex min-h-[44px] items-center gap-2 rounded px-4 text-label", item.action.kind === "contents" ? "border border-line-strong hover:border-ink" : "bg-ink text-canvas hover:bg-ink/90")}><Icon aria-hidden className="h-4 w-4" />{item.action.label}</Link>
           )}
+          {item.reviewHref && <Link href={item.reviewHref} className="ml-3 inline-flex min-h-[44px] items-center text-caption text-ink-2 underline underline-offset-4 hover:text-ink">Leave a review</Link>}
         </div>
       )}
     </li>

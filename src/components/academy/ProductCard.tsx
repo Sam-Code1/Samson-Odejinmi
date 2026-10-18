@@ -1,22 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Star } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { PlaceholderArt } from "@/components/visual/MediaFrame";
 import { canOptimize } from "@/lib/cms/images";
 import { TYPE_LABELS, type ProductCard as Card } from "@/lib/products";
 import { formatMoney } from "@/lib/utils";
 
-/** Shop card. Course products link to the course page (one page per course), everything else to its product page. */
-export function productHref(p: Pick<Card, "type" | "slug" | "courseSlug">) {
-  return p.type === "course" && p.courseSlug ? `/academy/courses/${p.courseSlug}` : `/academy/shop/${p.slug}`;
+/**
+ * Shop card. Course products link to the course page (one page per course), everything else to its product page on the
+ * storefront being browsed (main site /shop or Academy /academy/shop: same product, same checkout).
+ */
+export function productHref(p: Pick<Card, "type" | "slug" | "courseSlug">, base: "/shop" | "/academy/shop" = "/shop") {
+  return p.type === "course" && p.courseSlug ? `/academy/courses/${p.courseSlug}` : `${base}/${p.slug}`;
 }
 
 /**
  * `currency`: the shopper's selected currency. The card shows that price; if this item isn't priced in it, the card
  * says so and shows what it IS priced in (never silently a different currency as if it were the selected one).
  */
-export function ProductCard({ product: p, index = 0, currency }: { product: Card; index?: number; currency?: string }) {
+export function ProductCard({ product: p, index = 0, currency, base = "/shop", rating }: { product: Card; index?: number; currency?: string; base?: "/shop" | "/academy/shop"; rating?: { average: number; count: number } }) {
   const exact = currency ? p.prices.find((x) => x.currency === currency) : p.prices[0];
   const price = exact ?? p.prices[0];
   return (
@@ -30,9 +33,10 @@ export function ProductCard({ product: p, index = 0, currency }: { product: Card
       <div className="flex flex-1 flex-col p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2"><Badge>{TYPE_LABELS[p.type]}</Badge>{p.badge && <Badge tone="accent">{p.badge}</Badge>}</div>
         <h3 className="mt-3 text-h4">
-          <Link href={productHref(p)} className="after:absolute after:inset-0"><span className="link-line pb-0.5">{p.name}</span></Link>
+          <Link href={productHref(p, base)} className="after:absolute after:inset-0"><span className="link-line pb-0.5">{p.name}</span></Link>
         </h3>
         {p.shortDescription && <p className="mt-2 line-clamp-3 text-body-sm text-ink-2">{p.shortDescription}</p>}
+        {rating && rating.count > 0 && <p className="mt-3 flex items-center gap-1.5 text-caption text-ink-2"><Star aria-hidden className="h-3.5 w-3.5 fill-current text-blue" /><span>{rating.average.toFixed(1)}</span><span className="text-ink-3">({rating.count} review{rating.count === 1 ? "" : "s"})</span></p>}
         <div className="mt-auto flex items-center justify-between gap-4 pt-5">
           <p className="text-label tabular-nums">
             {!price ? "Coming soon" : price.amountMinor === 0 ? "Free" : formatMoney(price.amountMinor, price.currency)}

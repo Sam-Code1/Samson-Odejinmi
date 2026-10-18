@@ -30,6 +30,8 @@ export type LibraryAction = { kind: "continue" | "download" | "contents"; href: 
 export type LibraryItem = {
   key: string; title: string; typeLabel: string; category: LibraryCategory; subtitle: string | null;
   origin: string; date: string | null; action: LibraryAction; coverImage: string | null;
+  /** Where an owner leaves a review (products with a public page; courses and bundles aren't reviewed here). */
+  reviewHref: string | null;
 };
 
 type Row = Record<string, unknown>;
@@ -47,7 +49,7 @@ export function buildLibrary(enrolments: Row[], entitlements: Row[]): LibraryIte
     courseSlugs.add(slug);
     items.push({
       key: `course:${slug}`, title: str(c.title) ?? "Course", typeLabel: "Course", category: "courses", subtitle: str(c.subtitle),
-      origin: e.status === "completed" ? "Completed" : "Enrolled", date: str(e.granted_at), coverImage: null,
+      origin: e.status === "completed" ? "Completed" : "Enrolled", date: str(e.granted_at), coverImage: null, reviewHref: null,
       action: { kind: "continue", href: `/learn/${slug}`, label: e.status === "completed" ? "Review course" : "Continue" },
     });
   }
@@ -75,6 +77,7 @@ export function buildLibrary(enrolments: Row[], entitlements: Row[]): LibraryIte
       key: `product:${id}`, title: str(p.name) ?? "Product", typeLabel: TYPE_LABELS[type], category: CATEGORY_OF[type],
       subtitle: type === "course" ? str(course?.title) : null, origin: ORIGIN[String(e.source)] ?? "Owned",
       date: str(e.granted_at), action, coverImage: str(p.cover_image),
+      reviewHref: type !== "course" && type !== "bundle" && str(p.slug) ? `/shop/${str(p.slug)}#reviews` : null,
     });
   }
   return items.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));

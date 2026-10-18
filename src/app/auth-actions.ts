@@ -42,6 +42,8 @@ export async function register(_: FormState, fd: FormData): Promise<FormState> {
   const password = String(fd.get("password") ?? "");
   const confirm = String(fd.get("confirm") ?? "");
   const fields = { first_name: first, last_name: last, email };
+  // Where to go after signing up (e.g. back to claim a guest purchase). Same-site paths only.
+  const next = safeNext(fd.get("next"));
 
   if (!first || !last) return { error: "Enter your first and last name.", fields };
   if (!EMAIL.test(email)) return { error: "Enter a valid email address.", fields };
@@ -54,12 +56,12 @@ export async function register(_: FormState, fd: FormData): Promise<FormState> {
     email,
     password,
     // marketing_consent only when the person ticked the (unticked by default) box; read by handle_new_user (migration 0008).
-    options: { data: { first_name: first, last_name: last, ...(fd.get("marketing_consent") === "on" ? { marketing_consent: "true" } : {}) }, emailRedirectTo: `${base}/auth/callback?next=/dashboard` },
+    options: { data: { first_name: first, last_name: last, ...(fd.get("marketing_consent") === "on" ? { marketing_consent: "true" } : {}) }, emailRedirectTo: `${base}/auth/callback?next=${encodeURIComponent(next)}` },
   });
   if (error) return { error: "We couldn't create your account. Check your details and try again.", fields };
   if (data.user) { await recordSignupAttribution(data.user.id); await recordSecurityEvent("signup", { email, userId: data.user.id }); }
   // If email confirmation is off, a session exists already.
-  if (data.session) redirect("/dashboard");
+  if (data.session) redirect(next);
   return { message: "Check your email for a link to confirm your account." };
 }
 

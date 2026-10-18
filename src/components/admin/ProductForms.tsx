@@ -148,6 +148,8 @@ export type ShopSettingsRow = {
   show_newsletter: boolean; newsletter_title: string | null; newsletter_body: string | null;
   /** Present once migration 0010 has run. */
   enabled?: boolean; closed_title?: string | null; closed_body?: string | null;
+  /** Present once migration 0013 has run. */
+  guest_checkout_enabled?: boolean; downloads_enabled?: boolean; reviews_enabled?: boolean; guest_reviews_enabled?: boolean;
 };
 
 export function ShopSettingsForm({ s }: { s: ShopSettingsRow }) {
@@ -159,6 +161,15 @@ export function ShopSettingsForm({ s }: { s: ShopSettingsRow }) {
         <TextInput label="When there are no products: heading" name="empty_title" defaultValue={s.empty_title ?? ""} maxLength={120} />
         <TextAreaInput label="When there are no products: text" name="empty_body" rows={2} defaultValue={s.empty_body ?? ""} maxLength={400} className="sm:col-span-2" />
       </FormSection>
+      {s.guest_checkout_enabled !== undefined && (
+        <FormSection title="Checkout, downloads and reviews" description="Payment security never depends on these: the database checks every order, payment, download and review either way.">
+          <input type="hidden" name="commerce_present" value="1" />
+          <CheckboxInput label="Guest checkout: people can buy without an account" name="guest_checkout_enabled" defaultChecked={s.guest_checkout_enabled} />
+          <CheckboxInput label="Downloads available (switch off only to pause delivery temporarily)" name="downloads_enabled" defaultChecked={s.downloads_enabled !== false} />
+          <CheckboxInput label="Product reviews (buyers only, approved by you before they appear)" name="reviews_enabled" defaultChecked={s.reviews_enabled !== false} />
+          <CheckboxInput label="Guest buyers can review through their order link" name="guest_reviews_enabled" defaultChecked={s.guest_reviews_enabled !== false} />
+        </FormSection>
+      )}
       {s.enabled !== undefined && (
         <FormSection title="When the shop is closed" description="Shown on the shop page and on every product page while the shop is closed. Leave empty for the built-in wording.">
           <input type="hidden" name="closed_present" value="1" />

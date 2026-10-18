@@ -14,8 +14,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...routes.filter((_, i) => !seo[i].noindex).map(([p]) => ({ url: `${site.url}${p}`, lastModified: new Date() })),
     ...courses.map((c) => ({ url: `${site.url}/academy/courses/${c.slug}`, lastModified: new Date() })),
     // Shop pages (course products live on their course page). Downloads and the library are never listed.
-    ...(products.length ? [{ url: `${site.url}/academy/shop`, lastModified: new Date() }] : []),
-    ...products.filter((p) => p.type !== "course").map((p) => ({ url: `${site.url}/academy/shop/${p.slug}`, lastModified: new Date() })),
+    ...(products.length ? [{ url: `${site.url}/shop`, lastModified: new Date() }] : []),
+    ...products.filter((p) => p.type !== "course").map((p) => ({ url: `${site.url}/shop/${p.slug}`, lastModified: new Date() })),
     ...projects
       .filter((p) => !p.placeholder && p.status === "published")
       .map((p) => ({ url: `${site.url}/portfolio/${p.slug}`, lastModified: p.updatedAt ? new Date(p.updatedAt) : new Date() })),

@@ -17,7 +17,7 @@ export const FILE_TYPES: ProductType[] = ["ebook", "guide", "template", "downloa
 
 export type ProductCard = {
   id: string; slug: string; name: string; type: ProductType; shortDescription: string | null; coverImage: string | null;
-  courseSlug: string | null; prices: PriceRow[]; badge: string | null; featured: boolean;
+  courseSlug: string | null; prices: PriceRow[]; badge: string | null; featured: boolean; publishedAt: string | null;
 };
 export type PublicProduct = ProductCard & {
   description: string | null; seoTitle: string | null; seoDescription: string | null; ogImage: string | null; updatedAt: string | null;
@@ -30,7 +30,7 @@ const s = (v: unknown): string | null => (typeof v === "string" && v ? v : null)
 const isType = (v: unknown): v is ProductType => typeof v === "string" && (PRODUCT_TYPES as readonly string[]).includes(v);
 const CURRENCIES: Currency[] = ["NGN", "USD", "GBP"];
 
-const COLS = "id, slug, name, product_type, short_description, cover_image, course_id, courses(slug), product_prices(currency, amount_minor, active)";
+const COLS = "id, slug, name, product_type, short_description, cover_image, course_id, published_at, courses(slug), product_prices(currency, amount_minor, active)";
 
 async function coursePrices(supabase: Awaited<ReturnType<typeof contentClient>>, courseIds: string[]) {
   if (!courseIds.length) return new Map<string, PriceRow[]>();
@@ -58,7 +58,7 @@ function toCard(r: Row, cp: Map<string, PriceRow[]>, was: Map<string, number>): 
   return {
     id: r.id as string, slug: r.slug as string, name: r.name as string, type: r.product_type, shortDescription: s(r.short_description),
     coverImage: s(r.cover_image), courseSlug: course?.slug ?? null, prices: prices.sort((a, b) => CURRENCIES.indexOf(a.currency) - CURRENCIES.indexOf(b.currency)),
-    badge: s(r.badge), featured: r.featured === true,
+    badge: s(r.badge), featured: r.featured === true, publishedAt: s(r.published_at),
   };
 }
 
@@ -129,7 +129,7 @@ export type ShopSettings = { enabled: boolean; closedTitle: string; closedBody: 
 const SHOP_DEFAULTS: ShopSettings = {
   enabled: true, closedTitle: "The shop is closed for now", closedBody: "Ebooks and guides will be back soon. Everything you've already bought is still in your library.",
   title: "Shop", intro: "Ebooks, guides, templates and courses. Everything you buy stays in your library.", seoTitle: null, seoDescription: null,
-  emptyTitle: "Nothing here yet", emptyBody: "The first guides and ebooks are being prepared. Leave your email below and we'll tell you when they're ready.",
+  emptyTitle: "We're preparing something useful", emptyBody: "New resources will appear here soon. Leave your email below and we'll tell you when they're ready.",
   showNewsletter: true, newsletterTitle: null, newsletterBody: null,
 };
 

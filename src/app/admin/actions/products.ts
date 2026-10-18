@@ -236,6 +236,11 @@ export async function saveShopSettings(_: ActionResult, fd: FormData): Promise<A
       newsletter_title: optStr(fd, "newsletter_title", 120), newsletter_body: optStr(fd, "newsletter_body", 300),
       // The "closed" message fields exist from migration 0010; the form only sends them then.
       ...(fd.get("closed_present") === "1" ? { closed_title: optStr(fd, "closed_title", 120), closed_body: optStr(fd, "closed_body", 400) } : {}),
+      // Commerce switches (migration 0013).
+      ...(fd.get("commerce_present") === "1" ? {
+        guest_checkout_enabled: fd.get("guest_checkout_enabled") === "on", downloads_enabled: fd.get("downloads_enabled") === "on",
+        reviews_enabled: fd.get("reviews_enabled") === "on", guest_reviews_enabled: fd.get("guest_reviews_enabled") === "on",
+      } : {}),
     }).eq("id", true);
     if (error) return dbError(error, "Couldn't save. Run migration 0009.");
     await logActivity(ctx, "shop settings updated", "shop_settings", null, "Shop");

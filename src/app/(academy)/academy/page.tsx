@@ -14,6 +14,8 @@ import { getPublishedCourses } from "@/lib/academy";
 import { faqAcademy } from "@/content/about";
 import { getCoursePricing } from "@/lib/pricing";
 import { buildMetadata } from "@/lib/cms/seo";
+import { ShopPreview } from "@/components/shop/ShopPreview";
+import { getPublishedProducts, getShopSettings } from "@/lib/products";
 
 export const revalidate = 300;
 
@@ -37,7 +39,8 @@ const model = [
 const resources = ["Guides", "Blueprints", "Workbooks", "Cheat sheets"];
 
 export default async function AcademyPage() {
-  const courses = await getPublishedCourses();
+  const [courses, products, shop] = await Promise.all([getPublishedCourses(), getPublishedProducts(), getShopSettings()]);
+  const hasProducts = shop.enabled && products.length > 0;
   const course = courses[0] ?? null;
   const prices = course ? await getCoursePricing(course.slug) : [];
   const moduleSlides: Slide[] = course
@@ -152,6 +155,8 @@ export default async function AcademyPage() {
       </Section>
       )}
 
+      {/* Real products from the shop once any are published; until then, the honest "coming soon" list. */}
+      {hasProducts ? <ShopPreview surface="academy" id="resources" /> : (
       <Section tone="peach" id="resources">
         <Container>
           <SectionHeader title="Resources" intro="Guides and practice material will live here as they're finished. Nothing is published yet." />
@@ -165,6 +170,7 @@ export default async function AcademyPage() {
           </ul>
         </Container>
       </Section>
+      )}
 
       <Section id="instructor">
         <Container className="grid items-center gap-14 lg:grid-cols-12">

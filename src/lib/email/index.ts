@@ -46,6 +46,36 @@ export const templates = {
     subject: `Your purchase: ${o.product}`,
     text: `Hi ${o.name || "there"},\n\nThank you. Your payment of ${o.amount} was confirmed and ${o.product} is now in your library.\n\n${o.courseSlug ? `Start learning: ${site.url}/learn/${o.courseSlug}\n` : ""}Open your library: ${site.url}/library\nPayment reference: ${o.reference}\n\nDownloads are available after signing in, so your files stay yours.${sign}`,
   }),
+  /**
+   * An order (shop checkout, guest or account). `orderUrl` is the buyer's private receipt with downloads (a secure,
+   * expiring token link). Guests are invited, never required, to create an account; courses need one to start.
+   */
+  order: (o: { name: string; orderNumber: string; items: string[]; amount: string; orderUrl: string; guest: boolean; hasCourse: boolean; claimUrl: string | null }) => ({
+    subject: "Your Fola purchase is ready",
+    text: [
+      `Hi ${o.name || "there"},`,
+      ``,
+      `Thank you. Your payment of ${o.amount} is confirmed.`,
+      ``,
+      `Order ${o.orderNumber}`,
+      ...o.items.map((i) => `· ${i}`),
+      ``,
+      `Download or open your purchase: ${o.orderUrl}`,
+      `This private link is for you only and expires in 30 days. You can ask for a new one any time at ${site.url}/order/access`,
+      ``,
+      `Enjoying it? You can leave a review from the same link: ${o.orderUrl}#review`,
+      ...(o.guest && o.claimUrl
+        ? [``, o.hasCourse
+          ? `Your course needs a free Fola Academy account so your progress and certificate are saved. Create one (or sign in) here and the course is added automatically: ${o.claimUrl}`
+          : `Want to keep this purchase in your Fola Library? Create a free account (optional): ${o.claimUrl}`]
+        : o.guest ? [] : [``, `It's also in your Library: ${site.url}/library`]),
+    ].join("\n") + sign,
+  }),
+  /** New private links for every paid order on this email (requested at /order/access). */
+  orderLinks: (o: { links: { orderNumber: string; url: string }[] }) => ({
+    subject: "Your Fola purchase links",
+    text: `Hi,\n\nHere are new private links to your purchases. Each expires in 30 days.\n\n${o.links.map((l) => `Order ${l.orderNumber}: ${l.url}`).join("\n")}\n\nIf you didn't ask for these, you can ignore this email: nobody else received them.${sign}`,
+  }),
   productAccess: (o: { name: string; product: string; courseSlug: string | null }) => ({
     subject: `You now have: ${o.product}`,
     text: `Hi ${o.name || "there"},\n\n${o.product} is now in your library.\n\n${o.courseSlug ? `Start learning: ${site.url}/learn/${o.courseSlug}\n` : ""}Open your library: ${site.url}/library${sign}`,

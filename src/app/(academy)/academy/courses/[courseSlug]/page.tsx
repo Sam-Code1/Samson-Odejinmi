@@ -10,10 +10,9 @@ import { course as content } from "@/content/course";
 import { getPublishedCourse } from "@/lib/academy";
 import { getCoursePricing } from "@/lib/pricing";
 import { getShopperCurrency, pickCurrency } from "@/lib/currency";
-import { CheckoutPanel } from "@/components/academy/CheckoutPanel";
+import { BuyButtons } from "@/components/shop/CartClient";
 import { getUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getPaymentOptions, publicPayment } from "@/lib/payments/options";
 
 export async function generateMetadata({ params }: { params: Promise<{ courseSlug: string }> }): Promise<Metadata> {
   const { courseSlug } = await params;
@@ -45,11 +44,15 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     const { data: e } = await supabase.from("enrolments").select("id").eq("user_id", user.id).eq("course_id", course.id).in("status", ["active", "completed"]).maybeSingle();
     enrolled = !!e;
   }
-  const payOpts = await getPaymentOptions();
   // ONE currency for the price shown and the checkout. A shopper's own choice is respected (if unavailable, alternatives
   // are offered); the regional default falls back to a currency this course is actually priced in.
   const currency = shopper.chosen ? shopper.currency : pickCurrency(prices.map((p) => p.currency), shopper.currency, shopper.country) ?? shopper.currency;
-  const checkout = <CheckoutPanel courseId={course.id} slug={course.slug} prices={prices} currency={currency} payment={publicPayment(payOpts)} signedIn={!!user} enrolled={enrolled} />;
+  // Same checkout as the shop (guests welcome): Buy now / Add to cart. The course needs an account to START, which
+  // the buyer creates (or signs in to) right after paying; the order is then added to it.
+  const onSale = prices.some((p) => p.currency === currency);
+  const checkout = prices.length === 0
+    ? <p className="text-body-sm text-ink-2">Enrolment for this course isn&apos;t open yet.</p>
+    : <BuyButtons itemKey={`c:${course.id}`} owned={enrolled} ownedHref={`/learn/${course.slug}`} ownedLabel="Go to the course" available={onSale} />;
   const outcomes = [...course.learningOutcomes, ...course.objectives];
 
   const jsonLd = { "@context": "https://schema.org", "@type": "Course", name: course.title, description: course.subtitle ?? undefined, provider: { "@type": "Person", name: "Samson Afolabi Odejinmi" } };

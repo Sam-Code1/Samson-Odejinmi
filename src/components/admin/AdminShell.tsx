@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { HeartPulse, ShieldAlert, ChartLine, Contact, Gauge, Handshake, Mail, Megaphone, MessageCircle, Package, Target, WandSparkles, Workflow, Bot, BookOpenCheck, ScrollText, ShieldCheck, TicketPercent, AtSign, Award, BookOpen, Briefcase, ClipboardList, Compass, CreditCard, FolderOpen, Globe, HelpCircle, History, Home, Image as ImageIcon, Inbox, Layers, LayoutDashboard, LogOut, Menu, Paperclip, PenLine, PlayCircle, Search, Settings, Share2, Sparkles, User, UserCheck, Users, X } from "lucide-react";
+import { Receipt, Star, HeartPulse, ShieldAlert, ChartLine, Contact, Gauge, Handshake, Mail, Megaphone, MessageCircle, Package, Target, WandSparkles, Workflow, Bot, BookOpenCheck, ScrollText, ShieldCheck, TicketPercent, AtSign, Award, BookOpen, Briefcase, ClipboardList, Compass, CreditCard, FolderOpen, Globe, HelpCircle, History, Home, Image as ImageIcon, Inbox, Layers, LayoutDashboard, LogOut, Menu, Paperclip, PenLine, PlayCircle, Search, Settings, Share2, Sparkles, User, UserCheck, Users, X } from "lucide-react";
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
 import { CommandPalette } from "@/components/app/CommandPalette";
 import { NotificationBell } from "@/components/app/NotificationBell";
@@ -43,6 +43,8 @@ const groups: { title: string; items: Item[] }[] = [
   { title: "Sales & marketing", items: [
     { href: "/admin/marketing", label: "Overview", icon: Gauge, exact: true, perm: "marketing" },
     { href: "/admin/products", label: "Products", icon: Package, perm: "products" },
+    { href: "/admin/orders", label: "Orders", icon: Receipt, perm: "payments" },
+    { href: "/admin/reviews", label: "Reviews", icon: Star, perm: "products" },
     { href: "/admin/marketing/campaigns", label: "Campaigns", icon: Megaphone, perm: "marketing" },
     { href: "/admin/marketing/email", label: "Email", icon: Mail, perm: "marketing" },
     { href: "/admin/marketing/automations", label: "Automations", icon: Workflow, perm: "marketing" },

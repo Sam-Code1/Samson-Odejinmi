@@ -13,6 +13,7 @@ import { Paragraphs, plainTitle } from "@/components/cms/RichText";
 import { IntroReveal } from "@/components/showcase/IntroReveal";
 import { Playground } from "@/components/showcase/Playground";
 import { WhatsAppButton } from "@/components/showcase/WhatsAppButton";
+import { ShopPreview } from "@/components/shop/ShopPreview";
 import { backdropWord, gameLines, introWords, whatsappHref } from "@/lib/showcase";
 import { getPage, getProjects, getSiteSettings } from "@/lib/cms";
 import { buildMetadata } from "@/lib/cms/seo";
@@ -216,17 +217,21 @@ export default async function HomePage() {
 
       case "contact_cta":
         return s.title ? (
-          <Section key={s.key} tone="night">
-            <Container>
-              <div className="flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-end">
-                <h2 className="max-w-3xl text-h1">{s.title}</h2>
-                <div className="flex flex-wrap items-center gap-4">
-                  {s.cta?.label && <Button href={s.cta.href} size="lg">{s.cta.label}</Button>}
-                  {whatsapp && <WhatsAppButton href={whatsapp} size="lg" />}
+          <div key={s.key}>
+            {/* The shop, just before the closing call to action (renders nothing until products are published). */}
+            <ShopPreview surface="site" />
+            <Section tone="night">
+              <Container>
+                <div className="flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-end">
+                  <h2 className="max-w-3xl text-h1">{s.title}</h2>
+                  <div className="flex flex-wrap items-center gap-4">
+                    {s.cta?.label && <Button href={s.cta.href} size="lg">{s.cta.label}</Button>}
+                    {whatsapp && <WhatsAppButton href={whatsapp} size="lg" />}
+                  </div>
                 </div>
-              </div>
-            </Container>
-          </Section>
+              </Container>
+            </Section>
+          </div>
         ) : null;
 
       default:
