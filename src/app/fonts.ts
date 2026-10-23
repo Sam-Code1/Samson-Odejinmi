@@ -14,3 +14,6 @@ const geistMono = Geist_Mono({ subsets: ["latin"], display: "swap", variable: "-
 
 /** Put on the outermost element of every Academy surface. */
 export const academyRoot = (className?: string) => cn("fa-root", schibsted.variable, newsreader.variable, geistMono.variable, className);
+
+/** Main website: its own type (Manrope + Instrument Serif, from the root layout) plus the shared Geist Mono labels. */
+export const studioRoot = (className?: string) => cn("st-root", geistMono.variable, className);

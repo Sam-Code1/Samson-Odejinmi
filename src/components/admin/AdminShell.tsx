@@ -19,7 +19,8 @@ const groups: { title: string; items: Item[] }[] = [
   { title: "Website", items: [
     { href: "/admin/website/homepage", label: "Homepage", icon: Home, perm: "website" },
     { href: "/admin/website/about", label: "About", icon: User, perm: "website" },
-    { href: "/admin/website/portfolio", label: "Portfolio", icon: FolderOpen, perm: "website" },
+    { href: "/admin/website/gallery", label: "Gallery", icon: ImageIcon, perm: "website" },
+    { href: "/admin/website/portfolio", label: "Case studies", icon: FolderOpen, perm: "website" },
     { href: "/admin/website/services", label: "Services", icon: Briefcase, perm: "website" },
     { href: "/admin/website/contact", label: "Contact", icon: AtSign, perm: "website" },
     { href: "/admin/website/messages", label: "Messages", icon: Inbox, perm: "website" },

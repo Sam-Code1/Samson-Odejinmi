@@ -28,6 +28,7 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 13. **`supabase/migrations/0013_guest_commerce.sql`** (guest checkout without an account, cart orders with line items, FOLA order numbers, hashed expiring order links for guest downloads, claiming a guest order into an account, commerce switches, commerce events). Idempotent, non-destructive; existing checkouts keep working. Needs `SUPABASE_SERVICE_ROLE_KEY` on the server.
 14. **`supabase/migrations/0014_product_reviews.sql`** (verified-buyer product reviews and ratings with moderation). Idempotent.
 15. **`supabase/migrations/0015_profile_avatars.sql`** (student profile photos: a public `avatars` bucket where each user can only write their own folder, 2 MB, JPG/PNG/WebP). Idempotent.
+16. **`supabase/migrations/0016_portfolio_gallery.sql`** (the portfolio gallery behind `/work` and the homepage: `gallery_items`, by discipline, seeded with the work in `public/work/`; visitors read published pieces, admins with the "website" permission manage them in Admin → Website → Gallery). Idempotent; until it runs, the site shows the built-in pieces.
 16. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
 17. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
 18. Make yourself an admin (after registering):

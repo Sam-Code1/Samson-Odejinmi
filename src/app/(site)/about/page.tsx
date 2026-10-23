@@ -47,7 +47,9 @@ export default async function AboutPage() {
   const blocks = Object.values(page).map((s) => {
     switch (s.key) {
       case "intro": {
-        const img = safeImageSrc(s.imageUrl);
+        // The new portrait replaces the old default photo; a photo uploaded in Admin still wins.
+        const own = safeImageSrc(s.imageUrl);
+        const img = !own || own.endsWith("samson-odejinmi.jpg") ? "/images/samson-portrait.webp" : own;
         return (
           <section key={s.key} className="mesh grain relative overflow-hidden border-b border-line">
             <Container className="grid gap-12 pb-16 pt-14 sm:pt-20 lg:grid-cols-12 lg:pb-24 lg:pt-28">

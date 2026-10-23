@@ -146,7 +146,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
       {course.instructor && (
         <FaSection label="Instructor" title={course.instructor}>
           <div className="grid items-start gap-10 lg:grid-cols-12">
-            <div className="fa-frame relative aspect-[4/5] max-w-[16rem] overflow-hidden lg:col-span-3"><Image src="/images/samson-odejinmi.jpg" alt={`Portrait of ${course.instructor}`} fill sizes="16rem" className="object-cover" /></div>
+            <div className="fa-frame relative aspect-[4/5] max-w-[16rem] overflow-hidden lg:col-span-3"><Image src="/images/samson-studio.webp" alt={`${course.instructor} in the studio`} fill sizes="16rem" className="object-cover object-[52%_30%]" /></div>
             <p className="fa-book max-w-[60ch] text-ink-2 lg:col-span-8 lg:col-start-5">I&apos;m Samson Odejinmi, known as Fola. I trained in 3D Animation and Video Production in Lagos and I&apos;m exploring where 3D, programming and creative technology meet. I teach the way I wish I&apos;d been taught: understand what you&apos;re doing, and why it works.</p>
           </div>
         </FaSection>

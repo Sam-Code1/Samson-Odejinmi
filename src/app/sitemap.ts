@@ -8,7 +8,7 @@ import type { SeoRouteKey } from "@/lib/cms/types";
 /** Public, published, indexable pages only. Admin, student and account routes are never listed. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [courses, projects, products] = await Promise.all([getPublishedCourses(), getProjects(), getPublishedProducts()]);
-  const routes: [string, SeoRouteKey][] = [["", "home"], ["/about", "about"], ["/portfolio", "portfolio"], ["/services", "services"], ["/contact", "contact"], ["/academy", "academy"], ["/academy/courses", "academy_courses"]];
+  const routes: [string, SeoRouteKey][] = [["", "home"], ["/work", "portfolio"], ["/about", "about"], ["/portfolio", "portfolio"], ["/services", "services"], ["/contact", "contact"], ["/academy", "academy"], ["/academy/courses", "academy_courses"]];
   const seo = await Promise.all(routes.map(([, key]) => getSeo(key)));
   return [
     ...routes.filter((_, i) => !seo[i].noindex).map(([p]) => ({ url: `${site.url}${p}`, lastModified: new Date() })),

@@ -142,7 +142,7 @@ export default async function AcademyPage() {
         <div className="grid items-start gap-12 lg:grid-cols-12">
           <figure className="lg:col-span-4">
             <div className="fa-frame relative aspect-[4/5] max-w-sm overflow-hidden">
-              <Image src="/images/samson-odejinmi.jpg" alt="Portrait of Samson Afolabi Odejinmi, founder of Fola Academy" fill sizes="(min-width: 1024px) 24rem, 80vw" className="object-cover" />
+              <Image src="/images/samson-portrait.webp" alt="Portrait of Samson Afolabi Odejinmi, founder of Fola Academy" fill sizes="(min-width: 1024px) 24rem, 80vw" className="object-cover" />
             </div>
             <figcaption className="fa-label mt-4">Samson Afolabi Odejinmi · Founder</figcaption>
           </figure>

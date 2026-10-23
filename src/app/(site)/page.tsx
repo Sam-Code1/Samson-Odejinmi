@@ -1,252 +1,191 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Container, Section, SectionHeader } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
-import { CarouselStacked, type Slide } from "@/components/ui/carousel-07";
-import { HeroPreviewWalls } from "@/components/ui/hero-preview-walls";
-import { AcademyVisual } from "@/components/visual/AcademyVisual";
-import { WorkflowStack } from "@/components/sections/StepStack";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Paragraphs, plainTitle } from "@/components/cms/RichText";
-import { IntroReveal } from "@/components/showcase/IntroReveal";
-import { Playground } from "@/components/showcase/Playground";
 import { WhatsAppButton } from "@/components/showcase/WhatsAppButton";
-import { ShopPreview } from "@/components/shop/ShopPreview";
-import { backdropWord, gameLines, introWords, whatsappHref } from "@/lib/showcase";
+import { WorkGallery } from "@/components/studio/WorkGallery";
+import { DisciplineIndex } from "@/components/studio/DisciplineIndex";
+import { FMark, Pathway } from "@/components/brand/Brand";
+import { whatsappHref } from "@/lib/showcase";
 import { getPage, getProjects, getSiteSettings } from "@/lib/cms";
 import { buildMetadata } from "@/lib/cms/seo";
-import { DEFAULT_HERO_SCENE, canOptimize, safeImageSrc, splineSceneUrl } from "@/lib/cms/images";
-import { getPublishedCourse } from "@/lib/academy";
-import type { Section as CmsSection } from "@/lib/cms/types";
+import { canOptimize } from "@/lib/cms/images";
+import { byCategory, getGallery, selectedWork } from "@/lib/gallery";
 import { site } from "@/lib/site";
 
 export const revalidate = 3600;
-
-/** Still frame of the hero robot (public/images/hero-robot.png): instant paint, and the reduced-motion fallback. */
-const HERO_POSTER = existsSync(join(process.cwd(), "public/images/hero-robot.png")) ? "/images/hero-robot.png" : null;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("home", { path: "/", absoluteTitle: true });
 }
 
+const W = "mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10";
+
+/**
+ * Home: a creative portfolio that gets to the work fast. Name and role, the work itself, the disciplines as an index,
+ * a strip per discipline, about, Fola Academy, and one clear way to get in touch. No heavy 3D scene in the hero:
+ * the first screen is text + one optimised photograph, so it paints immediately.
+ * Words come from Admin → Website → Homepage; the work comes from Admin → Website → Gallery.
+ */
 export default async function HomePage() {
-  const [page, projects, services, settings] = await Promise.all([getPage("home"), getProjects(), getPage("services"), getSiteSettings()]);
-  const featured = projects.filter((p) => p.featured);
-  const steps = services.process?.items ?? [];
+  const [page, projects, settings, gallery] = await Promise.all([getPage("home"), getProjects(), getSiteSettings(), getGallery()]);
+  const hero = page.hero, about = page.about_preview, academy = page.academy, contact = page.contact_cta, statement = page.statement;
+  const disciplines = byCategory(gallery);
+  const filled = disciplines.filter((d) => d.items.length > 0);
+  const caseStudies = projects.filter((p) => p.featured && !p.placeholder).slice(0, 3);
   const whatsapp = whatsappHref(settings.whatsappNumber, settings.whatsappMessage);
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Person",
-    name: settings.fullName,
-    alternateName: [settings.siteName, site.alias],
-    url: site.url,
-    ...(settings.jobTitle ? { jobTitle: settings.jobTitle } : {}),
-  };
-
-  const render = async (s: CmsSection) => {
-    switch (s.key) {
-      case "hero": {
-        // The hero is built on the interactive 3D (Spline) card. An empty scene URL falls back to the static 3D artwork.
-        // An explicitly empty URL means "use the static artwork". Older databases keep the URL on the retired interactive_3d row.
-        const own = s.settings.scene_url;
-        const scene = typeof own === "string" ? splineSceneUrl(own) : splineSceneUrl(page.interactive_3d?.settings.scene_url) ?? DEFAULT_HERO_SCENE;
-        const src = safeImageSrc(s.imageUrl);
-        const portrait = src ? { src, alt: s.imageAlt ?? `Portrait of ${settings.fullName}`, optimize: canOptimize(src), word: backdropWord(s.settings.backdrop_word) } : null;
-        return <HeroPreviewWalls key={s.key} hero={s} scene={scene} portrait={portrait} poster={HERO_POSTER} />;
-      }
-
-      case "statement":
-        return s.title ? (
-          <Section key={s.key} tone="violet" className="!py-20 sm:!py-28">
-            <Container><p className="max-w-5xl text-h1">{s.title}</p></Container>
-          </Section>
-        ) : null;
-
-      case "interactive_3d":
-        return null; // Merged into the hero.
-
-      case "selected_work": {
-        if (!featured.length) return null;
-        const slides: Slide[] = featured.map((p) => ({
-          id: p.id, title: p.title, description: p.shortDescription, badge: p.placeholder ? "Placeholder" : p.category ?? p.projectStatus,
-          href: `/portfolio/${p.slug}`, image: p.coverImage,
-        }));
-        return (
-          <Section key={s.key} id="work">
-            <Container>
-              <div className="flex flex-wrap items-end justify-between gap-6">
-                <SectionHeader title={s.title ?? "Selected work"} intro={s.body ?? undefined} />
-                {s.cta?.label && <Button href={s.cta.href} variant="text">{s.cta.label}</Button>}
-              </div>
-              <div className="mt-10"><CarouselStacked slides={slides} label={plainTitle(s.title ?? "Selected work")} /></div>
-            </Container>
-          </Section>
-        );
-      }
-
-      case "about_preview": {
-        const img = safeImageSrc(s.imageUrl);
-        return (
-          <Section key={s.key} tone="peach">
-            <Container>
-              <div className="grid items-center gap-14 lg:grid-cols-12">
-                {img && (
-                  <div className="lg:col-span-5">
-                    <div className="relative max-w-md">
-                      <span aria-hidden className="absolute -bottom-4 -right-4 h-full w-full rounded-sm bg-tint-violet" />
-                      <div className="relative aspect-[4/5] overflow-hidden rounded-sm">
-                        <Image src={img} alt={s.imageAlt ?? ""} fill sizes="(min-width: 1024px) 28rem, 90vw" unoptimized={!canOptimize(img)} className="object-cover" />
-                        <span aria-hidden className="thread-v absolute inset-y-0 left-0 w-px" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className={img ? "lg:col-span-6 lg:col-start-7" : "lg:col-span-8"}>
-                  {s.title && <h2 className="text-h2">{s.title}</h2>}
-                  <Paragraphs text={s.body} className="mt-8 space-y-5 text-body-lg text-ink-2" />
-                  {s.cta?.label && <div className="mt-10"><Button href={s.cta.href} variant="text">{s.cta.label}</Button></div>}
-                </div>
-              </div>
-            </Container>
-          </Section>
-        );
-      }
-
-      case "disciplines":
-        return s.items.length ? (
-          <Section key={s.key}>
-            <Container>
-              {s.title && <SectionHeader title={s.title} intro={s.body ?? undefined} />}
-              <ul className="mt-12 border-t border-line">
-                {s.items.map((d, i) => (
-                  <li key={`${d.title}-${i}`} className="group border-b border-line">
-                    <Link href={s.cta?.href ?? "/services"} className="flex items-center justify-between gap-6 py-5 sm:py-6">
-                      <span className="text-h3 transition-transform duration-base ease-quiet group-hover:translate-x-2">{d.title}</span>
-                      <span aria-hidden className="thread-solid hidden h-px w-0 transition-all duration-base ease-quiet group-hover:w-24 sm:block" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Container>
-          </Section>
-        ) : null;
-
-      case "academy": {
-        const slug = typeof s.settings.featured_course_slug === "string" ? s.settings.featured_course_slug : "";
-        const course = slug ? await getPublishedCourse(slug) : null;
-        return (
-          <Section key={s.key} tone="night" id="academy">
-            <Container>
-              <div className="grid items-center gap-14 lg:grid-cols-12">
-                <div className="lg:col-span-6">
-                  {s.eyebrow && <p className="text-label text-ink-3">{s.eyebrow}</p>}
-                  {s.title && <h2 className="mt-4 text-h1">{s.title}</h2>}
-                  <Paragraphs text={s.body} className="mt-7 max-w-prose space-y-4 text-body-lg text-ink-2" />
-                  {s.items.length > 0 && (
-                    <ol className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-3 text-label">
-                      {s.items.map((st, i) => (
-                        <li key={`${st.title}-${i}`} className="flex items-center gap-4">
-                          <span>{st.title}</span>
-                          {i < s.items.length - 1 && <span aria-hidden className="thread-solid h-px w-8" />}
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                  {course && (
-                    <p className="mt-8 text-body-sm text-ink-2">
-                      Featured course: <Link href={`/academy/courses/${course.slug}`} className="text-ink"><span className="link-line pb-0.5">{course.title}</span></Link>
-                    </p>
-                  )}
-                  {(s.cta || s.cta2) && (
-                    <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
-                      {s.cta?.label && <Button href={s.cta.href}>{s.cta.label}</Button>}
-                      {s.cta2 && <Button href={s.cta2.href} variant="text">{s.cta2.label}</Button>}
-                    </div>
-                  )}
-                </div>
-                <div className="lg:col-span-6">
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-line bg-surface">
-                    <AcademyVisual className="absolute inset-0 h-full w-full" />
-                  </div>
-                </div>
-              </div>
-            </Container>
-          </Section>
-        );
-      }
-
-      case "workflow":
-        return (
-          <Section key={s.key} tone="blue">
-            <Container>
-              <div className="grid items-center gap-14 lg:grid-cols-12">
-                <div className="lg:col-span-5">
-                  {s.title && <SectionHeader title={s.title} intro={s.body ?? undefined} />}
-                  {s.cta?.label && <div className="mt-8"><Button href={s.cta.href} variant="text">{s.cta.label}</Button></div>}
-                </div>
-                <div className="flex justify-center pb-6 lg:col-span-7"><WorkflowStack steps={steps} /></div>
-              </div>
-            </Container>
-          </Section>
-        );
-
-      case "exploring":
-        return s.items.length ? (
-          <Section key={s.key} tone="mint">
-            <Container>
-              {s.title && <SectionHeader title={s.title} intro={s.body ?? undefined} />}
-              <dl className="mt-12 grid gap-x-12 sm:grid-cols-2">
-                {s.items.map((e, i) => (
-                  <div key={`${e.title}-${i}`} className="border-t border-line py-6">
-                    <dt className="text-h4">{e.title}</dt>
-                    {e.body && <dd className="mt-1 text-body-sm text-ink-2">{e.body}</dd>}
-                  </div>
-                ))}
-              </dl>
-            </Container>
-          </Section>
-        ) : null;
-
-      case "playground": {
-        const lines = gameLines(s.settings.game_text);
-        return lines ? <Playground key={s.key} section={s} lines={lines} /> : null;
-      }
-
-      case "contact_cta":
-        return s.title ? (
-          <div key={s.key}>
-            {/* The shop, just before the closing call to action (renders nothing until products are published). */}
-            <ShopPreview surface="site" />
-            <Section tone="night">
-              <Container>
-                <div className="flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-end">
-                  <h2 className="max-w-3xl text-h1">{s.title}</h2>
-                  <div className="flex flex-wrap items-center gap-4">
-                    {s.cta?.label && <Button href={s.cta.href} size="lg">{s.cta.label}</Button>}
-                    {whatsapp && <WhatsAppButton href={whatsapp} size="lg" />}
-                  </div>
-                </div>
-              </Container>
-            </Section>
-          </div>
-        ) : null;
-
-      default:
-        return null;
-    }
-  };
-
-  const blocks = await Promise.all(Object.values(page).map(render));
-  const intro = introWords(page.hero?.settings.intro_words);
+  const jsonLd = { "@context": "https://schema.org", "@type": "Person", name: settings.fullName, alternateName: [settings.siteName, site.alias], url: site.url, ...(settings.jobTitle ? { jobTitle: settings.jobTitle } : {}) };
 
   return (
     <>
-      {intro.length > 0 && <IntroReveal words={intro} />}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-      {blocks}
+
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden border-b border-line">
+        <div className={`${W} grid items-end gap-10 pb-12 pt-12 sm:pt-16 lg:grid-cols-12 lg:gap-8 lg:pb-16 lg:pt-20`}>
+          <div className="lg:col-span-8">
+            <p className="fa-label st-rise">{hero?.eyebrow ?? "Portfolio · 3D · Design · Technology"}</p>
+            <h1 className="mt-5 text-display st-rise" style={{ animationDelay: "60ms" }}>
+              Samson<br />Odejinmi<span className="text-[rgb(var(--node))]">.</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-[clamp(1.375rem,1.1rem+1vw,2rem)] leading-[1.2] tracking-[-0.02em] text-ink-2 st-rise" style={{ animationDelay: "120ms" }}>
+              <span className="st-em text-ink">3D artist, designer</span> and creative technologist, building worlds, brands and the software behind them.
+            </p>
+            {hero?.body && <Paragraphs text={hero.body} className="mt-5 max-w-xl space-y-3 text-body text-ink-3 st-rise" />}
+            <div className="mt-9 flex flex-wrap gap-3 st-rise" style={{ animationDelay: "180ms" }}>
+              <Link href="/work" className="inline-flex h-12 items-center gap-2 rounded-full bg-action px-6 text-[0.9375rem] font-semibold text-on-action transition-colors hover:bg-action-hover">See the work<ArrowRight aria-hidden className="h-4 w-4" /></Link>
+              <Link href={hero?.cta2?.href ?? "/contact"} className="inline-flex h-12 items-center gap-2 rounded-full border border-line-strong px-6 text-[0.9375rem] font-semibold hover:border-ink">{hero?.cta2?.label ?? "Start a project"}</Link>
+            </div>
+          </div>
+          <figure className="lg:col-span-4">
+            <div className="fa-frame relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-[4px] bg-[#2a3a5a] lg:max-w-none">
+              <Image src="/images/samson-portrait.webp" alt={`Portrait of ${settings.fullName}`} fill priority sizes="(min-width: 1024px) 30vw, 90vw" className="object-cover object-[50%_20%]" />
+            </div>
+            <figcaption className="fa-label mt-4 flex justify-between gap-4"><span>{settings.fullName}</span><span>Fola</span></figcaption>
+          </figure>
+        </div>
+        {/* Discipline marquee */}
+        <div className="marquee border-t border-line py-4" data-paused="false" aria-hidden>
+          <div className="marquee-track" style={{ ["--marquee-duration" as string]: "38s" }}>
+            {[0, 1].map((dup) => (
+              <div key={dup} className={dup ? "marquee-dup flex" : "flex"}>
+                {disciplines.map((d) => <span key={d.id + dup} className="flex items-center gap-6 px-6 text-sm font-semibold uppercase tracking-[0.08em] text-ink-2">{d.label}<span className="h-1.5 w-1.5 rounded-full bg-[rgb(var(--node))]" /></span>)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {statement?.title && (
+        <section className="border-b border-line">
+          <div className={`${W} py-16 sm:py-24`}><p className="max-w-5xl text-h1">{plainTitle(statement.title)}</p></div>
+        </section>
+      )}
+
+      {/* ── Selected work ── */}
+      {gallery.length > 0 && (
+        <section id="work" className="border-b border-line py-16 sm:py-24">
+          <div className={W}>
+            <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+              <div><p className="fa-label">Selected work</p><h2 className="mt-3 text-h2">Made to be <span className="st-em">looked at</span>, built to work.</h2></div>
+              <Link href="/work" className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-semibold hover:text-blue">All work<ArrowUpRight aria-hidden className="h-4 w-4" /></Link>
+            </div>
+            <WorkGallery items={selectedWork(gallery, 9, 3)} layout="feature" />
+          </div>
+        </section>
+      )}
+
+      {/* ── Discipline index ── */}
+      <section className="border-b border-line py-16 sm:py-24">
+        <div className={W}>
+          <div className="mb-10"><p className="fa-label">Disciplines</p><h2 className="mt-3 text-h2">One studio, <span className="st-em">seven crafts.</span></h2></div>
+          <DisciplineIndex rows={disciplines.map((d) => ({ id: d.id, label: d.label, group: d.group, blurb: d.blurb, items: d.items.slice(0, 6) }))} />
+        </div>
+      </section>
+
+      {/* ── A strip per discipline (only disciplines that have work) ── */}
+      {filled.map((d, i) => (
+        <section key={d.id} aria-labelledby={`d-${d.id}`} className="border-b border-line py-14 sm:py-20">
+          <div className={W}>
+            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+              <div className="max-w-2xl">
+                <p className="fa-label">{String(i + 1).padStart(2, "0")} · {d.group}</p>
+                <h2 id={`d-${d.id}`} className="mt-3 text-h3">{d.label}</h2>
+                <p className="mt-2 text-body-sm text-ink-2">{d.blurb}</p>
+              </div>
+              <Link href={`/work?c=${d.id}`} className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-semibold hover:text-blue">View {d.items.length} <ArrowUpRight aria-hidden className="h-4 w-4" /></Link>
+            </div>
+            <WorkGallery items={d.items.slice(0, 10)} layout="strip" />
+          </div>
+        </section>
+      ))}
+
+      {/* ── Case studies (from Admin → Website → Portfolio) ── */}
+      {caseStudies.length > 0 && (
+        <section className="border-b border-line py-16 sm:py-24">
+          <div className={W}>
+            <div className="mb-10 flex flex-wrap items-end justify-between gap-6"><div><p className="fa-label">Case studies</p><h2 className="mt-3 text-h2">How the work <span className="st-em">came together.</span></h2></div><Link href="/portfolio" className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-semibold hover:text-blue">All case studies<ArrowUpRight aria-hidden className="h-4 w-4" /></Link></div>
+            <ul className="grid gap-6 md:grid-cols-3">
+              {caseStudies.map((p) => (
+                <li key={p.id}>
+                  <Link href={`/portfolio/${p.slug}`} className="st-tile group block">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-[4px] bg-surface">{p.coverImage && <Image src={p.coverImage.src} alt={p.coverImage.alt ?? ""} fill sizes="(min-width: 768px) 30vw, 100vw" unoptimized={!canOptimize(p.coverImage.src)} className="object-cover" />}</div>
+                    <p className="fa-label mt-4">{p.category ?? "Project"}</p>
+                    <p className="mt-1 text-h4 group-hover:text-blue">{p.title}</p>
+                    {p.shortDescription && <p className="mt-1 line-clamp-2 text-body-sm text-ink-2">{p.shortDescription}</p>}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* ── About ── */}
+      <section className="border-b border-line py-16 sm:py-24">
+        <div className={`${W} grid items-center gap-12 lg:grid-cols-12`}>
+          <figure className="lg:col-span-7">
+            <div className="relative aspect-[16/9] overflow-hidden rounded-[4px] bg-[#16161c]">
+              <Image src="/images/samson-studio.webp" alt={`${settings.fullName} in the studio`} fill sizes="(min-width: 1024px) 56vw, 100vw" className="object-cover" />
+            </div>
+            <figcaption className="fa-label mt-4">In the studio</figcaption>
+          </figure>
+          <div className="lg:col-span-5">
+            <p className="fa-label">About</p>
+            <h2 className="mt-3 text-h2">{about?.title ? plainTitle(about.title) : <>Curious about <span className="st-em">how things are made.</span></>}</h2>
+            <Paragraphs text={about?.body ?? "I'm Samson Afolabi Odejinmi, known as Fola: a 3D artist, designer and creative technologist. I build environments and products in 3D, design for brands, and write the software that ties it together."} className="mt-6 space-y-4 text-body-lg text-ink-2" />
+            <Link href={about?.cta?.href ?? "/about"} className="mt-8 inline-flex min-h-[44px] items-center gap-1.5 text-sm font-semibold hover:text-blue">{about?.cta?.label ?? "More about me"}<ArrowUpRight aria-hidden className="h-4 w-4" /></Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Fola Academy (the bridge to the Academy's own design) ── */}
+      <section className="theme-night border-b border-line">
+        <div className={`${W} grid items-center gap-10 py-16 sm:py-24 lg:grid-cols-12`}>
+          <div className="lg:col-span-7">
+            <div className="flex items-center gap-3"><FMark className="h-8 w-8" /><p className="fa-label">{academy?.eyebrow ?? "Fola Academy"}</p></div>
+            <h2 className="mt-5 text-h2">{academy?.title ? plainTitle(academy.title) : <>I also teach what I do: <span className="st-em">the why, not just the buttons.</span></>}</h2>
+            <Paragraphs text={academy?.body ?? "Fola Academy makes 3D, design and creative technology easier to understand, through courses and books."} className="mt-5 max-w-xl space-y-3 text-body-lg text-ink-2" />
+            <Pathway className="mt-8 max-w-[16rem]" />
+          </div>
+          <div className="flex flex-wrap gap-3 lg:col-span-5 lg:justify-end">
+            <Link href={academy?.cta?.href ?? "/academy"} className="inline-flex h-12 items-center gap-2 rounded-full bg-action px-6 text-[0.9375rem] font-semibold text-on-action hover:bg-action-hover">{academy?.cta?.label ?? "Visit Fola Academy"}<ArrowRight aria-hidden className="h-4 w-4" /></Link>
+            <Link href="/academy/books" className="inline-flex h-12 items-center gap-2 rounded-full border border-line-strong px-6 text-[0.9375rem] font-semibold hover:border-ink">Books</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Contact ── */}
+      <section>
+        <div className={`${W} flex flex-col items-start justify-between gap-10 py-20 sm:py-28 lg:flex-row lg:items-end`}>
+          <h2 className="max-w-4xl text-h1">{contact?.title ? plainTitle(contact.title) : <>Got a project? <span className="st-em">Let&apos;s talk.</span></>}</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href={contact?.cta?.href ?? "/contact"} className="inline-flex h-14 items-center gap-2 rounded-full bg-action px-7 text-base font-semibold text-on-action hover:bg-action-hover">{contact?.cta?.label ?? "Start a project"}<ArrowUpRight aria-hidden className="h-4 w-4" /></Link>
+            {whatsapp && <WhatsAppButton href={whatsapp} size="lg" />}
+          </div>
+        </div>
+      </section>
     </>
   );
 }

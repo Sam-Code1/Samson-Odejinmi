@@ -6,7 +6,7 @@ export const site = {
 };
 
 export const mainNav = [
-  { href: "/portfolio", label: "Work" },
+  { href: "/work", label: "Work" },
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
   { href: "/academy", label: "Academy" },

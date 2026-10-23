@@ -1,17 +1,19 @@
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
 import { PreviewBanner } from "@/components/layout/PreviewBanner";
+import { StudioHeader } from "@/components/studio/StudioHeader";
+import { StudioFooter } from "@/components/studio/StudioFooter";
 import { getSiteSettings, getSocialLinks } from "@/lib/cms";
 import { getShopSettings } from "@/lib/products";
+import { studioRoot } from "@/app/fonts";
 
+/** The main Samson Odejinmi website: the studio theme (.st-root), its header and footer. */
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const [settings, socials, shop] = await Promise.all([getSiteSettings(), getSocialLinks(), getShopSettings()]);
   return (
-    <>
+    <div className={studioRoot("min-h-screen")}>
       <PreviewBanner />
-      <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl} hide={shop.enabled ? undefined : ["/academy/books"]} />
+      <StudioHeader name={settings.siteName} hide={shop.enabled ? [] : ["/academy/books"]} />
       <main id="main">{children}</main>
-      <Footer settings={settings} socials={socials} />
-    </>
+      <StudioFooter settings={settings} socials={socials} />
+    </div>
   );
 }

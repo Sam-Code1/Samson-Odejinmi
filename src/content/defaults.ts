@@ -58,7 +58,7 @@ const pages: Record<PageKey, Section[]> = {
     s("about_preview", {
       title: "Creative by instinct. Technical by curiosity.",
       body: "I got interested in 3D and animation around 2020, then trained in 3D Animation and Video Production in Lagos. I care about how things look, and how they're made.\n\nAlongside the creative work I'm studying Computer Science and exploring Python, procedural 3D and Unreal Engine, with Technical Direction as the long-term goal.",
-      imageUrl: "/images/samson-odejinmi.jpg", imageAlt: "Portrait of Samson Odejinmi", cta: ["More about me", "/about"],
+      imageUrl: "/images/samson-portrait.webp", imageAlt: "Portrait of Samson Odejinmi", cta: ["More about me", "/about"],
     }),
     s("disciplines", {
       title: "What I work across", cta: ["", "/services"],
@@ -92,7 +92,7 @@ const pages: Record<PageKey, Section[]> = {
     s("intro", {
       title: "I make visual things, and I'm learning how technology can take them further.",
       body: "I'm Samson Afolabi Odejinmi, publicly known as Fola. I work in 3D, animation and design, I'm studying Computer Science, and I'm building Fola Academy.",
-      imageUrl: "/images/samson-odejinmi.jpg", imageAlt: "Portrait of Samson Odejinmi",
+      imageUrl: "/images/samson-portrait.webp", imageAlt: "Portrait of Samson Odejinmi",
     }),
     s("story", {
       title: "How I got into 3D",
