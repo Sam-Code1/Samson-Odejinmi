@@ -36,7 +36,7 @@ export async function uploadImage(ctx: AdminContext, file: File, kind: ImageKind
   const { error } = await ctx.supabase.storage.from("academy-media").upload(path, file, { contentType: file.type, upsert: false });
   if (error) return { ok: false, error: "The image couldn't be uploaded. Check that the storage buckets exist (run migration 0002)." };
   const url = ctx.supabase.storage.from("academy-media").getPublicUrl(path).data.publicUrl;
-  const { error: me } = await ctx.supabase.from("media_assets").insert({ bucket: "academy-media", path, public_url: url, filename: file.name.slice(0, 200), mime_type: file.type, size_bytes: file.size, kind, created_by: ctx.user.id, ...link });
+  const { error: me } = await ctx.supabase.from("media_assets").insert({ bucket: "academy-media", path, public_url: url, filename: file.name.slice(0, 200), mime_type: file.type, size_bytes: file.size, kind, created_by: ctx.user.id || null, ...link });
   if (me) console.error("[media] library record not saved:", me.code);
   return { ok: true, url, path };
 }

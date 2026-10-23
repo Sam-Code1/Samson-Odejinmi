@@ -26,7 +26,7 @@ function ProjectTile({ item, sizes, priority, fixedRatio }: { item: GalleryItem;
         <span className="min-w-0 flex-1 truncate text-center font-mono text-[0.62rem] text-ink-3">{item.series}</span>
       </span>
       <span className={cn("relative block overflow-hidden", fixedRatio ? "flex-1" : "aspect-[16/10]")}>
-        <Image src={item.src} alt={item.title} fill sizes={sizes} priority={priority} className="object-cover object-top transition-[object-position] duration-[2400ms] ease-in-out group-hover:object-bottom" />
+        <Image quality={88} src={item.src} alt={item.title} fill sizes={sizes} priority={priority} className="object-cover object-top transition-[object-position] duration-[2400ms] ease-in-out group-hover:object-bottom" />
       </span>
       <span className="flex items-center justify-between gap-3 px-3.5 py-3">
         <span className="min-w-0">
@@ -54,7 +54,7 @@ function Tile({ item, onOpen, sizes, priority, fixedRatio }: { item: GalleryItem
           <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-[3px] bg-black/55 px-2 py-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-white backdrop-blur"><Play aria-hidden className="h-3 w-3 fill-current" />Video</span>
         </>
       ) : (
-        <Image src={item.src} alt={item.title} fill sizes={sizes} priority={priority} unoptimized={remote(item.src)} className="object-cover" />
+        <Image quality={88} src={item.src} alt={item.title} fill sizes={sizes} priority={priority} unoptimized={remote(item.src)} className="object-cover" />
       )}
       <span className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-4 pt-12 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
         <span className="block font-mono text-[0.62rem] uppercase tracking-[0.14em] text-white/70">{LABEL[item.category]}{item.series ? ` · ${item.series}` : ""}</span>
@@ -86,7 +86,7 @@ function Viewer({ items, index, onClose, onIndex }: { items: GalleryItem[]; inde
       <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 sm:px-16">
         {item.kind === "video"
           ? <video key={item.src} src={item.src} poster={item.poster ?? undefined} controls autoPlay playsInline className="max-h-full max-w-full rounded-[4px]" />
-          : <div className="relative h-full w-full"><Image key={item.src} src={item.src} alt={item.title} fill sizes="100vw" loading="eager" unoptimized={remote(item.src)} className="object-contain" /></div>}
+          : <div className="relative h-full w-full"><Image quality={88} key={item.src} src={item.src} alt={item.title} fill sizes="100vw" loading="eager" unoptimized={remote(item.src)} className="object-contain" /></div>}
         {items.length > 1 && <>
           <button type="button" onClick={() => go(-1)} aria-label="Previous" className="absolute left-2 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 hover:bg-white/20 sm:left-4"><ArrowLeft aria-hidden className="h-5 w-5" /></button>
           <button type="button" onClick={() => go(1)} aria-label="Next" className="absolute right-2 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 hover:bg-white/20 sm:right-4"><ArrowRight aria-hidden className="h-5 w-5" /></button>

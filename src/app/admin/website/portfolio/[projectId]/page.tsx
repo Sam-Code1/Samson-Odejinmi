@@ -16,7 +16,7 @@ export const metadata = { title: "Edit project" };
 // Capturing a website (Microlink + screenshots) can take ~40 seconds.
 export const maxDuration = 60;
 type SiteShot = { src: string; w: number; h: number };
-type SitePreviewRow = { url?: string; domain?: string; embeddable?: boolean; fetchedAt?: string; hero?: SiteShot; mobile?: SiteShot | null } | null;
+type SitePreviewRow = { url?: string; domain?: string; embeddable?: boolean; fetchedAt?: string; checkedAt?: string; autoRefresh?: boolean; hero?: SiteShot; mobile?: SiteShot | null } | null;
 type Media = { id: string; url: string; alt: string; caption: string | null };
 
 export default async function EditProject({ params, searchParams }: { params: Promise<{ projectId: string }>; searchParams: Promise<{ imported?: string }> }) {
@@ -46,12 +46,12 @@ export default async function EditProject({ params, searchParams }: { params: Pr
         <ProjectForm key={p.updated_at ?? p.id} p={p} library={library} categorySuggestions={categories} />
         <div className="space-y-6">
           {p.site_preview !== undefined && (
-            <Panel title="Live website" description={site ? `Captured ${site.fetchedAt ? new Date(site.fetchedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : ""}. ${site.embeddable ? "Visitors can also try it live." : "Shown as scrolling screenshots (the site blocks live embedding)."}` : "Paste the link to a website you built. Its details and screenshots fill this project in."}>
+            <Panel title="Live website" description={site ? `Screenshots from ${site.fetchedAt ? new Date(site.fetchedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : ""}${site.checkedAt && site.checkedAt !== site.fetchedAt ? `, last checked ${new Date(site.checkedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}. ${site.embeddable ? "Visitors can also try it live." : "The site blocks being shown inside other websites, so visitors get scrolling screenshots."}` : "Paste the link to a website you built. Its details and screenshots fill this project in."}>
               {site?.hero && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={site.hero.src} alt="" className="mb-4 aspect-[16/10] w-full rounded border border-line object-cover object-top" />
               )}
-              <WebsiteCaptureForm projectId={projectId} url={p.project_url ?? site?.url ?? null} captured={!!site} />
+              <WebsiteCaptureForm projectId={projectId} url={p.project_url ?? site?.url ?? null} captured={!!site} autoRefresh={site?.autoRefresh !== false} />
             </Panel>
           )}
           <Panel title={`Gallery (${gallery.length})`} description="Images shown below the case study, in this order.">

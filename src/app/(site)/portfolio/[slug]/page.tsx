@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Container, Section } from "@/components/ui/Container";
 import { MediaFrame } from "@/components/visual/MediaFrame";
 import { SitePreview } from "@/components/studio/SitePreview";
+import { canEmbed } from "@/lib/site-embed";
 import { ProjectMeta } from "@/components/sections/ProjectCard";
 import { Button } from "@/components/ui/Button";
 import { MixTitle, Paragraphs } from "@/components/cms/RichText";
@@ -46,6 +47,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const [project, projects] = await Promise.all([getProject(slug), getProjects()]);
   if (!project) notFound();
 
+  // "Try it live" only when the site still allows being framed: checked against its own headers (cached for an hour).
+  const embedOk = project.site?.live ? await canEmbed(project.site.url) : false;
+  const site = project.site ? { ...project.site, live: project.site.live && embedOk !== false } : null;
   const idx = projects.findIndex((p) => p.id === project.id);
   const next = projects.length > 1 ? projects[(idx + 1) % projects.length] : null;
   const facts: [string, string | null | undefined][] = [
@@ -73,8 +77,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       </section>
 
       <Container>
-        {project.site
-          ? <SitePreview site={project.site} title={project.title} />
+        {site
+          ? <SitePreview site={site} title={project.title} />
           : <MediaFrame image={project.coverImage} ratio="16/9" variant={Math.max(idx, 0)} label={project.placeholder ? "Placeholder · image to come" : undefined} priority sizes="100vw" />}
       </Container>
 

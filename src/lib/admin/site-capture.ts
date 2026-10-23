@@ -1,5 +1,6 @@
 import type { AdminContext } from "./guard";
 import { uploadImage } from "./storage";
+import { canEmbed, framingAllowed } from "@/lib/site-embed";
 
 /**
  * Website projects: paste a link, get its details and screenshots.
@@ -16,6 +17,14 @@ export type SitePreview = {
   /** Whether the site allows being shown inside another page (X-Frame-Options / CSP frame-ancestors). */
   embeddable: boolean;
   hero: Shot; tall: Shot | null; mobile: Shot | null; fetchedAt: string;
+  /** Last time the live site was checked (a refresh that found no visible change only moves this). */
+  checkedAt?: string;
+  /** Change detection: a 32×20 greyscale thumbnail of the first screen (base64) and the page length in CSS px. */
+  fp?: string; pageH?: number;
+  /** Screenshots this capture added to the project gallery (replaced, not duplicated, when the site changes). */
+  gallery?: string[];
+  /** Re-captured daily by the scheduled job (default on). */
+  autoRefresh?: boolean;
 };
 export type Capture = { preview: SitePreview; sections: Shot[]; techHints: string[] };
 
@@ -63,19 +72,15 @@ async function downloadShot(url: string | undefined): Promise<Buffer | null> {
   let u: URL;
   try { u = new URL(url); } catch { return null; }
   if (u.protocol !== "https:" || !(u.hostname === "microlink.io" || u.hostname.endsWith(".microlink.io"))) return null;
-  const res = await fetch(u, { cache: "no-store", signal: AbortSignal.timeout(30_000) }).catch(() => null);
+  const res = await fetch(u, { cache: "no-store", signal: AbortSignal.timeout(45_000) }).catch(() => null);
   if (!res?.ok) return null;
   const buf = Buffer.from(await res.arrayBuffer());
-  return buf.byteLength > 40 * 1024 * 1024 ? null : buf;
+  return buf.byteLength > 80 * 1024 * 1024 ? null : buf;
 }
 
-/** Can another site show this page in an iframe? Conservative: anything restrictive means no. */
+/** Can another site show this page in an iframe? Microlink's view of the headers; confirmed directly by canEmbed(). */
 function isEmbeddable(h: Record<string, string>) {
-  const xfo = (h["x-frame-options"] ?? "").toLowerCase();
-  if (xfo.includes("deny") || xfo.includes("sameorigin")) return false;
-  const fa = /frame-ancestors([^;]*)/i.exec(h["content-security-policy"] ?? "")?.[1]?.trim().toLowerCase();
-  if (fa !== undefined && !fa.split(/\s+/).includes("*")) return false;
-  return true;
+  return framingAllowed(h);
 }
 
 /** Honest hints from response headers only (never guessed from looks). Offered as Tools when that field is empty. */
@@ -95,50 +100,89 @@ function techFrom(h: Record<string, string>) {
 
 const clean = (s: string | undefined | null, max: number) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, max) || null;
 
-/** Visit the site through Microlink, then store a hero, a tall scrolling capture, a phone view and up to three sections. */
-export async function captureSite(ctx: AdminContext, url: string, label: string): Promise<Capture | { error: string }> {
+/** HD: captures at 2× pixel density (a 1440px-wide desktop becomes a 2880px image; phones are Retina too). */
+const DPR = 2;
+const MAX_UPLOAD = 4.9 * 1024 * 1024;
+
+/**
+ * A tiny greyscale thumbnail of the first screen plus the page length: two captures with nearly the same fingerprint
+ * show the same website, so a scheduled refresh can skip re-uploading (animations and clocks don't count as changes).
+ */
+async function fingerprint(sharp: (typeof import("sharp"))["default"], full: Buffer, w: number, view: number) {
+  const px = await sharp(full).extract({ left: 0, top: 0, width: w, height: view }).resize(32, 20, { fit: "fill" }).greyscale().raw().toBuffer();
+  return Buffer.from(px).toString("base64");
+}
+function sameSite(a: { fp?: string; pageH?: number } | null | undefined, fp: string, pageH: number) {
+  if (!a?.fp || !a.pageH) return false;
+  const x = Buffer.from(a.fp, "base64"), y = Buffer.from(fp, "base64");
+  if (x.length !== y.length) return false;
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff += Math.abs(x[i] - y[i]);
+  return diff / x.length < 6 && Math.abs(a.pageH - pageH) / a.pageH < 0.03;
+}
+
+export type Unchanged = { unchanged: true; embeddable: boolean; checkedAt: string };
+
+/**
+ * Visit the site through Microlink, then store a hero, a tall scrolling capture, a phone view and up to three sections,
+ * all in HD. With `previous`, an unchanged site returns { unchanged } before anything is uploaded.
+ */
+export async function captureSite(ctx: AdminContext, url: string, label: string, previous?: SitePreview | null): Promise<Capture | Unchanged | { error: string }> {
   const [desk, phone] = await Promise.all([
-    microlink({ url, meta: "true", screenshot: "true", "screenshot.fullPage": "true", "screenshot.type": "png", "viewport.width": "1440", "viewport.height": "900", "viewport.deviceScaleFactor": "1", waitForTimeout: "1500", force: "true" }),
-    microlink({ url, meta: "false", screenshot: "true", "screenshot.type": "png", "viewport.isMobile": "true", "viewport.width": "390", "viewport.height": "844", "viewport.deviceScaleFactor": "2", waitForTimeout: "1500", force: "true" }),
+    microlink({ url, meta: "true", screenshot: "true", "screenshot.fullPage": "true", "screenshot.type": "png", "viewport.width": "1440", "viewport.height": "900", "viewport.deviceScaleFactor": String(DPR), waitForTimeout: "1500", force: "true" }),
+    microlink({ url, meta: "false", screenshot: "true", "screenshot.type": "png", "viewport.isMobile": "true", "viewport.width": "390", "viewport.height": "844", "viewport.deviceScaleFactor": "3", waitForTimeout: "1500", force: "true" }),
   ]);
   if ("error" in desk) return desk;
   const full = await downloadShot(desk.data.screenshot?.url);
   if (!full) return { error: "The screenshot couldn't be downloaded. Try again." };
 
   const sharp = (await import("sharp")).default;
-  const meta = await sharp(full).metadata();
-  const W = meta.width ?? 1440, H = meta.height ?? 900;
-  const VIEW = Math.min(900, H);
+  const meta = await sharp(full, { limitInputPixels: false }).metadata();
+  const W = meta.width ?? 1440 * DPR, H = meta.height ?? 900 * DPR;
+  const scale = W / 1440;
+  const VIEW = Math.min(Math.round(900 * scale), H);
+  const finalUrl = normaliseSiteUrl(desk.data.url ?? url) ?? url;
+  // Decided by the site's own headers, fetched directly (Microlink doesn't always pass X-Frame-Options through).
+  const direct = await canEmbed(finalUrl);
+  const embeddable = direct ?? isEmbeddable(desk.headers);
+  const fp = await fingerprint(sharp, full, W, VIEW);
+  const pageH = Math.round(H / scale);
+  if (previous && sameSite(previous, fp, pageH)) return { unchanged: true, embeddable, checkedAt: new Date().toISOString() };
+
   const store = async (buf: Buffer, part: string, alt: string): Promise<Shot | null> => {
     const m = await sharp(buf).metadata();
     const file = new File([new Uint8Array(buf)], `${label}-${part}.webp`, { type: "image/webp" });
     const up = await uploadImage(ctx, file, "portfolio", { alt_text: alt });
     return up.ok ? { src: up.url, w: m.width ?? 0, h: m.height ?? 0 } : null;
   };
-  const name = clean(desk.data.title, 140) ?? new URL(url).hostname;
-
-  // All crops are encoded and uploaded in parallel (the capture itself already took most of the time budget).
-  const crop = (top: number, height: number, q: number, width?: number) => {
-    const img = sharp(full).extract({ left: 0, top, width: W, height });
-    return (width ? img.resize({ width }) : img).webp({ quality: q }).toBuffer();
+  /** High quality first; steps down only if a very long page would exceed the upload limit. */
+  const encode = async (img: () => ReturnType<(typeof import("sharp"))["default"]>, qualities = [90, 82, 72, 62]) => {
+    let out = await img().webp({ quality: qualities[0], effort: 5, smartSubsample: true }).toBuffer();
+    for (const q of qualities.slice(1)) { if (out.byteLength <= MAX_UPLOAD) break; out = await img().webp({ quality: q, effort: 5 }).toBuffer(); }
+    return out;
   };
-  const sectionTops = [1, 2, 3].map((i) => VIEW * i).filter((top) => top + 450 <= H);
+  const name = clean(desk.data.title, 140) ?? new URL(url).hostname;
+  const crop = (top: number, height: number) => () => sharp(full, { limitInputPixels: false }).extract({ left: 0, top, width: W, height });
+
+  const sectionTops = [1, 2, 3].map((i) => VIEW * i).filter((top) => top + 450 * scale <= H);
+  const tallH = Math.min(H, Math.round(7200 * scale));
   const [hero, tall, mobile, ...sectionShots] = await Promise.all([
-    crop(0, VIEW, 82).then((b) => store(b, "hero", `${name}: home page`)),
-    // The scrolling preview: the whole page, capped so it stays light.
-    H > VIEW * 1.4 ? crop(0, Math.min(H, 7200), 70, 1200).then((b) => store(b, "page", `${name}: full page`)) : Promise.resolve(null),
-    "error" in phone ? Promise.resolve(null) : downloadShot(phone.data.screenshot?.url).then(async (p) => (p ? store(await sharp(p).webp({ quality: 80 }).toBuffer(), "mobile", `${name}: on a phone`) : null)),
-    ...sectionTops.map((top, i) => crop(top, Math.min(VIEW, H - top), 80).then((b) => store(b, `section-${i + 1}`, `${name}: section ${i + 2}`))),
+    encode(crop(0, VIEW)).then((b) => store(b, "hero", `${name}: home page`)),
+    // The scrolling preview: the whole page at 1800px wide (crisp on Retina at the frame's size), capped in length.
+    H > VIEW * 1.4 ? encode(() => crop(0, tallH)().resize({ width: 1800 }), [84, 76, 66, 56]).then((b) => store(b, "page", `${name}: full page`)) : Promise.resolve(null),
+    "error" in phone ? Promise.resolve(null) : downloadShot(phone.data.screenshot?.url).then(async (p) => (p ? store(await encode(() => sharp(p)), "mobile", `${name}: on a phone`) : null)),
+    ...sectionTops.map((top, i) => encode(crop(top, Math.min(VIEW, H - top))).then((b) => store(b, `section-${i + 1}`, `${name}: section ${i + 2}`))),
   ]);
   if (!hero) return { error: "The screenshot couldn't be saved. Check the storage bucket exists (migration 0002)." };
   const sections = sectionShots.filter((s): s is Shot => !!s);
 
-  const finalUrl = normaliseSiteUrl(desk.data.url ?? url) ?? url;
   return {
     preview: {
       url: finalUrl, domain: new URL(finalUrl).hostname.replace(/^www\./, ""), title: name, description: clean(desk.data.description, 400),
-      siteName: clean(desk.data.publisher, 80), lang: clean(desk.data.lang, 12), embeddable: isEmbeddable(desk.headers),
-      hero, tall, mobile, fetchedAt: new Date().toISOString(),
+      siteName: clean(desk.data.publisher, 80), lang: clean(desk.data.lang, 12), embeddable,
+      hero, tall, mobile, fetchedAt: new Date().toISOString(), checkedAt: new Date().toISOString(), fp, pageH,
+      gallery: [...sections.map((s) => s.src), ...(mobile ? [mobile.src] : [])],
+      autoRefresh: previous?.autoRefresh ?? true,
     },
     sections,
     techHints: techFrom(desk.headers),

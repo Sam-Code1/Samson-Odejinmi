@@ -43,7 +43,7 @@ export function SitePreview({ site, title }: { site: ProjectSite; title: string 
         <div className="grid place-items-center rounded-[14px] border border-line bg-surface py-10">
           <div className="relative w-[min(300px,72vw)] overflow-hidden rounded-[38px] border-[10px] border-[#111] bg-[#111] shadow-[0_30px_60px_-30px_rgb(0_0_0/0.6)]">
             <span aria-hidden className="absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-[#111]" />
-            <Image src={site.mobile.src} alt={`${title} on a phone`} width={site.mobile.w || 780} height={site.mobile.h || 1688} sizes="300px" className="block h-auto w-full rounded-[28px]" />
+            <Image src={site.mobile.src} alt={`${title} on a phone`} width={site.mobile.w || 780} height={site.mobile.h || 1688} sizes="300px" quality={92} className="block h-auto w-full rounded-[28px]" />
           </div>
         </div>
       ) : (
@@ -94,7 +94,7 @@ function ScrollShot({ site, title }: { site: ProjectSite; title: string }) {
   return (
     <div ref={box} tabIndex={0} aria-label={`${title}: full page preview. Scroll to explore.`} onMouseEnter={start} onMouseLeave={stop} onWheel={stop} onTouchStart={stop}
       className="relative aspect-[16/10] overflow-y-auto overscroll-contain bg-canvas [scrollbar-width:thin] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue">
-      <Image src={shot.src} alt={`${title}: the website`} width={shot.w || 1200} height={shot.h || 750} sizes="(min-width: 1280px) 1200px, 100vw" priority className="block h-auto w-full" />
+      <Image src={shot.src} alt={`${title}: the website`} width={shot.w || 1200} height={shot.h || 750} sizes="(min-width: 1280px) 1200px, 100vw" quality={92} priority className="block h-auto w-full" />
     </div>
   );
 }
