@@ -63,7 +63,9 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     head("courses").eq("status", "coming_soon"),
   ]);
 
-  const firstName = (me.data as { first_name?: string } | null)?.first_name?.trim();
+  const rawFirst = (me.data as { first_name?: string } | null)?.first_name?.trim();
+  // Names saved in capitals ("SAMSON") read as shouting in a greeting: show them as "Samson".
+  const firstName = rawFirst && rawFirst === rawFirst.toUpperCase() ? rawFirst.charAt(0) + rawFirst.slice(1).toLowerCase() : rawFirst;
   const header = (
     <PageHeader eyebrow={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: TZ })}
       title={`${greeting()}${firstName ? `, ${firstName}` : ""}.`}

@@ -3,13 +3,13 @@ import { cn } from "@/lib/utils";
 /** Page title block: eyebrow, title, a short line of context, and actions that wrap under it on small screens. */
 export function PageHeader({ eyebrow, title, subtitle, actions, className }: { eyebrow?: string; title: string; subtitle?: React.ReactNode; actions?: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between", className)}>
-      <div className="min-w-0">
+    <div className={cn("mb-8 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between", className)}>
+      <div className="min-w-0 xl:flex-1">
         {eyebrow && <p className="ad-label mb-2.5">{eyebrow}</p>}
         <h1 className="break-words text-admin-title">{title}</h1>
         {subtitle && <div className="mt-2.5 max-w-3xl text-[0.9375rem] leading-relaxed text-ink-2">{subtitle}</div>}
       </div>
-      {actions && <div className="flex min-w-0 flex-wrap items-center gap-2.5 md:shrink-0 md:justify-end">{actions}</div>}
+      {actions && <div className="flex min-w-0 flex-wrap items-center gap-2.5 xl:shrink-0 xl:justify-end">{actions}</div>}
     </div>
   );
 }
