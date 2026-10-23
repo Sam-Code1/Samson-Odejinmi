@@ -17,3 +17,6 @@ export const academyRoot = (className?: string) => cn("fa-root", schibsted.varia
 
 /** Main website: its own type (Manrope + Instrument Serif, from the root layout) plus the shared Geist Mono labels. */
 export const studioRoot = (className?: string) => cn("st-root", geistMono.variable, className);
+
+/** Admin: the Fola Academy type (Schibsted Grotesk + Geist Mono) on its own quiet control-room palette. */
+export const adminRoot = (className?: string) => cn("ad-root", schibsted.variable, geistMono.variable, className);

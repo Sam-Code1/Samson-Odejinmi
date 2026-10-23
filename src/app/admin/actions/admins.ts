@@ -9,6 +9,7 @@ import { logActivity } from "@/lib/admin/activity";
 import { confirmPassword } from "@/lib/admin/stepup";
 import { ROLE_LABELS } from "@/lib/admin/roles";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { envSiteUrl } from "@/lib/site";
 
 /**
  * Admin management. Owner only ("admins" permission), enforced here AND inside the database functions
@@ -55,7 +56,7 @@ export async function addAdmin(_: ActionResult, fd: FormData): Promise<ActionRes
       const service = createServiceClient();
       if (!service) return { ok: false, error: "Invitations need SUPABASE_SERVICE_ROLE_KEY on the server. Ask them to register, then add them here." };
       const h = await headers();
-      const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+      const base = envSiteUrl() ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
       const { error } = await service.auth.admin.inviteUserByEmail(email, { redirectTo: `${base}/auth/callback?next=/reset-password` });
       if (error) {
         console.error("[admins] invite failed:", error.status, error.message);

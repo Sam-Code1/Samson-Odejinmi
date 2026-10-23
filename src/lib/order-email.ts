@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { sendEmail, templates } from "@/lib/email";
 import { formatMoney } from "@/lib/utils";
 import { siteBaseUrl } from "@/lib/checkout";
+import { site } from "@/lib/site";
 import { issueOrderToken, trackCommerce } from "@/lib/orders";
 
 /**
@@ -28,7 +29,7 @@ export async function sendOrderConfirmation(paymentId: string) {
   if (!email) return;
   const token = await issueOrderToken(paymentId, "email");
   if (!token) return;
-  const base = await siteBaseUrl().catch(() => process.env.NEXT_PUBLIC_SITE_URL ?? "");
+  const base = await siteBaseUrl().catch(() => site.url);
   const amount = Number(p.amount_minor) === 0 ? "Free" : formatMoney(Number(p.amount_minor), p.currency as string);
   const res = await sendEmail({
     to: email,

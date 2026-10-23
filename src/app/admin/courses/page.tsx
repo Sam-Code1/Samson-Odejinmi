@@ -21,13 +21,13 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
 
   let query = supabase.from("courses").select("id, title, slug, status, level, updated_at, modules(count), lessons(count)", { count: "exact" }).order("updated_at", { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   if (q) query = query.or(`title.ilike.%${q}%,slug.ilike.%${q}%`);
-  if (status && ["draft", "published", "archived"].includes(status)) query = query.eq("status", status);
+  if (status && ["draft", "coming_soon", "published", "archived"].includes(status)) query = query.eq("status", status);
   const { data, count, error } = await query;
 
   return (
     <>
       <PageHeader title="Courses" subtitle="Create, edit and publish the courses in your Academy." actions={<Link href="/admin/courses/new" className="inline-flex h-10 items-center gap-2 rounded bg-ink px-4 text-label text-canvas hover:bg-ink/90"><Plus aria-hidden className="h-4 w-4" />Create course</Link>} />
-      <div className="mb-5 flex flex-wrap items-center gap-3"><SearchInput placeholder="Search courses" /><FilterSelect param="status" label="Status" options={[{ value: "draft", label: "Draft" }, { value: "published", label: "Published" }, { value: "archived", label: "Archived" }]} /></div>
+      <div className="mb-5 flex flex-wrap items-center gap-3"><SearchInput placeholder="Search courses" /><FilterSelect param="status" label="Status" options={[{ value: "draft", label: "Draft" }, { value: "coming_soon", label: "Coming soon" }, { value: "published", label: "Published" }, { value: "archived", label: "Archived" }]} /></div>
       {error ? <AdminError /> : (
         <>
           <DataTable<Row>

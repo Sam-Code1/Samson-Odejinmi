@@ -15,7 +15,7 @@ type Row = { id: string; label: string; group: string; blurb: string; items: Gal
  */
 export function DisciplineIndex({ rows }: { rows: Row[] }) {
   const [active, setActive] = useState(0);
-  const preview = rows[active]?.items.find((i) => i.kind === "image" || i.poster);
+  const preview = rows[active]?.items.find((i) => i.kind !== "video" || i.poster);
   return (
     <div className="grid gap-10 lg:grid-cols-12">
       <ol className="border-t border-line lg:col-span-7" onMouseLeave={() => undefined}>

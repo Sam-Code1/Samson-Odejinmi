@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient, supabaseConfigured } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/utils";
+import { envSiteUrl } from "@/lib/site";
 
 export type FormState = { error?: string; message?: string; fields?: Record<string, string> };
 
@@ -17,7 +18,7 @@ async function origin() {
   const h = await headers();
   const proto = h.get("x-forwarded-proto") ?? "http";
   const host = h.get("x-forwarded-host") ?? h.get("host");
-  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? `${proto}://${host}`;
+  return envSiteUrl() ?? `${proto}://${host}`;
 }
 
 export async function login(_: FormState, fd: FormData): Promise<FormState> {

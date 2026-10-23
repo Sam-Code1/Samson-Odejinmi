@@ -29,6 +29,7 @@ export function SubjectIcon({ subject, className }: { subject: string | null; cl
 export type CourseCardData = {
   slug: string; title: string; subtitle?: string | null; level?: string | null; category?: string | null; imageUrl?: string | null;
   lessonCount?: number; moduleCount?: number; estimatedDuration?: string | null;
+  comingSoon?: boolean; launchNote?: string | null; certificate?: boolean;
 };
 
 /** Course card (§16): numbered art panel, tags, title, mono facts; optional progress and a custom href. */
@@ -41,16 +42,17 @@ export function CourseCard({ c, index = 0, progress, href, cta }: { c: CourseCar
           ? <Image src={c.imageUrl} alt="" fill sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw" unoptimized={!canOptimize(c.imageUrl)} className="object-cover" />
           : <div className="absolute inset-0 grid place-items-center text-ink"><SubjectIcon subject={c.category ?? c.title} className="h-14 w-14 transition-transform duration-[480ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1" /></div>}
         <span className="fa-label absolute left-4 top-4">Course {String(index + 1).padStart(2, "0")}</span>
+        {c.comingSoon && <span className="absolute right-3 top-3 rounded-full bg-node px-2.5 py-1 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#0b0b0c]">Coming soon</span>}
       </div>
       <div className="flex flex-1 flex-col p-5 sm:p-6">
-        {(c.level || c.category) && (
-          <div className="flex flex-wrap gap-2">{c.level && <span className="fa-tag" data-dot>{c.level}</span>}{c.category && <span className="fa-tag">{c.category}</span>}</div>
+        {(c.level || c.category || c.certificate) && (
+          <div className="flex flex-wrap gap-2">{c.level && <span className="fa-tag" data-dot>{c.level}</span>}{c.category && <span className="fa-tag">{c.category}</span>}{c.certificate && <span className="fa-tag">Certificate</span>}</div>
         )}
         <h3 className="mt-4 text-h4"><Link href={href ?? `/academy/courses/${c.slug}`} className="after:absolute after:inset-0 focus-visible:outline-none">{c.title}</Link></h3>
         {c.subtitle && <p className="mt-2 line-clamp-2 text-body-sm text-ink-2">{c.subtitle}</p>}
         <div className="mt-auto pt-5">
           {progress !== undefined && <Progress value={progress} label={`${c.title} progress`} className="mb-4" />}
-          <p className="text-caption text-ink-3">{progress !== undefined ? `${Math.round(progress * 100)}% complete${cta ? ` · ${cta}` : ""}` : facts.join(" · ")}</p>
+          <p className="text-caption text-ink-3">{progress !== undefined ? `${Math.round(progress * 100)}% complete${cta ? ` · ${cta}` : ""}` : c.comingSoon ? (c.launchNote ? `Coming soon · ${c.launchNote}` : "Coming soon · Enrolment opens at launch") : facts.join(" · ")}</p>
         </div>
       </div>
     </article>

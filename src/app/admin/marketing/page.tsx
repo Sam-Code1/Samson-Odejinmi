@@ -3,7 +3,8 @@ import { PageHeader, Panel } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { AdminError } from "@/components/admin/AdminStates";
 import { ActionButton } from "@/components/admin/ActionButton";
-import { PeriodFilter, ShareBar } from "@/components/admin/PeriodFilter";
+import { PeriodFilter } from "@/components/admin/PeriodFilter";
+import { BarList } from "@/components/admin/charts/BarList";
 import { runMarketingNow } from "@/app/admin/actions/marketing";
 import { requirePermission } from "@/lib/admin/guard";
 import { getMarketingStats, moneyMap, pct, periodDays } from "@/lib/admin/marketing-stats";
@@ -31,11 +32,10 @@ export default async function MarketingOverview({ searchParams }: { searchParams
   return (
     <>
       <PageHeader eyebrow="Sales & marketing" title="Overview" subtitle="Real numbers from payments, contacts, coupons, affiliates and email. Nothing here is estimated."
-        actions={<ActionButton action={runMarketingNow} fields={{}} variant="outline" className="h-10 px-4 text-label">Run marketing queue now</ActionButton>} />
-      <div className="mb-6"><PeriodFilter current={days} basePath="/admin/marketing" /></div>
+        actions={<><PeriodFilter current={days} basePath="/admin/marketing" /><ActionButton action={runMarketingNow} fields={{}} variant="outline" className="h-10 px-4 text-label">Run marketing queue now</ActionButton></>} />
       {error || !s ? <AdminError title="Marketing needs the Batch 3 migration" body="Run supabase/migrations/0008_batch3_products_marketing.sql, then refresh." /> : (
         <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {s.can_see_revenue && <StatCard label="Revenue" value={moneyMap(s.revenue)} href="/admin/payments" />}
             <StatCard label="Orders" value={s.orders} hint={`${s.paid_orders} paid · ${s.orders - s.paid_orders} free`} />
             <StatCard label="Customers" value={s.customers} hint="People with an order in this period" />
@@ -46,35 +46,18 @@ export default async function MarketingOverview({ searchParams }: { searchParams
             <StatCard label="Affiliate orders" value={s.affiliates.orders} hint={s.can_see_revenue ? moneyMap(s.affiliates.revenue) : `${s.affiliates.clicks} referral clicks`} />
           </div>
 
-          <div className="mt-10 grid gap-8 lg:grid-cols-2">
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
             <Panel title="Top products" description="By orders in this period.">
-              {s.product_sales.length === 0 ? <p className="text-body-sm text-ink-3">No sales in this period.</p> : (
-                <ul className="space-y-4">
-                  {s.product_sales.slice(0, 6).map((p) => (
-                    <li key={`${p.name}-${p.currency}`}>
-                      <p className="mb-1.5 flex justify-between gap-3 text-body-sm"><span className="min-w-0 truncate">{p.name}</span>{p.revenue != null && <span className="shrink-0 tabular-nums text-ink-3">{moneyMap({ [p.currency]: p.revenue })}</span>}</p>
-                      <ShareBar value={p.orders} max={s.product_sales[0].orders} label={`${p.orders} order${p.orders === 1 ? "" : "s"}`} />
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <BarList limit={6} empty="No sales in this period." rows={s.product_sales.map((p) => ({ key: `${p.name}-${p.currency}`, label: p.name, value: p.orders, display: `${p.orders} order${p.orders === 1 ? "" : "s"}`, hint: p.revenue != null ? moneyMap({ [p.currency]: p.revenue }) : undefined }))} />
             </Panel>
             <Panel title="Where buyers came from" description="Last touch before purchase (UTM source, affiliate or direct).">
-              {s.sources.length === 0 ? <p className="text-body-sm text-ink-3">No orders in this period.</p> : (
-                <ul className="space-y-4">
-                  {s.sources.slice(0, 6).map((r) => (
-                    <li key={`${r.source}-${r.currency}`}>
-                      <p className="mb-1.5 text-body-sm capitalize">{r.source}</p>
-                      <ShareBar value={r.orders} max={s.sources[0].orders} label={`${r.orders} order${r.orders === 1 ? "" : "s"}`} />
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <BarList limit={6} slot={3} empty="No orders in this period." rows={Object.values(s.sources.reduce<Record<string, { source: string; orders: number }>>((m, r) => { (m[r.source] ??= { source: r.source, orders: 0 }).orders += r.orders; return m; }, {}))
+                .map((r) => ({ key: r.source, label: r.source === "direct" ? "Direct / unknown" : r.source, value: r.orders, display: `${r.orders} order${r.orders === 1 ? "" : "s"}` }))} />
               <p className="mt-5 text-caption"><Link href={`/admin/marketing/attribution?days=${days}`} className="underline underline-offset-4">Full attribution</Link></p>
             </Panel>
           </div>
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-2">
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
             <Panel title="Coupons used" description="Redemptions in this period.">
               {s.coupons.length === 0 ? <p className="text-body-sm text-ink-3">No coupons used.</p> : (
                 <ul className="divide-y divide-line">{s.coupons.slice(0, 6).map((c) => (

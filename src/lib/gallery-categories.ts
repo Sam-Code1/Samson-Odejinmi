@@ -18,6 +18,8 @@ export const categoryOf = (id: string) => GALLERY_CATEGORIES.find((c) => c.id ==
 
 export type GalleryItem = {
   id: string; slug: string; title: string; description?: string | null; category: GalleryCategory; series: string | null;
-  kind: "image" | "video"; src: string; poster: string | null; width: number; height: number; tone: string | null;
+  kind: "image" | "video" | "project"; src: string; poster: string | null; width: number; height: number; tone: string | null;
   featured: boolean; position: number; linkUrl?: string | null;
+  /** kind "project": the case study page this tile opens (a portfolio project, e.g. a website). */
+  href?: string;
 };

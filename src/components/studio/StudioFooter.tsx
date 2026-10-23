@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { legalLinks } from "@/lib/site";
 import { ArrowUpRight } from "lucide-react";
 import type { SiteSettings, SocialLink } from "@/lib/cms/types";
 import { GALLERY_CATEGORIES } from "@/lib/gallery-categories";
@@ -38,7 +39,7 @@ export function StudioFooter({ settings, socials }: { settings: SiteSettings; so
         </div>
         <div className="mt-16 flex flex-col gap-3 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="fa-label">© {new Date().getFullYear()} {settings.fullName}</p>
-          <div className="flex gap-5 text-xs text-ink-3"><Link href="/legal/privacy" className="hover:text-ink">Privacy</Link><Link href="/legal/terms" className="hover:text-ink">Terms</Link></div>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-ink-3">{legalLinks.map((l) => <li key={l.href}><Link href={l.href} className="hover:text-ink">{l.label}</Link></li>)}</ul>
         </div>
       </div>
     </footer>

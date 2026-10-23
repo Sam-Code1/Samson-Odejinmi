@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Check } from "lucide-react";
+import { Award, Check } from "lucide-react";
+import { NewsletterSignup } from "@/components/academy/NewsletterSignup";
+import { Certificate } from "@/components/certificate/Certificate";
+import { qrSvg, sampleCertificate, verifyUrl } from "@/lib/certificate-data";
 import { Accordion } from "@/components/ui/Accordion";
 import { FaContainer, FaSection } from "@/components/brand/Shell";
 import { Callout, Pathway } from "@/components/brand/Brand";
@@ -52,9 +55,14 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   const shown = prices.find((p) => p.currency === currency);
   const number = Math.max(0, all.findIndex((c) => c.slug === course.slug)) + 1;
   const outcomes = [...course.learningOutcomes, ...course.objectives];
-  const checkout = prices.length === 0
+  // Coming soon: details and price are public; enrolment and payment open on publish (the database refuses before that).
+  const checkout = course.comingSoon
+    ? <div><span aria-disabled="true" className="fa-btn fa-btn-secondary w-full cursor-not-allowed opacity-80">Coming soon{course.launchNote ? ` · ${course.launchNote}` : ""}</span><p className="mt-3 text-body-sm text-ink-2">Enrolment opens when the course launches. <a href="#notify" className="font-semibold text-ink underline underline-offset-4">Get notified</a>.</p></div>
+    : prices.length === 0
     ? <p className="text-body-sm text-ink-2">Enrolment for this course isn&apos;t open yet.</p>
     : <BuyButtons itemKey={`c:${course.id}`} owned={enrolled} ownedHref={`/learn/${course.slug}`} ownedLabel="Go to the course" available={!!shown} />;
+  const certUrl = verifyUrl("FOLA-ACADEMY-CERT-SAMPLE");
+  const certQr = course.certificate ? await qrSvg(certUrl) : "";
   const jsonLd = { "@context": "https://schema.org", "@type": "Course", name: course.title, description: course.subtitle ?? undefined, provider: { "@type": "Organization", name: "Fola Academy" } };
   let lessonNo = 0;
 
@@ -66,7 +74,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         <FaContainer className="grid gap-12 py-12 sm:py-16 lg:grid-cols-12 lg:py-24">
           <div className="lg:col-span-7">
             <p className="fa-label fa-rise">Course {String(number).padStart(2, "0")}{course.category ? ` · ${course.category}` : ""}</p>
-            <div className="mt-5 flex flex-wrap gap-2">{course.level && <span className="fa-tag" data-dot>{course.level}</span>}{course.category && <span className="fa-tag">{course.category}</span>}<span className="fa-tag">Self-paced</span></div>
+            <div className="mt-5 flex flex-wrap gap-2">{course.comingSoon && <span className="fa-tag !border-node !text-node" data-dot>Coming soon{course.launchNote ? ` · ${course.launchNote}` : ""}</span>}{course.level && <span className="fa-tag" data-dot>{course.level}</span>}{course.category && <span className="fa-tag">{course.category}</span>}<span className="fa-tag">Self-paced</span>{course.certificate && <span className="fa-tag"><Award aria-hidden className="h-3.5 w-3.5" />Certificate included</span>}</div>
             <h1 className="mt-6 text-display fa-rise">{course.title}</h1>
             {course.subtitle && <p className="mt-7 max-w-prose text-body-lg text-ink-2">{course.subtitle}</p>}
             <dl className="mt-10 grid max-w-xl grid-cols-2 gap-x-8 gap-y-5 border-t border-line pt-6 sm:grid-cols-4">
@@ -74,6 +82,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
               {course.lessonCount > 0 && <div><dt className="fa-label">Lessons</dt><dd className="mt-1.5 font-mono text-lg">{course.lessonCount}</dd></div>}
               {course.estimatedDuration && <div><dt className="fa-label">Duration</dt><dd className="mt-1.5 font-mono text-lg">{course.estimatedDuration}</dd></div>}
               <div><dt className="fa-label">Access</dt><dd className="mt-1.5 font-mono text-lg">Lifetime</dd></div>
+              {course.certificate && <div><dt className="fa-label">Certificate</dt><dd className="mt-1.5 font-mono text-lg">Included</dd></div>}
             </dl>
           </div>
           <div className="lg:col-span-5">
@@ -84,10 +93,11 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
                   : <div className="absolute inset-0 grid place-items-center text-ink"><SubjectIcon subject={course.category ?? course.title} className="h-16 w-16" /></div>}
               </div>
               <div className="p-6">
+                {course.comingSoon && prices.length > 0 && <p className="fa-label mb-2">Price at launch</p>}
                 <PriceSwitcher prices={prices} currency={currency} size="md" />
                 <div className="mt-6">{checkout}</div>
                 <ul className="mt-6 space-y-2 border-t border-line pt-5 text-body-sm text-ink-2">
-                  {["Lifetime access, self-paced", "Your progress is saved in your account", "No account needed to pay: create it right after"].map((t) => <li key={t} className="flex gap-2.5"><Check aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-success" />{t}</li>)}
+                  {["Lifetime access, self-paced", "Your progress is saved in your account", course.certificate ? "Certificate of completion, verifiable online" : null, course.comingSoon ? null : "No account needed to pay: create it right after"].filter((t): t is string => !!t).map((t) => <li key={t} className="flex gap-2.5"><Check aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-success" />{t}</li>)}
                 </ul>
               </div>
             </div>
@@ -152,18 +162,37 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         </FaSection>
       )}
 
+      {course.certificate && (
+        <FaSection id="certificate" label="Certificate" title="Finish the course, earn the certificate.">
+          <div className="grid items-center gap-12 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <p className="max-w-prose text-body-lg text-ink-2">Complete every lesson{course.comingSoon ? " once the course opens" : ""} and Fola Academy issues your certificate of completion automatically, signed by the founder.</p>
+              <ul className="mt-6 space-y-3 text-body-sm text-ink-2">
+                {["Your name, the course and the date you finished", "A unique ID and QR code anyone can check at /verify", "Download it as a PDF or add it to LinkedIn"].map((t) => <li key={t} className="flex gap-2.5"><Check aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-success" />{t}</li>)}
+              </ul>
+            </div>
+            <div className="lg:col-span-8">
+              <Certificate c={sampleCertificate({ studentName: "Your Name", course: course.title, level: course.level, duration: course.estimatedDuration })} qr={certQr} url={certUrl} specimen />
+              <p className="mt-3 text-center text-caption text-ink-3">A specimen. Yours carries your name and its own verification code.</p>
+            </div>
+          </div>
+        </FaSection>
+      )}
+
       <FaSection label="FAQ" title="Questions">
         <div className="max-w-3xl"><Accordion items={content.faq.map((f) => ({ q: f.q, a: f.a }))} /></div>
       </FaSection>
 
       <section className="theme-night fa-blueprint border-t border-line">
         <FaContainer className="grid gap-10 py-20 sm:py-24 lg:grid-cols-12 lg:items-end">
-          <div className="lg:col-span-7"><p className="fa-label">Enrol</p><h2 className="mt-4 text-h1">Ready when you are.</h2><Pathway className="mt-8 max-w-xs" /></div>
-          <div className="fa-card p-6 lg:col-span-4 lg:col-start-9">{shown && <p className="mb-5 text-h3 tabular-nums">{shown.amountMinor === 0 ? "Free" : formatMoney(shown.amountMinor, shown.currency)}</p>}{checkout}</div>
+          <div className="lg:col-span-7"><p className="fa-label">{course.comingSoon ? "Coming soon" : "Enrol"}</p><h2 className="mt-4 text-h1">{course.comingSoon ? "Be first in when it opens." : "Ready when you are."}</h2><Pathway className="mt-8 max-w-xs" /></div>
+          <div id="notify" className="scroll-mt-28 lg:col-span-4 lg:col-start-9">{course.comingSoon
+            ? <NewsletterSignup title={`Tell me when ${course.title} opens`} body="One email when enrolment opens, then occasional news about new courses. Unsubscribe with one click." />
+            : <div className="fa-card p-6">{shown && <p className="mb-5 text-h3 tabular-nums">{shown.amountMinor === 0 ? "Free" : formatMoney(shown.amountMinor, shown.currency)}</p>}{checkout}</div>}</div>
         </FaContainer>
       </section>
 
-      {shown && !enrolled && (
+      {shown && !enrolled && !course.comingSoon && (
         <div className="sticky bottom-0 z-30 border-t border-line bg-canvas/95 px-4 py-3 backdrop-blur lg:hidden">
           <div className="mx-auto flex max-w-[1248px] items-center justify-between gap-4">
             <div className="min-w-0"><p className="truncate text-body-sm font-semibold">{course.title}</p><p className="text-caption text-ink-2">{shown.amountMinor === 0 ? "Free" : formatMoney(shown.amountMinor, shown.currency)}</p></div>

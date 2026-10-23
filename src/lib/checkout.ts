@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { PROVIDERS } from "@/lib/payments/providers";
 import { getPaymentOptions, orderCandidates } from "@/lib/payments/options";
 import { recordCapability } from "@/lib/payments/capabilities";
+import { envSiteUrl } from "@/lib/site";
 
 /** Plain-language messages for the database's checkout error codes (courses and products). */
 const MESSAGES: Record<string, string> = {
@@ -33,7 +34,7 @@ export const cleanCurrency = (v: unknown) => String(v ?? "").trim().toUpperCase(
 
 export async function siteBaseUrl() {
   const h = await headers();
-  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  return envSiteUrl() ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
 }
 
 

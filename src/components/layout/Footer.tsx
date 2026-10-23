@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Container, Thread } from "@/components/ui/Container";
-import { mainNav } from "@/lib/site";
+import { legalLinks, mainNav } from "@/lib/site";
 import type { SiteSettings, SocialLink } from "@/lib/cms/types";
 
 function Col({ title, children }: { title: string; children: React.ReactNode }) {
@@ -39,9 +39,8 @@ export function Footer({ settings, socials }: { settings: SiteSettings; socials:
         </div>
         <div className="mt-16 flex flex-col gap-4 border-t border-line pt-6 text-caption text-ink-3 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} {settings.copyrightText ?? settings.fullName}</p>
-          <ul className="flex gap-6">
-            <li><Link href="/legal/privacy" className="hover:text-ink">Privacy</Link></li>
-            <li><Link href="/legal/terms" className="hover:text-ink">Terms</Link></li>
+          <ul className="flex flex-wrap gap-x-6 gap-y-2">
+            {legalLinks.map((l) => <li key={l.href}><Link href={l.href} className="hover:text-ink">{l.label}</Link></li>)}
           </ul>
         </div>
       </Container>

@@ -19,8 +19,9 @@ export type MarketingStats = {
 export const PERIODS = { "7": "Last 7 days", "30": "Last 30 days", "90": "Last 90 days", "365": "Last 12 months" } as const;
 export const periodDays = (v: string | undefined) => (v && v in PERIODS ? Number(v) : 30);
 
-export async function getMarketingStats(ctx: AdminContext, days: number): Promise<{ stats: MarketingStats | null; error: boolean }> {
-  const to = new Date(Date.now() + 60_000);
+/** Stats for the last `days` days; `offsetDays` shifts the window back (offsetDays = days gives the previous period). */
+export async function getMarketingStats(ctx: AdminContext, days: number, offsetDays = 0): Promise<{ stats: MarketingStats | null; error: boolean }> {
+  const to = new Date(Date.now() + 60_000 - offsetDays * 86_400_000);
   const from = new Date(to.getTime() - days * 86_400_000);
   const { data, error } = await ctx.supabase.rpc("marketing_stats", { p_from: from.toISOString(), p_to: to.toISOString() });
   return { stats: (data as MarketingStats) ?? null, error: !!error };

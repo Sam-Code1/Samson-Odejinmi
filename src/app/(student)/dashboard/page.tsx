@@ -162,7 +162,7 @@ export default async function DashboardPage() {
                 <div className="min-w-0">
                   <p className="font-semibold">{c.courses?.title}</p>
                   <p className="mt-1 font-mono text-xs text-ink-3">{c.certificate_number}</p>
-                  <Link href={`/verify/certificate/${c.certificate_number}`} className="mt-3 inline-flex min-h-[32px] items-center gap-1 text-body-sm font-medium text-blue hover:underline">View certificate<ArrowRight aria-hidden className="h-3.5 w-3.5" /></Link>
+                  <Link href={`/verify/certificate/${c.certificate_number}`} className="mt-3 inline-flex min-h-[32px] items-center gap-1 text-body-sm font-medium text-blue hover:underline">View &amp; download<ArrowRight aria-hidden className="h-3.5 w-3.5" /></Link>
                 </div>
               </li>
             ))}

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { site } from "@/lib/site";
+import { legalLinks, site } from "@/lib/site";
 import { getSocialLinks } from "@/lib/cms";
 import { FolaLogo, Pathway } from "./Brand";
 import { AcademyHeader } from "./AcademyHeader";
@@ -77,7 +77,7 @@ async function AcademyFooter() {
             {col("Learn", [{ href: "/academy/courses", label: "Courses" }, { href: "/academy/books", label: "Books" }, { href: "/dashboard", label: "My learning" }, { href: "/library", label: "Library" }])}
             {col("Academy", [{ href: "/academy#about", label: "About" }, { href: "/academy#instructor", label: "Instructor" }, { href: "/verify", label: "Verify a certificate" }, { href: "/", label: site.name }])}
             {col("Connect", [{ href: "/contact", label: "Contact" }, ...socials.map((s) => ({ href: s.url, label: s.label, external: true }))])}
-            {col("Legal", [{ href: "/legal/privacy", label: "Privacy" }, { href: "/legal/terms", label: "Terms" }, { href: "/legal/refund-policy", label: "Refund policy" }, { href: "/order/access", label: "Find my purchase" }])}
+            {col("Legal", [...legalLinks, { href: "/order/access", label: "Find my purchase" }])}
           </div>
         </div>
         <div className="mt-16 flex flex-col gap-3 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">

@@ -8,6 +8,7 @@ import { logActivity } from "@/lib/admin/activity";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { getSiteSettings } from "@/lib/cms";
 import { sendEmail } from "@/lib/email";
+import { site } from "@/lib/site";
 
 /**
  * Reply to a website message from Admin → Messages ("website" permission).
@@ -32,7 +33,7 @@ export async function replyToMessage(_: ActionResult, fd: FormData): Promise<Act
     const inbox = process.env.CONTACT_TO_EMAIL || settings.contactEmail;
     const subject = `Re: ${(m.subject as string) || "your message"}`.slice(0, 200);
     const quoted = String(m.message).split("\n").map((l) => `> ${l}`).join("\n");
-    const text = `${body}\n\n—\n${settings.fullName}\n${process.env.NEXT_PUBLIC_SITE_URL ?? ""}\n\nOn ${new Date(m.created_at as string).toUTCString()}, ${m.name} wrote:\n${quoted}`;
+    const text = `${body}\n\n—\n${settings.fullName}\n${site.url}\n\nOn ${new Date(m.created_at as string).toUTCString()}, ${m.name} wrote:\n${quoted}`;
     const from = process.env.CONTACT_FROM_EMAIL || process.env.EMAIL_FROM;
     const r = await sendEmail({ to: m.email as string, subject, text, replyTo: inbox, bcc: inbox && inbox !== m.email ? [inbox] : undefined, ...(from ? { from } : {}) }, "reply");
 

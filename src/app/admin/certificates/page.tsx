@@ -10,6 +10,12 @@ import { setCertificateRevoked } from "@/app/admin/actions/people";
 import { requirePermission } from "@/lib/admin/guard";
 import { Panel } from "@/components/admin/PageHeader";
 import { IssueCertificateForm } from "@/components/admin/IssueCertificateForm";
+import { CertificateDesignForm } from "@/components/admin/CertificateDesignForm";
+import { Certificate } from "@/components/certificate/Certificate";
+import { getCertificateDesign } from "@/lib/admin/certificate-design";
+import { getLibraryImages } from "@/lib/admin/media";
+import { qrSvg, sampleCertificate, verifyUrl } from "@/lib/certificate-data";
+import { academyRoot } from "@/app/fonts";
 import { personName, type Person } from "@/lib/admin/format";
 import { PAGE_SIZE, first, formatDate, pageParam, safeSearch } from "@/lib/admin/validation";
 
@@ -24,11 +30,27 @@ export default async function CertificatesPage({ searchParams }: { searchParams:
   const { supabase } = ctx;
   let query = supabase.from("certificates").select("id, certificate_number, issued_at, completed_at, revoked, courses(title), profiles(first_name, last_name, email)", { count: "exact" }).order("issued_at", { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   if (q) query = query.ilike("certificate_number", `%${q}%`);
-  const [{ data, count, error }, { data: courses }] = await Promise.all([query, supabase.from("courses").select("id, title").neq("status", "archived").order("title")]);
+  const canDesign = ctx.can("settings");
+  const [{ data, count, error }, { data: courses }, design, library] = await Promise.all([
+    query, supabase.from("courses").select("id, title").neq("status", "archived").order("title"),
+    getCertificateDesign(supabase), canDesign ? getLibraryImages(ctx) : Promise.resolve([]),
+  ]);
+  const sample = sampleCertificate({ signatoryName: design.certificate_signatory_name, signatoryTitle: design.certificate_signatory_title, signatureUrl: design.certificate_signature_url });
+  const sampleUrl = verifyUrl(sample.number);
+  const sampleQr = await qrSvg(sampleUrl);
 
   return (
     <>
       <PageHeader title="Certificates" subtitle="Issued automatically when a student completes every lesson (and, if the course requires it, passes every quiz) in a course with certificates turned on. IDs look like FOLA-ACADEMY-CERT-2026-000001." />
+      <Panel title="Certificate design" className="mb-8" description="Every certificate uses this design: the Fola Academy brand, the student's name, the course, the completion date, the signatory, the certificate ID and a QR code that opens its public verification page.">
+        <div className="grid gap-8 xl:grid-cols-[1fr_24rem]">
+          <div className={academyRoot()}><Certificate c={sample} qr={sampleQr} url={sampleUrl} specimen /></div>
+          <div className="space-y-4">
+            {canDesign ? <CertificateDesignForm d={design} library={library} /> : <p className="text-body-sm text-ink-2">Only admins with Settings access can change who signs certificates.</p>}
+            <p className="text-caption text-ink-3">Verification links use <span className="font-mono">{sampleUrl.replace(/\/verify.*$/, "")}</span>. <Link href="/admin/certificates/preview" target="_blank" className="underline underline-offset-4">Open the full-size preview</Link></p>
+          </div>
+        </div>
+      </Panel>
       <Panel title="Issue a certificate manually" className="mb-8"><IssueCertificateForm courses={(courses ?? []) as { id: string; title: string }[]} /></Panel>
       <div className="mb-5"><SearchInput placeholder="Search certificate number" /></div>
       {error ? <AdminError /> : (

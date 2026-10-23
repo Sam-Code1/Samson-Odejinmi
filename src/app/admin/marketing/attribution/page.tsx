@@ -27,8 +27,7 @@ export default async function AttributionPage({ searchParams }: { searchParams: 
   return (
     <>
       <PageHeader eyebrow="Sales & marketing" title="Attribution"
-        subtitle="Where buyers came from, using UTM tags and affiliate links on the links you share. First touch = the first tagged link a buyer used; last touch = the most recent one before buying. Untagged visits count as direct." />
-      <div className="mb-6"><PeriodFilter current={days} basePath="/admin/marketing/attribution" /></div>
+        subtitle="Where buyers came from, using UTM tags and affiliate links on the links you share. First touch = the first tagged link a buyer used; last touch = the most recent one before buying. Untagged visits count as direct." actions={<PeriodFilter current={days} basePath="/admin/marketing/attribution" />} />
       {error || !s ? <AdminError title="Attribution needs the Batch 3 migration" body="Run supabase/migrations/0008_batch3_products_marketing.sql, then refresh." /> : (
         <div className="grid gap-8 lg:grid-cols-2">
           <Panel title="Last touch" description="The source of the last tagged link before purchase.">

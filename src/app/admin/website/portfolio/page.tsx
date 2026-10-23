@@ -7,11 +7,15 @@ import { ActionButton } from "@/components/admin/ActionButton";
 import { AdminError } from "@/components/admin/AdminStates";
 import { FilterSelect } from "@/components/admin/Filters";
 import { PageSections, PreviewLink } from "@/components/admin/PageSections";
+import { Panel } from "@/components/admin/PageHeader";
+import { NewWebsiteProjectForm } from "@/components/admin/WebsiteImportForms";
 import { moveProject, setProjectStatus, toggleProjectFeatured } from "@/app/admin/actions/website";
 import { getAdminContext } from "@/lib/admin/guard";
 import { first, formatDate } from "@/lib/admin/validation";
 
-export const metadata = { title: "Portfolio" };
+export const metadata = { title: "Projects" };
+// Creating a project from a website link captures it (~40 seconds).
+export const maxDuration = 60;
 type Row = { id: string; title: string; slug: string; category: string | null; status: string; featured: boolean; is_placeholder: boolean; project_status: string; cover_image_url: string | null; updated_at: string };
 
 export default async function PortfolioAdmin({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -27,13 +31,16 @@ export default async function PortfolioAdmin({ searchParams }: { searchParams: P
 
   return (
     <>
-      <PageHeader eyebrow="Website" title="Portfolio" subtitle="Create, edit, order and publish projects. The order here is the order on the site; “Homepage” controls Selected work."
+      <PageHeader eyebrow="Website" title="Projects" subtitle="Case studies: create, edit, order and publish. Click a project's title to edit its page. The order here is the order on the site; “Homepage” controls Selected work."
         actions={<><PreviewLink path="/portfolio" /><Link href="/admin/website/portfolio/new" className="inline-flex h-10 items-center gap-2 rounded bg-ink px-4 text-label text-canvas hover:bg-ink/90"><Plus aria-hidden className="h-4 w-4" />New project</Link></>} />
       {placeholders > 0 && (
         <p className="mb-5 rounded-lg border border-violet/40 bg-elevated px-4 py-3 text-body-sm text-ink-2">
           {placeholders} published {placeholders === 1 ? "entry is a placeholder" : "entries are placeholders"}, clearly labelled on the site. Replace {placeholders === 1 ? "it" : "them"} with real work, or archive {placeholders === 1 ? "it" : "them"}.
         </p>
       )}
+      <Panel title="Add a website you built" description="Paste the link. The project fills itself in with the site's name, description, a cover, a scrolling full-page capture, a phone view and section screenshots, as a draft for you to review." className="mb-8">
+        <div className="max-w-2xl"><NewWebsiteProjectForm /></div>
+      </Panel>
       <div className="mb-5"><FilterSelect param="status" label="Status" options={[{ value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" }]} /></div>
       {error ? <AdminError title="Unable to load portfolio projects" body="Run supabase/migrations/0003_website_cms.sql, then refresh this page." /> : (
         <DataTable<Row> rows={rows} rowKey={(r) => r.id}

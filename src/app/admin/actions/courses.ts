@@ -114,7 +114,7 @@ export async function setCourseStatus(_: ActionResult, fd: FormData): Promise<Ac
     const { supabase } = ctx;
     const id = str(fd, "courseId", 40);
     const to = str(fd, "to", 20);
-    if (!isUuid(id) || !["published", "draft", "archived"].includes(to)) return { ok: false, error: "That change isn't valid." };
+    if (!isUuid(id) || !["published", "coming_soon", "draft", "archived"].includes(to)) return { ok: false, error: "That change isn't valid." };
     if (str(fd, "confirm", 5) !== "yes") return { ok: false, error: "Please confirm this change." };
 
     const { data: course } = await supabase.from("courses").select("title, slug").eq("id", id).single();
@@ -124,13 +124,30 @@ export async function setCourseStatus(_: ActionResult, fd: FormData): Promise<Ac
       const { count } = await supabase.from("lessons").select("id", { count: "exact", head: true }).eq("course_id", id).eq("status", "published");
       if (!count) return { ok: false, error: "Publish at least one lesson before publishing the course." };
     }
+    if (to === "coming_soon" && (!course.title || !course.slug)) return { ok: false, error: "Add a title and slug first." };
     const { error } = await supabase.from("courses").update({ status: to }).eq("id", id);
+    if (error?.code === "23514" && to === "coming_soon") return { ok: false, error: "Run migration 0017 in Supabase to use “Coming soon”." };
     if (error) return dbError(error);
-    await logActivity(ctx, to === "published" ? "course published" : to === "archived" ? "course archived" : "course unpublished", "course", id, course.title as string);
+    const done = { published: ["course published", "Course published. It's open for enrolment."], coming_soon: ["course set to coming soon", "Course is now Coming soon: visible, but not open for enrolment."], archived: ["course archived", "Course archived."], draft: ["course unpublished", "Course moved to draft."] }[to as "published" | "coming_soon" | "archived" | "draft"];
+    await logActivity(ctx, done[0], "course", id, course.title as string);
     revalidatePath("/admin/courses");
     revalidatePath(`/admin/courses/${id}`);
     revalidatePublic(course.slug);
-    return { ok: true, message: to === "published" ? "Course published." : to === "archived" ? "Course archived." : "Course moved to draft." };
+    return { ok: true, message: done[1] };
+  });
+}
+
+/** The short line shown on a coming-soon course, e.g. "Opens January 2027". Empty clears it. */
+export async function saveLaunchNote(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  return runAdmin("academy", async (ctx) => {
+    const id = str(fd, "courseId", 40);
+    if (!isUuid(id)) return { ok: false, error: "Missing course." };
+    const note = str(fd, "launch_note", 80) || null;
+    const { data, error } = await ctx.supabase.from("courses").update({ launch_note: note }).eq("id", id).select("slug").single();
+    if (error) return dbError(error, "Couldn't save. Run migration 0017 first.");
+    revalidatePath(`/admin/courses/${id}`);
+    revalidatePublic(data.slug as string);
+    return { ok: true, message: note ? "Launch note saved." : "Launch note cleared." };
   });
 }
 

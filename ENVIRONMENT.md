@@ -6,7 +6,8 @@ server code (server actions, route handlers, server components). Never prefix a 
 
 | Variable | Secret? | Development | Preview | Production | What it's for |
 |---|---|---|---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | No | `http://localhost:3000` | the preview URL (optional) | **required**, e.g. `https://yourdomain.com` | Canonical URLs, auth redirects, Paystack return URL, certificate links |
+| `NEXT_PUBLIC_SITE_URL` | No | `http://localhost:3000` | the preview URL (optional) | recommended, e.g. `https://yourdomain.com` (never `localhost`: on Vercel a localhost value is ignored and the project's production domain, `VERCEL_PROJECT_PRODUCTION_URL`, is used instead) | Canonical URLs, auth redirects, Paystack return URL, certificate verification links and QR codes |
+| `MICROLINK_API_KEY` | No | not needed | not needed | optional | Website projects: screenshots and details when you paste a link (Admin → Website → Projects). Without a key Microlink allows a small free daily number of captures. |
 | `NEXT_PUBLIC_SUPABASE_URL` | No | required | required | **required** | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | No (RLS-protected) | required | required | **required** | Browser/server Supabase client |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | for payment testing | for payment testing | **required** | Confirming payments (`fulfill_payment` is service-role only), private file downloads, admin invitations |

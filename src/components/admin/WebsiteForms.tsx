@@ -7,6 +7,7 @@ import { AdminForm } from "./AdminForm";
 import { CheckboxInput, FormSection, SelectInput, TextAreaInput, TextInput } from "./FormFields";
 import { ImageField, type LibraryImage } from "./ImageField";
 import { RepeaterField } from "./RepeaterField";
+import { GALLERY_CATEGORIES } from "@/lib/gallery-categories";
 
 // ───────────── contact + site settings ─────────────
 export type ContactSettings = {
@@ -142,6 +143,8 @@ export type ProjectRow = {
   process: { title?: string; body?: string }[]; categories: string[]; services: string[]; tools: string[]; cover_image_url: string | null; cover_image_alt: string | null;
   video_id: string | null; project_url: string | null; external_url: string | null; year: number | null; role: string | null; client: string | null;
   project_type: string | null; project_status: string; is_placeholder: boolean; featured: boolean; status: string; seo_title: string | null; seo_description: string | null;
+  /** Migration 0017 (undefined before it runs). */
+  discipline?: string | null; live_preview?: boolean; site_preview?: { embeddable?: boolean } | null; updated_at?: string;
 };
 
 export function ProjectForm({ p, library, categorySuggestions }: { p: ProjectRow; library: LibraryImage[]; categorySuggestions: string[] }) {
@@ -156,6 +159,7 @@ export function ProjectForm({ p, library, categorySuggestions }: { p: ProjectRow
         <TextInput label="Title" name="title" required defaultValue={p.title} maxLength={140} className="sm:col-span-2" hint="Wrap a word in *asterisks* to set it in italic serif on the site, e.g. Habit *flow* tracker." />
         <TextInput label="Slug" name="slug" required defaultValue={p.slug} maxLength={80} hint={`Public URL: /portfolio/${p.slug}`} />
         <TextInput label="Categories" name="categories" defaultValue={p.categories.join(", ")} hint={`Comma-separated. The first is the main category.${categorySuggestions.length ? ` In use: ${categorySuggestions.join(", ")}.` : ""}`} />
+        {p.discipline !== undefined && <SelectInput label="Show on the Work page under" name="discipline" defaultValue={p.discipline ?? ""} options={[{ value: "", label: "Not on the Work page" }, ...GALLERY_CATEGORIES.map((c) => ({ value: c.id, label: c.label }))]} hint="Published projects appear in this discipline on /work and the homepage, linking to this case study." />}
         <TextAreaInput label="Short description" name="short_description" rows={2} defaultValue={p.short_description ?? ""} maxLength={300} className="sm:col-span-2" hint="One or two lines, shown on cards." />
         <ImageField name="cover" label="Cover image" current={p.cover_image_url} library={library} />
         <TextInput label="Cover image description (alt text)" name="cover_image_alt" defaultValue={p.cover_image_alt ?? ""} maxLength={200} className="sm:col-span-2" />
@@ -185,6 +189,9 @@ export function ProjectForm({ p, library, categorySuggestions }: { p: ProjectRow
       <FormSection title="Display">
         <CheckboxInput label="Show on homepage (Selected work)" name="featured" defaultChecked={p.featured} />
         <CheckboxInput label="This is a placeholder" name="is_placeholder" defaultChecked={p.is_placeholder} hint="Labels it clearly on the site and keeps it out of search engines." />
+        {p.live_preview !== undefined && <><input type="hidden" name="live_preview_field" value="1" />
+          <CheckboxInput label="Let visitors try the live website on the project page" name="live_preview" defaultChecked={p.live_preview} disabled={p.site_preview?.embeddable === false}
+            hint={p.site_preview?.embeddable === false ? "This site blocks being shown inside other pages, so visitors get scrolling screenshots and a link instead." : "Opens the real site inside a browser frame when a visitor asks for it."} /></>}
       </FormSection>
 
       <FormSection title="SEO">

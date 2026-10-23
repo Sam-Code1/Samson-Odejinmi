@@ -19,7 +19,8 @@
     "@supabase/supabase-js": "^2.47.10",
     "lucide-react": "^0.468.0",
     "motion": "^11.18.0",
-    "next": "^15.1.0",
+    "next": "^15.5.28",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "unpdf": "^1.7.0",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",

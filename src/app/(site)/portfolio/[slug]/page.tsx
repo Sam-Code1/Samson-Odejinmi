@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container, Section } from "@/components/ui/Container";
 import { MediaFrame } from "@/components/visual/MediaFrame";
+import { SitePreview } from "@/components/studio/SitePreview";
 import { ProjectMeta } from "@/components/sections/ProjectCard";
 import { Button } from "@/components/ui/Button";
 import { MixTitle, Paragraphs } from "@/components/cms/RichText";
@@ -48,6 +49,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const idx = projects.findIndex((p) => p.id === project.id);
   const next = projects.length > 1 ? projects[(idx + 1) % projects.length] : null;
   const facts: [string, string | null | undefined][] = [
+    ["Website", project.site?.domain],
     ["Category", project.categories.join(", ")],
     ["Type", project.projectType],
     ["Status", project.projectStatus],
@@ -57,7 +59,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     ["Services", project.services.join(", ")],
     ["Tools", project.tools.join(", ")],
   ];
-  const links = [project.projectUrl && { href: project.projectUrl, label: "View project" }, project.externalUrl && { href: project.externalUrl, label: "View externally" }].filter(Boolean) as { href: string; label: string }[];
+  const links = [project.projectUrl && { href: project.projectUrl, label: project.site ? "Visit the website" : "View project" }, project.externalUrl && { href: project.externalUrl, label: "View externally" }].filter(Boolean) as { href: string; label: string }[];
 
   return (
     <>
@@ -71,7 +73,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       </section>
 
       <Container>
-        <MediaFrame image={project.coverImage} ratio="16/9" variant={Math.max(idx, 0)} label={project.placeholder ? "Placeholder · image to come" : undefined} priority sizes="100vw" />
+        {project.site
+          ? <SitePreview site={project.site} title={project.title} />
+          : <MediaFrame image={project.coverImage} ratio="16/9" variant={Math.max(idx, 0)} label={project.placeholder ? "Placeholder · image to come" : undefined} priority sizes="100vw" />}
       </Container>
 
       <Section className="!pt-16 sm:!pt-24">

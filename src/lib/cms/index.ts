@@ -4,7 +4,7 @@ import { createClient as createSupabase } from "@supabase/supabase-js";
 import { createClient as createSessionClient, supabaseConfigured } from "@/lib/supabase/server";
 import { defaultPage, defaultProjects, defaultServices, defaultSettings } from "@/content/defaults";
 import { plainTitle } from "@/lib/showcase";
-import type { PageContent, PageKey, PortfolioProject, Section, SectionItem, SeoEntry, SeoRouteKey, Service, SiteSettings, SocialLink } from "./types";
+import type { PageContent, PageKey, PortfolioProject, ProjectShot, ProjectSite, Section, SectionItem, SeoEntry, SeoRouteKey, Service, SiteSettings, SocialLink } from "./types";
 
 /**
  * Public website content: DATABASE → SERVER FETCH → CONTENT MODEL → COMPONENT.
@@ -145,6 +145,24 @@ function toProject(r: Row): PortfolioProject {
     role: str(r.role), client: str(r.client), projectType: str(r.project_type), projectStatus: str(r.project_status) ?? "Personal Study",
     placeholder: r.is_placeholder === true, featured: r.featured === true, status: r.status as PortfolioProject["status"],
     seoTitle: str(r.seo_title), seoDescription: str(r.seo_description), updatedAt: str(r.updated_at),
+    discipline: str(r.discipline), site: toSite(r.site_preview, r.live_preview !== false),
+  };
+}
+
+/** Validates the stored website capture: only our own storage images and an https link get through. */
+function toSite(v: unknown, liveOn: boolean): ProjectSite | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Row;
+  const shot = (x: unknown): ProjectShot | null => {
+    const s = x as Row | null;
+    return s && typeof s.src === "string" && /^https:\/\/[^/]+\/storage\/v1\/object\/public\//.test(s.src) ? { src: s.src, w: Number(s.w) || 0, h: Number(s.h) || 0 } : null;
+  };
+  const hero = shot(o.hero);
+  const url = typeof o.url === "string" && /^https:\/\//.test(o.url) ? o.url : null;
+  if (!hero || !url) return null;
+  return {
+    url, domain: str(o.domain) ?? new URL(url).hostname, title: str(o.title), description: str(o.description),
+    hero, tall: shot(o.tall), mobile: shot(o.mobile), live: o.embeddable === true && liveOn,
   };
 }
 

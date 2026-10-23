@@ -5,7 +5,7 @@ import { useFieldError } from "./FormContext";
 import { PasswordInput } from "@/components/forms/PasswordInput";
 
 const control =
-  "w-full rounded border border-line-strong bg-transparent px-3 text-body-sm text-ink placeholder:text-ink-3 transition-colors hover:border-ink/40 focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30 disabled:opacity-60";
+  "w-full min-w-0 rounded-lg border border-line-strong bg-elevated px-3 text-body-sm text-ink placeholder:text-ink-3 transition-colors hover:border-ink/40 focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30 disabled:opacity-60";
 
 type Base = { label: string; name: string; hint?: string; className?: string };
 
@@ -80,7 +80,7 @@ export function CheckboxInput({ label, name, hint, className, ...rest }: Base & 
 
 export function FormSection({ title, description, children, className }: { title: string; description?: string; children: React.ReactNode; className?: string }) {
   return (
-    <fieldset className={cn("rounded-lg border border-line bg-elevated p-5 sm:p-6", className)}>
+    <fieldset className={cn("ad-card min-w-0 p-5 sm:p-6", className)}>
       <legend className="sr-only">{title}</legend>
       <div className="mb-5 border-b border-line pb-4">
         <h2 className="text-admin-section">{title}</h2>

@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, ArrowRight, ExternalLink, Play, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, ExternalLink, Globe, Play, X } from "lucide-react";
 import type { GalleryItem } from "@/lib/gallery-categories";
 import { cn } from "@/lib/utils";
 
@@ -14,9 +15,34 @@ const LABEL: Record<string, string> = {
 const ratio = (i: GalleryItem) => (i.width && i.height ? `${i.width} / ${i.height}` : "4 / 3");
 const remote = (src: string) => /^https?:/.test(src);
 
-/** One piece of work. A button: it opens the viewer. Videos preview silently on hover (desktop). */
+/** A project (e.g. a website): links to its case study, with the site in a small browser frame. */
+function ProjectTile({ item, sizes, priority, fixedRatio }: { item: GalleryItem; sizes: string; priority?: boolean; fixedRatio?: string }) {
+  return (
+    <Link href={item.href ?? "/work"} aria-label={`${item.title}: open the case study`}
+      className="st-tile group relative flex w-full flex-col overflow-hidden rounded-[4px] border border-line bg-surface text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--focus))]"
+      style={{ aspectRatio: fixedRatio }}>
+      <span aria-hidden className="flex items-center gap-2 border-b border-line px-3 py-2">
+        <span className="flex gap-1"><span className="h-2 w-2 rounded-full bg-[#ff5f57]" /><span className="h-2 w-2 rounded-full bg-[#febc2e]" /><span className="h-2 w-2 rounded-full bg-[#28c840]" /></span>
+        <span className="min-w-0 flex-1 truncate text-center font-mono text-[0.62rem] text-ink-3">{item.series}</span>
+      </span>
+      <span className={cn("relative block overflow-hidden", fixedRatio ? "flex-1" : "aspect-[16/10]")}>
+        <Image src={item.src} alt={item.title} fill sizes={sizes} priority={priority} className="object-cover object-top transition-[object-position] duration-[2400ms] ease-in-out group-hover:object-bottom" />
+      </span>
+      <span className="flex items-center justify-between gap-3 px-3.5 py-3">
+        <span className="min-w-0">
+          <span className="flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-3"><Globe aria-hidden className="h-3 w-3" />{LABEL[item.category]}</span>
+          <span className="mt-0.5 block truncate text-sm font-semibold">{item.title}</span>
+        </span>
+        <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-ink-2 group-hover:text-ink">Case study<ArrowUpRight aria-hidden className="h-3.5 w-3.5" /></span>
+      </span>
+    </Link>
+  );
+}
+
+/** One piece of work. A button: it opens the viewer. Videos preview silently on hover (desktop). Projects link out. */
 function Tile({ item, onOpen, sizes, priority, fixedRatio }: { item: GalleryItem; onOpen: () => void; sizes: string; priority?: boolean; fixedRatio?: string }) {
   const video = useRef<HTMLVideoElement>(null);
+  if (item.kind === "project") return <ProjectTile item={item} sizes={sizes} priority={priority} fixedRatio={fixedRatio} />;
   return (
     <button type="button" onClick={onOpen} aria-label={`Open ${item.title}`}
       onMouseEnter={() => video.current?.play().catch(() => undefined)} onMouseLeave={() => { video.current?.pause(); }}
@@ -85,7 +111,10 @@ function Viewer({ items, index, onClose, onIndex }: { items: GalleryItem[]; inde
 export function WorkGallery({ items, layout = "masonry", className }: { items: GalleryItem[]; layout?: "masonry" | "feature" | "strip"; className?: string }) {
   const [open, setOpen] = useState<number | null>(null);
   if (!items.length) return null;
-  const viewer = open !== null && <Viewer items={items} index={open} onClose={() => setOpen(null)} onIndex={setOpen} />;
+  // The viewer steps through images and videos only; project tiles open their own page.
+  const viewable = items.filter((i) => i.kind !== "project");
+  const show = (it: GalleryItem) => { const n = viewable.indexOf(it); if (n >= 0) setOpen(n); };
+  const viewer = open !== null && <Viewer items={viewable} index={open} onClose={() => setOpen(null)} onIndex={setOpen} />;
 
   if (layout === "strip") {
     return (
@@ -93,7 +122,7 @@ export function WorkGallery({ items, layout = "masonry", className }: { items: G
         <ul className={cn("st-strip -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6", className)}>
           {items.map((it, i) => (
             <li key={it.id} className="shrink-0" style={{ width: `min(${it.width && it.height && it.width > it.height ? 30 : 19}rem, 78vw)` }}>
-              <Tile item={it} onOpen={() => setOpen(i)} sizes="(min-width: 1024px) 30rem, 78vw" />
+              <Tile item={it} onOpen={() => show(it)} sizes="(min-width: 1024px) 30rem, 78vw" />
             </li>
           ))}
         </ul>
@@ -107,13 +136,13 @@ export function WorkGallery({ items, layout = "masonry", className }: { items: G
     return (
       <>
         <div className={cn("grid gap-4 lg:grid-cols-12", className)}>
-          <div className="lg:col-span-7"><Tile item={lead} onOpen={() => setOpen(0)} sizes="(min-width: 1024px) 56vw, 100vw" priority fixedRatio="4 / 3" /></div>
+          <div className="lg:col-span-7"><Tile item={lead} onOpen={() => show(lead)} sizes="(min-width: 1024px) 56vw, 100vw" priority fixedRatio="4 / 3" /></div>
           <ul className="grid grid-cols-2 gap-4 lg:col-span-5">
-            {rest.slice(0, 4).map((it, i) => <li key={it.id}><Tile item={it} onOpen={() => setOpen(i + 1)} sizes="(min-width: 1024px) 20vw, 50vw" fixedRatio="1 / 1" /></li>)}
+            {rest.slice(0, 4).map((it, i) => <li key={it.id}><Tile item={it} onOpen={() => show(it)} sizes="(min-width: 1024px) 20vw, 50vw" fixedRatio="1 / 1" /></li>)}
           </ul>
           {rest.length > 4 && (
             <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:col-span-12">
-              {rest.slice(4, 8).map((it, i) => <li key={it.id}><Tile item={it} onOpen={() => setOpen(i + 5)} sizes="(min-width: 1024px) 24vw, 50vw" fixedRatio="4 / 5" /></li>)}
+              {rest.slice(4, 8).map((it, i) => <li key={it.id}><Tile item={it} onOpen={() => show(it)} sizes="(min-width: 1024px) 24vw, 50vw" fixedRatio="4 / 5" /></li>)}
             </ul>
           )}
         </div>
@@ -127,7 +156,7 @@ export function WorkGallery({ items, layout = "masonry", className }: { items: G
       <ul className={cn("columns-1 gap-4 xs:columns-2 lg:columns-3 2xl:columns-4", className)}>
         {items.map((it, i) => (
           <li key={it.id} className="mb-4 break-inside-avoid st-rise" style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
-            <Tile item={it} onOpen={() => setOpen(i)} sizes="(min-width: 1536px) 24vw, (min-width: 1024px) 32vw, (min-width: 430px) 48vw, 100vw" priority={i < 3} />
+            <Tile item={it} onOpen={() => show(it)} sizes="(min-width: 1536px) 24vw, (min-width: 1024px) 32vw, (min-width: 430px) 48vw, 100vw" priority={i < 3} />
           </li>
         ))}
       </ul>

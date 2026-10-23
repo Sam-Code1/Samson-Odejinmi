@@ -28,7 +28,7 @@ export function SearchInput({ placeholder = "Search", param = "q" }: { placehold
       <input
         type="search" value={value} aria-label={placeholder} placeholder={placeholder}
         onChange={(e) => { setValue(e.target.value); window.clearTimeout(t.current); t.current = window.setTimeout(() => set(param, e.target.value.trim()), 350); }}
-        className="h-10 w-full rounded border border-line-strong bg-transparent pl-9 pr-3 text-body-sm placeholder:text-ink-3 focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30"
+        className="h-10 w-full rounded-lg border border-line-strong bg-elevated pl-9 pr-3 text-body-sm placeholder:text-ink-3 focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30"
       />
     </div>
   );
@@ -40,7 +40,7 @@ export function FilterSelect({ param, label, options }: { param: string; label: 
   return (
     <label className="flex items-center gap-2 text-body-sm text-ink-2">
       <span className="sr-only sm:not-sr-only">{label}</span>
-      <select value={sp.get(param) ?? ""} onChange={(e) => set(param, e.target.value)} className="h-10 rounded border border-line-strong bg-canvas px-3 text-body-sm text-ink focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30">
+      <select value={sp.get(param) ?? ""} onChange={(e) => set(param, e.target.value)} className="h-10 max-w-full rounded-lg border border-line-strong bg-elevated px-3 text-body-sm text-ink focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30">
         <option value="">All</option>
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>

@@ -48,8 +48,8 @@ const config: Config = {
         label: ["0.875rem", { lineHeight: "1.2", fontWeight: "600" }],
         meta: ["0.75rem", { lineHeight: "1.4", letterSpacing: "0.01em" }],
         // Admin scale: denser than the public site
-        "admin-title": ["clamp(2rem, 1.5rem + 1.4vw, 2.75rem)", { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "700" }],
-        "admin-section": ["1.125rem", { lineHeight: "1.3", letterSpacing: "-0.01em", fontWeight: "600" }],
+        "admin-title": ["clamp(1.625rem, 1.35rem + 0.9vw, 2.125rem)", { lineHeight: "1.15", letterSpacing: "-0.025em", fontWeight: "700" }],
+        "admin-section": ["1.0625rem", { lineHeight: "1.35", letterSpacing: "-0.01em", fontWeight: "600" }],
       },
       maxWidth: { page: "1320px", prose: "62ch", narrow: "46ch" },
       borderRadius: { sm: "3px", DEFAULT: "6px", md: "8px", lg: "12px" },

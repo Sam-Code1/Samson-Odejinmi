@@ -1,31 +1,45 @@
 import { cn } from "@/lib/utils";
 
+/** Page title block: eyebrow, title, a short line of context, and actions that wrap under it on small screens. */
 export function PageHeader({ eyebrow, title, subtitle, actions, className }: { eyebrow?: string; title: string; subtitle?: React.ReactNode; actions?: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between", className)}>
+    <div className={cn("mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between", className)}>
       <div className="min-w-0">
-        {eyebrow && <p className="mb-2 text-meta font-semibold uppercase tracking-wider text-ink-3">{eyebrow}</p>}
-        <h1 className="text-admin-title">{title}</h1>
-        {subtitle && <div className="mt-2 max-w-2xl text-[0.9375rem] text-ink-2 sm:text-base">{subtitle}</div>}
+        {eyebrow && <p className="ad-label mb-2.5">{eyebrow}</p>}
+        <h1 className="break-words text-admin-title">{title}</h1>
+        {subtitle && <div className="mt-2.5 max-w-3xl text-[0.9375rem] leading-relaxed text-ink-2">{subtitle}</div>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div>}
+      {actions && <div className="flex min-w-0 flex-wrap items-center gap-2.5 md:shrink-0 md:justify-end">{actions}</div>}
     </div>
   );
 }
 
-export function Panel({ title, description, actions, children, className }: { title?: string; description?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string }) {
+/** The card every admin section sits in. */
+export function Panel({ title, description, actions, children, className, flush = false }: {
+  title?: string; description?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string; flush?: boolean;
+}) {
   return (
-    <section className={cn("rounded-lg border border-line bg-elevated", className)}>
+    <section className={cn("ad-card min-w-0", className)}>
       {(title || actions) && (
-        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4">
-          <div>
+        <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-5 pb-1 pt-5 sm:px-6">
+          <div className="min-w-0">
             {title && <h2 className="text-admin-section">{title}</h2>}
-            {description && <p className="mt-1 text-body-sm text-ink-3">{description}</p>}
+            {description && <p className="mt-1 max-w-2xl text-body-sm text-ink-3">{description}</p>}
           </div>
-          {actions}
+          {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
         </header>
       )}
-      <div className="p-5">{children}</div>
+      <div className={flush ? "pt-3" : "p-5 sm:p-6"}>{children}</div>
     </section>
+  );
+}
+
+/** A section heading between groups of cards. */
+export function SectionTitle({ children, action, className }: { children: React.ReactNode; action?: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("mb-4 mt-10 flex items-end justify-between gap-4 first:mt-0", className)}>
+      <h2 className="text-admin-section">{children}</h2>
+      {action}
+    </div>
   );
 }

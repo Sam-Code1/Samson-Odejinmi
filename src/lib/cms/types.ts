@@ -80,6 +80,18 @@ export type PortfolioProject = {
   seoTitle: string | null;
   seoDescription: string | null;
   updatedAt: string | null;
+  /** The Work-page discipline this project appears under (gallery category id), if any. */
+  discipline?: string | null;
+  /** A captured live website (migration 0017): screenshots + whether it may be shown live. */
+  site?: ProjectSite | null;
+};
+
+export type ProjectShot = { src: string; w: number; h: number };
+export type ProjectSite = {
+  url: string; domain: string; title: string | null; description: string | null;
+  hero: ProjectShot; tall: ProjectShot | null; mobile: ProjectShot | null;
+  /** The site allows being framed AND the owner turned live preview on. */
+  live: boolean;
 };
 
 export type Service = {

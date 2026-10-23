@@ -8,6 +8,10 @@ export type PublicCourse = {
   category: string | null; estimatedDuration: string | null; imageUrl: string | null;
   learningOutcomes: string[]; requirements: string[]; targetAudience: string[]; objectives: string[];
   seoTitle: string | null; seoDescription: string | null;
+  /** Visible with details (and price, if set) but not yet open for enrolment or purchase. */
+  comingSoon: boolean; launchNote: string | null;
+  /** A certificate of completion is issued when the course is finished. */
+  certificate: boolean;
   modules: { position: number; title: string; lessons: { title: string }[] }[];
   moduleCount: number; lessonCount: number;
   /** "sample" = built-in outline shown only when Supabase isn't connected yet. */
@@ -22,7 +26,7 @@ function sample(): PublicCourse {
   return withCounts({
     id: "", slug: data.slug, title: data.title, subtitle: data.shortDescription, description: data.promise, level: data.level, instructor: "Samson Odejinmi",
     category: "3D", estimatedDuration: null, imageUrl: null, learningOutcomes: data.learn, requirements: ["A computer that can run Blender (Blender itself is free)."],
-    targetAudience: data.forWho, objectives: [], seoTitle: null, seoDescription: null,
+    targetAudience: data.forWho, objectives: [], seoTitle: null, seoDescription: null, comingSoon: false, launchNote: null, certificate: false,
     modules: data.modules.map((m) => ({ position: m.number, title: m.title, lessons: m.lessons.map((l) => ({ title: `${l.number} ${l.title}` })) })),
     source: "sample",
   });
@@ -32,14 +36,14 @@ type Row = Record<string, unknown>;
 const arr = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 const s = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
 
-/** Published courses only. Drafts appear only in an admin's preview session (draft mode + admin RLS). Archived never. */
+/** Published and coming-soon courses. Drafts appear only in an admin's preview session (draft mode + admin RLS). Archived never. */
 export const getPublishedCourses = cache(async (): Promise<PublicCourse[]> => {
   if (!supabaseConfigured) return [sample()];
   try {
     // Cookie-less for visitors so Academy pages can be cached; the admin's own session only in preview.
     const supabase = await contentClient();
     const preview = await isPreview();
-    const { data: rows, error } = await supabase.from("courses").select("*").in("status", preview ? ["published", "draft"] : ["published"]).order("created_at");
+    const { data: rows, error } = await supabase.from("courses").select("*").in("status", preview ? ["published", "coming_soon", "draft"] : ["published", "coming_soon"]).order("created_at");
     if (error || !rows) return [];
     return await Promise.all((rows as Row[]).map(async (r) => {
       const { data: cur } = await supabase.rpc("public_course_curriculum", { p_slug: r.slug as string });
@@ -48,7 +52,8 @@ export const getPublishedCourses = cache(async (): Promise<PublicCourse[]> => {
         id: r.id as string, slug: r.slug as string, title: r.title as string, subtitle: s(r.subtitle), description: s(r.description), level: s(r.level), instructor: s(r.instructor),
         category: s(r.category), estimatedDuration: s(r.estimated_duration), imageUrl: s(r.image_url),
         learningOutcomes: arr(r.learning_outcomes), requirements: arr(r.requirements), targetAudience: arr(r.target_audience), objectives: arr(r.objectives),
-        seoTitle: s(r.seo_title), seoDescription: s(r.seo_description), modules, source: "database",
+        seoTitle: s(r.seo_title), seoDescription: s(r.seo_description), comingSoon: r.status === "coming_soon", launchNote: s(r.launch_note),
+        certificate: r.certificate_enabled === true, modules, source: "database",
       });
     }));
   } catch {

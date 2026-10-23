@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Container, Thread } from "@/components/ui/Container";
-import { site } from "@/lib/site";
+import { legalLinks, site } from "@/lib/site";
 import { getSocialLinks } from "@/lib/cms";
 
 function Col({ title, children }: { title: string; children: React.ReactNode }) {
@@ -44,9 +44,8 @@ export async function AcademyFooter() {
               {socials.map((s) => <li key={s.id}><a href={s.url} rel="noopener noreferrer" target="_blank" className="text-ink-2 hover:text-ink">{s.label}</a></li>)}
             </Col>
             <Col title="Legal">
-              <L href="/legal/privacy">Privacy</L>
-              <L href="/legal/terms">Terms</L>
-              <L href="/legal/refund-policy">Refund policy</L>
+              {legalLinks.map((l) => <L key={l.href} href={l.href}>{l.label}</L>)}
+              <L href="/verify">Verify a certificate</L>
             </Col>
           </div>
         </div>

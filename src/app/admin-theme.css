@@ -1,0 +1,95 @@
+/* ───────────── Admin (.ad-root) ─────────────
+   The Fola Academy control room: brand type (Schibsted Grotesk + Geist Mono), quiet paper/night surfaces, white
+   (or deep navy) cards with a hairline and a soft shadow, one accent. Light and dark follow the theme switcher.
+   Chart colours are validated for colour-blind separation and contrast on the card surface in both modes. */
+.ad-root {
+  --font-sans-active: var(--font-fa-sans);
+  --canvas: 245 244 240;        /* page    #F5F4F0 */
+  --surface: 238 237 231;       /* fills, hovers */
+  --elevated: 255 255 255;      /* cards   #FFFFFF */
+  --ink: 11 16 32; --ink-2: 70 76 96; --ink-3: 108 113 130;
+  --line: 11 16 32; --line-a: 0.09; --line-strong-a: 0.2;
+  --blue: 58 92 240; --blue-soft: 58 92 240; --violet: 110 79 232; --violet-soft: 138 91 224;
+  --warm: 196 74 48; --warm-soft: 224 117 47;
+  --action: 58 92 240; --action-hover: 46 78 224; --on-action: 255 255 255;
+  --success: 18 128 88; --caution: 150 92 0; --node: 110 79 232;
+  --path-start: 58 92 240; --path-end: 110 79 232; --focus: 90 59 209;
+  /* charts (validated: light, surface #FFFFFF) */
+  --c1: #3a5cf0; --c2: #e0752f; --c3: #8a5be0; --c4: #15936a;
+  --c-grid: rgb(11 16 32 / 0.07); --c-axis: rgb(11 16 32 / 0.45); --c-prev: rgb(11 16 32 / 0.22);
+  --ad-shadow: 0 1px 2px rgb(11 16 32 / 0.04), 0 8px 24px -12px rgb(11 16 32 / 0.12);
+  --ad-sidebar: 250 249 246;
+  background-color: rgb(var(--canvas));
+  color: rgb(var(--ink));
+  font-family: var(--font-fa-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01";
+}
+:root[data-theme="dark"] .ad-root {
+  color-scheme: dark;
+  --canvas: 9 12 24; --surface: 25 32 58; --elevated: 18 24 45;
+  --ink: 240 241 247; --ink-2: 170 177 200; --ink-3: 132 140 166;
+  --line: 160 174 225; --line-a: 0.12; --line-strong-a: 0.26;
+  --blue: 120 146 255; --blue-soft: 142 168 255; --violet: 160 139 255; --violet-soft: 183 162 255;
+  --warm: 255 140 100; --warm-soft: 255 170 140;
+  --action: 95 124 245; --action-hover: 112 140 255; --on-action: 255 255 255;
+  --success: 79 209 155; --caution: 244 188 79; --node: 139 114 255;
+  --path-start: 91 123 255; --path-end: 139 114 255; --focus: 183 162 255;
+  /* charts (validated: dark, surface #141B33) */
+  --c1: #5f7cf5; --c2: #d4703a; --c3: #9478f0; --c4: #1fa877;
+  --c-grid: rgb(160 174 225 / 0.09); --c-axis: rgb(200 206 230 / 0.55); --c-prev: rgb(200 206 230 / 0.25);
+  --ad-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 30px -16px rgb(0 0 0 / 0.6);
+  --ad-sidebar: 12 16 31;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .ad-root {
+    color-scheme: dark;
+    --canvas: 9 12 24; --surface: 25 32 58; --elevated: 18 24 45;
+    --ink: 240 241 247; --ink-2: 170 177 200; --ink-3: 132 140 166;
+    --line: 160 174 225; --line-a: 0.12; --line-strong-a: 0.26;
+    --blue: 120 146 255; --blue-soft: 142 168 255; --violet: 160 139 255; --violet-soft: 183 162 255;
+    --action: 95 124 245; --action-hover: 112 140 255; --on-action: 255 255 255;
+    --success: 79 209 155; --caution: 244 188 79; --node: 139 114 255;
+    --c1: #5f7cf5; --c2: #d4703a; --c3: #9478f0; --c4: #1fa877;
+    --c-grid: rgb(160 174 225 / 0.09); --c-axis: rgb(200 206 230 / 0.55); --c-prev: rgb(200 206 230 / 0.25);
+    --ad-shadow: 0 12px 30px -16px rgb(0 0 0 / 0.6); --ad-sidebar: 12 16 31;
+  }
+}
+
+/* Cards: the one container. */
+.ad-root .ad-card { background: rgb(var(--elevated)); border: 1px solid rgb(var(--line) / var(--line-a)); border-radius: 14px; box-shadow: var(--ad-shadow); }
+.ad-root a.ad-card, .ad-root .ad-card-hover { transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+.ad-root a.ad-card:hover, .ad-root .ad-card-hover:hover { border-color: rgb(var(--line) / var(--line-strong-a)); transform: translateY(-1px); }
+.ad-root .ad-label { font-family: var(--font-fa-mono), ui-monospace, monospace; font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(var(--ink-3)); }
+.ad-root .ad-num { font-variant-numeric: tabular-nums; overflow-wrap: normal; }
+
+/* Long words (emails, references, slugs) wrap instead of pushing the layout off-screen. */
+.ad-root main { overflow-wrap: break-word; }
+.ad-root main :where(code, .font-mono, a[href^="mailto:"]) { overflow-wrap: anywhere; }
+
+/* Sidebar */
+.ad-root .ad-sidebar { background: rgb(var(--ad-sidebar)); }
+.ad-root .ad-nav-link[aria-current="page"] { background: rgb(var(--elevated)); color: rgb(var(--ink)); box-shadow: var(--ad-shadow); }
+.ad-root .ad-nav-link[aria-current="page"] svg { color: rgb(var(--blue)); }
+
+/* Charts */
+.ad-root .ad-chart text { font-family: var(--font-fa-mono), ui-monospace, monospace; font-size: 10.5px; fill: var(--c-axis); }
+.ad-root .ad-bar { transition: opacity 120ms ease; }
+.ad-root .ad-chart:hover .ad-bar:not(:hover):not([data-active]) { opacity: 0.55; }
+.ad-root .ad-tip { pointer-events: none; position: absolute; z-index: 10; min-width: 9rem; padding: 0.55rem 0.7rem; border-radius: 10px;
+  background: rgb(var(--elevated)); border: 1px solid rgb(var(--line) / var(--line-strong-a)); box-shadow: 0 12px 30px -10px rgb(0 0 0 / 0.35); font-size: 0.8125rem; }
+@keyframes ad-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes ad-draw { from { stroke-dashoffset: var(--len, 2000); } to { stroke-dashoffset: 0; } }
+@keyframes ad-fade { from { opacity: 0; } to { opacity: 1; } }
+.ad-root .ad-grow { transform-box: fill-box; transform-origin: bottom; animation: ad-grow 520ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ad-root .ad-draw { stroke-dasharray: var(--len, 2000); animation: ad-draw 900ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ad-root .ad-fade { animation: ad-fade 700ms ease both; }
+@media (prefers-reduced-motion: reduce) { .ad-root .ad-grow, .ad-root .ad-draw, .ad-root .ad-fade { animation: none; } }
+
+/* Older admin pages style their buttons as "rounded bg-ink text-canvas" (a black button). Inside the admin those become
+   the brand action colour with softer corners, so every page matches without per-page edits. */
+.ad-root .rounded { border-radius: 0.5rem; }
+.ad-root :is(a, button).bg-ink { background-color: rgb(var(--action)); color: rgb(var(--on-action)); }
+.ad-root :is(a, button).bg-ink:hover { background-color: rgb(var(--action-hover)); }
+.ad-root :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]).bg-transparent { background-color: rgb(var(--elevated)); }
+/* Older pages build their boxes as "rounded-lg border bg-elevated": give them the card treatment too. */
+.ad-root .rounded-lg.border.bg-elevated { border-radius: 14px; box-shadow: var(--ad-shadow); }

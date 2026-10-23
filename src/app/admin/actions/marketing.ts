@@ -12,6 +12,7 @@ import { buildMarketingEmail, marketingEmailConfigured, sendMarketingEmail } fro
 import { processEmailQueue, runMarketingJobs } from "@/lib/marketing/engine";
 import { parseDefinition } from "@/lib/marketing/segments";
 import { isTrigger, validateSteps } from "@/lib/marketing/steps";
+import { site as siteInfo } from "@/lib/site";
 
 /**
  * Admin → Marketing ("marketing" permission). Nothing here sends anything automatically: emails go out only when an
@@ -102,7 +103,7 @@ export async function deleteContentPost(_: ActionResult, fd: FormData): Promise<
 export async function previewTrackedLink(base: string, utm: { source?: string; medium?: string; campaign?: string; content?: string; term?: string }): Promise<string | null> {
   const ctx = await getAdminContext();
   if (!ctx?.can("marketing")) return null;
-  const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+  const site = siteInfo.url;
   return buildTrackedUrl(base.startsWith("/") ? `${site}${base}` : base, utm);
 }
 

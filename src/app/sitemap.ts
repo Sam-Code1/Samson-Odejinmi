@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { site } from "@/lib/site";
+import { legalPages, site } from "@/lib/site";
 import { getProjects, getSeo } from "@/lib/cms";
 import { getPublishedCourses } from "@/lib/academy";
 import { getPublishedProducts } from "@/lib/products";
@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const seo = await Promise.all(routes.map(([, key]) => getSeo(key)));
   return [
     ...routes.filter((_, i) => !seo[i].noindex).map(([p]) => ({ url: `${site.url}${p}`, lastModified: new Date() })),
+    ...["/legal", ...Object.keys(legalPages).map((s) => `/legal/${s}`)].map((p) => ({ url: `${site.url}${p}`, lastModified: new Date() })),
     ...courses.map((c) => ({ url: `${site.url}/academy/courses/${c.slug}`, lastModified: new Date() })),
     // Shop pages (course products live on their course page). Downloads and the library are never listed.
     ...(products.length ? [{ url: `${site.url}/academy/books`, lastModified: new Date() }] : []),

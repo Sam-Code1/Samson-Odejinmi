@@ -9,6 +9,7 @@ import { EMAIL_RE, SLUG_RE, bool, httpUrl, isUuid, lines, list, optStr, parseYou
 import { resolveImageField } from "@/lib/admin/storage";
 import { logActivity, revalidateSite } from "@/lib/admin/activity";
 import { sectionDef } from "@/lib/admin/sections";
+import { isGalleryCategory } from "@/lib/gallery-categories";
 
 type FieldErrors = Record<string, string>;
 const STATUSES = ["draft", "published", "archived"] as const;
@@ -356,6 +357,8 @@ async function parseProject(ctx: AdminContext, fd: FormData) {
   if (!cover.ok) errors.cover = cover.error;
   const categories = list(fd, "categories", 8, 60);
   const projectStatus = str(fd, "project_status", 40) || "Personal Study";
+  const discipline = str(fd, "discipline", 40);
+  if (discipline && !isGalleryCategory(discipline)) errors.discipline = "Choose a discipline.";
 
   const patch: Record<string, unknown> = {
     title, slug, short_description: optStr(fd, "short_description", 300), description: optStr(fd, "description", 8000),
@@ -369,6 +372,9 @@ async function parseProject(ctx: AdminContext, fd: FormData) {
     project_status: projectStatus, is_placeholder: bool(fd, "is_placeholder"), featured: bool(fd, "featured"),
     seo_title: optStr(fd, "seo_title", 70), seo_description: optStr(fd, "seo_description", 170),
   };
+  // Migration 0017 fields: only sent when the form has them, so saving still works before the migration runs.
+  if (fd.has("discipline")) patch.discipline = discipline || null;
+  if (fd.has("live_preview_field")) patch.live_preview = bool(fd, "live_preview");
   if (cover.ok && cover.url !== undefined) patch.cover_image_url = cover.url;
   return { errors, patch, title };
 }

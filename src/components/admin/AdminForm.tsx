@@ -42,8 +42,8 @@ export function AdminForm({ action, children, submitLabel = "Save changes", save
         }}
       >
         {children}
-        <div className={cn("flex flex-wrap items-center gap-3", stickyBar && "sticky bottom-0 -mx-4 border-t border-line bg-canvas/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-lg lg:border lg:px-5")}>
-          <button type="submit" name={saveIntent ? "intent" : undefined} value={saveIntent} disabled={pending} className="h-10 rounded bg-ink px-5 text-label text-canvas transition-colors hover:bg-ink/90 disabled:opacity-60">
+        <div className={cn("flex flex-wrap items-center gap-3", stickyBar && "sticky bottom-3 z-20 rounded-xl border border-line bg-elevated/90 px-4 py-3 shadow-[var(--ad-shadow)] backdrop-blur-xl sm:px-5")}>
+          <button type="submit" name={saveIntent ? "intent" : undefined} value={saveIntent} disabled={pending} className="h-10 rounded-lg bg-action px-5 text-label text-on-action transition-colors hover:bg-action-hover disabled:opacity-60">
             {pending ? "Saving…" : submitLabel}
           </button>
           {extra}
