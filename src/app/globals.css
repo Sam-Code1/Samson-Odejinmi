@@ -38,6 +38,9 @@
   --art-floor: 14 16 42;
   --art-glow: 0.3;
   --grain: 0.07;
+  /* primary action + status (the main site's action is ink; the Academy redefines these in .fa-root) */
+  --action: 14 16 42; --action-hover: 40 44 72; --on-action: 249 248 253;
+  --success: 22 128 88; --caution: 150 92 0; --node: 109 67 217;
 }
 
 /* DARK (and any .theme-night band, which stays dark in both themes). */
@@ -69,6 +72,8 @@
   --art-floor: 150 165 215;
   --art-glow: 0.55;
   --grain: 0.12;
+  --action: 245 247 255; --action-hover: 220 224 240; --on-action: 7 10 18;
+  --success: 79 209 155; --caution: 244 188 79; --node: 139 92 246;
 }
 
 /* No-JS fallback: follow the OS until the theme script has run. */
@@ -83,6 +88,8 @@
     --mesh-a: 0.3; --mesh-b: 0.1;
     --art-top: 58 74 124; --art-left: 13 19 36; --art-right: 27 40 74; --art-floor: 150 165 215;
     --art-glow: 0.55; --grain: 0.12;
+    --action: 245 247 255; --action-hover: 220 224 240; --on-action: 7 10 18;
+    --success: 79 209 155; --caution: 244 188 79; --node: 139 92 246;
   }
 }
 

@@ -1,32 +1,47 @@
 import type { Metadata } from "next";
-import { Container } from "@/components/ui/Container";
-import { CourseSummaryCard } from "@/components/academy/CourseSummaryCard";
-import { EmptyState } from "@/components/ui/States";
+import Link from "next/link";
+import { FaContainer } from "@/components/brand/Shell";
+import { Pathway } from "@/components/brand/Brand";
+import { CourseCard } from "@/components/brand/CourseCard";
 import { getPublishedCourses } from "@/lib/academy";
-import { getCoursePricing } from "@/lib/pricing";
 import { buildMetadata } from "@/lib/cms/seo";
 
 export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
-  return buildMetadata("academy_courses", { title: "Courses — Fola Academy", absoluteTitle: true, description: "Courses from Fola Academy: practical creative education, concept first.", path: "/academy/courses" });
+  return buildMetadata("academy_courses", { title: "Courses — Fola Academy", absoluteTitle: true, description: "Fola Academy courses: mental models first, then tools, then projects with purpose.", path: "/academy/courses" });
 }
 
+/** Course catalogue (§16): numbered course cards on the 12-column grid. */
 export default async function CoursesPage() {
   const courses = await getPublishedCourses();
-  const priced = await Promise.all(courses.map(async (c) => ({ c, prices: await getCoursePricing(c.slug) })));
   return (
-    <Container className="pb-20 pt-14 sm:pt-20 lg:pt-28">
-      <h1 className="text-h1">Courses</h1>
-      <p className="mt-6 max-w-prose text-body-lg text-ink-2">Practical creative education, concept first.</p>
-      {priced.length === 0 ? (
-        <EmptyState title="Courses are on the way" body="The first programme is being prepared. More programmes are being developed. When a course is ready, it will appear here." action={{ href: "/academy", label: "Back to the Academy" }} />
-      ) : (
-        <>
-          <div className="mt-14 space-y-6">{priced.map(({ c, prices }) => <CourseSummaryCard key={c.slug} course={c} prices={prices} />)}</div>
-          <p className="mt-10 max-w-prose text-body-sm text-ink-3">More programmes are being developed. When they&apos;re ready, they&apos;ll appear here.</p>
-        </>
-      )}
-    </Container>
+    <>
+      <section className="fa-blueprint border-b border-line">
+        <FaContainer className="py-14 sm:py-20 lg:py-24">
+          <p className="fa-label fa-rise">Courses · Fola Academy</p>
+          <h1 className="mt-4 max-w-4xl text-display fa-rise">Learn the craft. Understand the tools.</h1>
+          <p className="mt-6 max-w-prose text-body-lg text-ink-2">Every course starts with the problem a tool was invented to solve, then the tool, then a project you finish yourself.</p>
+          <Pathway className="mt-8 max-w-xs" />
+        </FaContainer>
+      </section>
+      <section className="py-14 sm:py-20">
+        <FaContainer>
+          {courses.length === 0 ? (
+            <div className="fa-callout max-w-2xl">
+              <p className="fa-label !text-blue">In preparation</p>
+              <p className="mt-2 text-h4">Courses are on the way</p>
+              <p className="mt-2 text-body text-ink-2">The first programme is being prepared. When a course is ready, it appears here.</p>
+              <Link href="/academy/books" className="fa-btn fa-btn-secondary mt-6">Browse books meanwhile</Link>
+            </div>
+          ) : (
+            <>
+              <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{courses.map((c, i) => <li key={c.slug} className="fa-rise" style={{ animationDelay: `${i * 60}ms` }}><CourseCard c={c} index={i} /></li>)}</ul>
+              <p className="mt-12 max-w-prose text-caption text-ink-3">More programmes are being developed. When they&apos;re ready, they appear here.</p>
+            </>
+          )}
+        </FaContainer>
+      </section>
+    </>
   );
 }

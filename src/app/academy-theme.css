@@ -1,0 +1,207 @@
+/* ==================================================================================================================
+   FOLA ACADEMY THEME: Brand Guidelines v1.0 (October 2026)
+   Scoped to .fa-root (every Academy surface: Academy, Books, courses, student portal, course player, checkout, auth).
+   It REDEFINES the same design variables the components already use, so everything inside adopts the brand, while the
+   main Samson Odejinmi site keeps its own look.
+     Night (dark) is home (§07 "Default to the Night theme"); Paper (light) is designed, not inverted, and is used when
+     the visitor chooses Light. Proportions: ground 70 · ink 15 · surfaces 10 · blue 4 · violet 1.
+     Blue = understanding (actions, links). Violet = the idea (the node) only. The Pathway is the only gradient.
+   ================================================================================================================== */
+
+.fa-root {
+  color-scheme: dark;
+  /* ── Night ── */
+  --canvas: 8 11 22;            /* night  #080B16 */
+  --surface: 16 22 43;          /* navy   #10162B */
+  --elevated: 23 31 58;         /* surface-raised #171F3A */
+  --ink: 244 241 234;           /* paper  #F4F1EA */
+  --ink-2: 166 171 191;         /* ink-muted  #A6ABBF */
+  --ink-3: 134 140 163;         /* ink-subtle #868CA3 */
+  --line: 102 114 166;          /* border-strong #6672A6; hairline ≈ border #2A3358 */
+  --line-a: 0.42;
+  --line-strong-a: 0.85;
+  --blue: 142 168 255;          /* accent (signal-blue) #8EA8FF: links, active, selected */
+  --blue-soft: 142 168 255;
+  --violet: 139 114 255;        /* node #8B72FF */
+  --violet-soft: 183 162 255;   /* accent-violet #B7A2FF */
+  --warm: 255 122 112;          /* error #FF7A70 */
+  --warm-soft: 244 188 79;      /* warning #F4BC4F */
+  --tint-blue: 16 22 43; --tint-violet: 16 22 43; --tint-peach: 16 22 43; --tint-mint: 16 22 43;
+  --action: 58 92 240;          /* fola-blue #3A5CF0 */
+  --action-hover: 46 78 224;    /* #2E4EE0 */
+  --on-action: 255 255 255;
+  --success: 79 209 155; --caution: 244 188 79; --node: 139 114 255;
+  --path-start: 91 123 255; --path-end: 139 114 255; --focus: 183 162 255;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.35), 0 10px 28px -14px rgb(0 0 0 / 0.6);
+  --shadow-2: 0 2px 4px rgb(0 0 0 / 0.35), 0 24px 60px -24px rgb(0 0 0 / 0.75);
+  --mesh-a: 0; --mesh-b: 0; --grain: 0;
+
+  /* ── Type (§08) ── */
+  --font-sans-active: var(--font-fa-sans);
+  --font-serif-active: var(--font-fa-serif);
+  --fs-display: clamp(3.25rem, 1.9rem + 4.4vw, 6rem); --lh-display: 0.95; --ls-display: -0.035em; --fw-display: 800;
+  --fs-h1: clamp(2.5rem, 1.8rem + 2.4vw, 4rem); --lh-h1: 1; --ls-h1: -0.03em; --fw-h1: 750;
+  --fs-h2: clamp(2rem, 1.6rem + 1.3vw, 2.75rem); --lh-h2: 1.08; --ls-h2: -0.02em; --fw-h2: 700;
+  --fs-h3: clamp(1.5rem, 1.3rem + 0.6vw, 1.875rem); --lh-h3: 1.15; --ls-h3: -0.012em; --fw-h3: 650;
+  --fs-h4: 1.375rem; --lh-h4: 1.25; --ls-h4: -0.006em; --fw-h4: 600;
+  --fs-body-lg: 1.1875rem; --lh-body-lg: 1.55;
+
+  /* ── Motion (§13) ── */
+  --dur-instant: 90ms; --dur-fast: 160ms; --dur-base: 240ms; --dur-calm: 480ms; --dur-reveal: 900ms;
+  --ease-precise: cubic-bezier(0.2, 0, 0, 1); --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.7, 0, 0.84, 0); --ease-calm: cubic-bezier(0.65, 0, 0.35, 1);
+
+  background-color: rgb(var(--canvas));
+  color: rgb(var(--ink));
+  font-family: var(--font-fa-sans), "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "ss01" 0;
+}
+
+/* ── Paper: the designed light theme (warm off-white, deeper blue and violet, darker borders) ── */
+:root[data-theme-pref="light"] .fa-root {
+  color-scheme: light;
+  --canvas: 244 241 234;        /* paper #F4F1EA */
+  --surface: 251 250 246;       /* #FBFAF6 */
+  --elevated: 255 255 255;
+  --ink: 11 16 32;              /* #0B1020 */
+  --ink-2: 74 80 102;           /* #4A5066 */
+  --ink-3: 98 104 128;          /* #626880 */
+  --line: 143 137 122;          /* border-strong #8F897A; hairline ≈ border #D7D2C5 */
+  --line-a: 0.33;
+  --line-strong-a: 1;
+  --blue: 45 75 214; --blue-soft: 45 75 214;       /* accent #2D4BD6 */
+  --violet: 110 79 232; --violet-soft: 90 59 209;  /* node #6E4FE8, accent-violet #5A3BD1 */
+  --warm: 190 43 34; --warm-soft: 138 86 0;
+  --tint-blue: 230 226 216; --tint-violet: 230 226 216; --tint-peach: 230 226 216; --tint-mint: 230 226 216; /* stone */
+  --action: 45 75 214; --action-hover: 36 64 189; --on-action: 255 255 255;
+  --success: 20 122 82; --caution: 138 86 0; --node: 110 79 232;
+  --path-start: 58 92 240; --path-end: 110 79 232; --focus: 90 59 209;
+  --shadow-1: 0 1px 2px rgb(11 16 32 / 0.06), 0 10px 28px -16px rgb(11 16 32 / 0.25);
+  --shadow-2: 0 2px 4px rgb(11 16 32 / 0.06), 0 28px 60px -28px rgb(11 16 32 / 0.35);
+}
+
+/* Night bands stay Night inside Paper pages (course player video, hero bands, book covers). */
+.fa-root .theme-night,
+:root[data-theme-pref="light"] .fa-root .theme-night {
+  color-scheme: dark;
+  --canvas: 8 11 22; --surface: 16 22 43; --elevated: 23 31 58;
+  --ink: 244 241 234; --ink-2: 166 171 191; --ink-3: 134 140 163;
+  --line: 102 114 166; --line-a: 0.42; --line-strong-a: 0.85;
+  --blue: 142 168 255; --blue-soft: 142 168 255; --violet: 139 114 255; --violet-soft: 183 162 255;
+  --warm: 255 122 112; --warm-soft: 244 188 79;
+  --tint-blue: 16 22 43; --tint-violet: 16 22 43; --tint-peach: 16 22 43; --tint-mint: 16 22 43;
+  --action: 58 92 240; --action-hover: 46 78 224; --success: 79 209 155; --caution: 244 188 79; --node: 139 114 255;
+  --path-start: 91 123 255; --path-end: 139 114 255; --focus: 183 162 255;
+  background-image: none;
+  color: rgb(var(--ink));
+}
+
+/* ── Base adjustments inside the Academy ── */
+.fa-root ::selection { background: rgb(var(--action) / 0.35); }
+.fa-root :focus-visible { outline: 2px solid rgb(var(--focus)); outline-offset: 2px; border-radius: 3px; }
+/* Captions, metadata and numbers are the "technology lab" voice: Geist Mono (§08). */
+.fa-root .text-caption, .fa-root .text-meta { font-family: var(--font-fa-mono), Menlo, monospace; letter-spacing: 0.02em; }
+.fa-root .tabular-nums { font-family: var(--font-fa-mono), Menlo, monospace; font-variant-numeric: tabular-nums; }
+.fa-root .text-label { letter-spacing: 0.005em; }
+/* No mesh gradients, glows or grain in this brand (§07, §19): the mesh becomes the blueprint grid. */
+.fa-root .mesh { background-color: rgb(var(--canvas)); background-image: var(--fa-blueprint); background-size: 48px 48px; }
+.fa-root .grain::after { display: none; }
+.fa-root .spot-stage {
+  background-color: rgb(var(--surface));
+  background-image: radial-gradient(60% 70% at 18% 0%, rgb(var(--ink) / 0.07), transparent 70%);
+}
+.fa-root .thread, .fa-root .thread-solid { background: linear-gradient(90deg, rgb(var(--path-start)), rgb(var(--path-end))); }
+.fa-root .thread-v { background: linear-gradient(180deg, rgb(var(--path-start)), rgb(var(--path-end))); }
+.fa-root .link-line { background-image: linear-gradient(90deg, rgb(var(--path-start)), rgb(var(--path-end))); }
+
+/* ── Brand graphics (§10) ── */
+.fa-root {
+  --fa-blueprint:
+    linear-gradient(rgb(var(--line) / 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--line) / 0.16) 1px, transparent 1px);
+}
+/* Blueprint grid background + one soft directional light from the upper left (10–20%). Never under body text. */
+:where(.fa-blueprint) {
+  background-color: rgb(var(--canvas));
+  background-image:
+    radial-gradient(70% 90% at 0% 0%, rgb(var(--path-start) / 0.12), transparent 70%),
+    linear-gradient(rgb(var(--line) / 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--line) / 0.16) 1px, transparent 1px);
+  background-size: 100% 100%, 48px 48px, 48px 48px;
+  background-position: 0 0, -1px -1px, -1px -1px;
+}
+/* Dot grid for product and course art panels. */
+:where(.fa-dots) {
+  background-color: rgb(var(--surface));
+  background-image: radial-gradient(circle, rgb(var(--ink-3) / 0.45) 1px, transparent 1.5px);
+  background-size: 18px 18px;
+  background-position: 9px 9px;
+}
+/* Registration-corner frame for images, renders and covers (The Frame, §10). */
+.fa-frame { position: relative; }
+.fa-frame::after {
+  content: ""; position: absolute; inset: -7px; pointer-events: none; --c: rgb(var(--ink-2));
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 14px 1.5px no-repeat, linear-gradient(var(--c), var(--c)) top left / 1.5px 14px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 14px 1.5px no-repeat, linear-gradient(var(--c), var(--c)) top right / 1.5px 14px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 14px 1.5px no-repeat, linear-gradient(var(--c), var(--c)) bottom left / 1.5px 14px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 14px 1.5px no-repeat, linear-gradient(var(--c), var(--c)) bottom right / 1.5px 14px no-repeat;
+}
+
+/* ── Components (fa-*) ── */
+/* Technical label: Geist Mono 11/1.2, 500, +14%, UPPERCASE always. */
+:where(.fa-label) { font-family: var(--font-fa-mono), Menlo, monospace; font-size: 0.6875rem; line-height: 1.2; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: rgb(var(--ink-3)); }
+/* Tag: format, level, discipline. Square-ish (radius-sm), never a pill. data-dot adds the node dot. */
+:where(.fa-tag) {
+  display: inline-flex; align-items: center; gap: 0.4rem; height: 1.5rem; padding: 0 0.5rem; border-radius: 3px;
+  border: 1px solid rgb(var(--line) / var(--line-strong-a)); color: rgb(var(--ink-2));
+  font-family: var(--font-fa-mono), Menlo, monospace; font-size: 0.65rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap;
+}
+.fa-tag[data-dot]::before { content: ""; width: 5px; height: 5px; border-radius: 9999px; background: rgb(var(--node)); }
+.fa-tag[data-tone="accent"] { border-color: rgb(var(--blue) / 0.6); color: rgb(var(--blue)); }
+/* Buttons: radius-md, sentence case, 600. One primary per view. */
+:where(.fa-btn) {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; white-space: nowrap;
+  height: 2.75rem; padding: 0 1.125rem; border-radius: 6px; font-weight: 600; font-size: 0.9375rem; letter-spacing: 0.005em; line-height: 1;
+  transition: background-color var(--dur-fast) var(--ease-precise), border-color var(--dur-fast) var(--ease-precise), color var(--dur-fast) var(--ease-precise), transform var(--dur-instant) var(--ease-precise);
+}
+.fa-btn:active { transform: translateY(1px); }
+.fa-btn[disabled], .fa-btn[aria-disabled="true"] { opacity: 0.55; pointer-events: none; }
+:where(.fa-btn-lg) { height: 3.25rem; padding: 0 1.5rem; font-size: 1rem; }
+:where(.fa-btn-sm) { height: 2.25rem; padding: 0 0.875rem; font-size: 0.875rem; }
+.fa-btn-primary { background: rgb(var(--action)); color: rgb(var(--on-action)); }
+.fa-btn-primary:hover { background: rgb(var(--action-hover)); }
+.fa-btn-secondary { border: 1px solid rgb(var(--line) / var(--line-strong-a)); color: rgb(var(--ink)); }
+.fa-btn-secondary:hover { border-color: rgb(var(--ink) / 0.7); background: rgb(var(--ink) / 0.04); }
+:where(.fa-btn-text) { height: auto; min-height: 2.75rem; padding: 0; color: rgb(var(--blue)); }
+.fa-btn-text:hover { text-decoration: underline; text-underline-offset: 4px; }
+.fa-btn .fa-arrow { transition: transform var(--dur-fast) var(--ease-precise); }
+.fa-btn:hover .fa-arrow { transform: translateX(3px); }
+/* Card: surface, hairline, radius-md. Hover: 2px lift, strong border, shadow-1 (§13). */
+:where(.fa-card) { background: rgb(var(--surface)); border: 1px solid rgb(var(--line) / var(--line-a)); border-radius: 8px; }
+.fa-card-hover { transition: transform var(--dur-fast) var(--ease-precise), border-color var(--dur-fast) var(--ease-precise), box-shadow var(--dur-fast) var(--ease-precise); }
+.fa-card-hover:hover { transform: translateY(-2px); border-color: rgb(var(--line) / var(--line-strong-a)); box-shadow: var(--shadow-1); }
+/* Callout: hairline box with a 2px corner mark; label like "Why this works" (§16). */
+:where(.fa-callout) { position: relative; background: rgb(var(--surface)); border: 1px solid rgb(var(--line) / var(--line-a)); padding: 1.125rem 1.25rem; }
+.fa-callout::before { content: ""; position: absolute; top: -1px; left: -1px; width: 14px; height: 14px; border-top: 2px solid rgb(var(--ink)); border-left: 2px solid rgb(var(--ink)); }
+/* Input: radius-sm, border-strong (≥3:1). */
+:where(.fa-input) {
+  width: 100%; min-width: 0; height: 2.75rem; padding: 0 0.75rem; border-radius: 4px; background: rgb(var(--canvas) / 0.4);
+  border: 1px solid rgb(var(--line) / var(--line-strong-a)); color: rgb(var(--ink)); font-size: 1rem;
+  transition: border-color var(--dur-fast) var(--ease-precise), box-shadow var(--dur-fast) var(--ease-precise);
+}
+.fa-input::placeholder { color: rgb(var(--ink-3)); }
+.fa-input:focus { outline: none; border-color: rgb(var(--blue)); box-shadow: 0 0 0 3px rgb(var(--blue) / 0.2); }
+@media (min-width: 640px) { .fa-input { font-size: 0.9375rem; } }
+/* Editorial rule and chapter number. */
+.fa-rule { height: 1px; background: rgb(var(--line) / var(--line-a)); border: 0; }
+:where(.fa-book) { font-family: var(--font-fa-serif), Georgia, serif; font-size: 1.125rem; line-height: 1.65; }
+.fa-quote { font-family: var(--font-fa-serif), Georgia, serif; font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+/* Book cover depth (§16 "Cover with shadow"). */
+.fa-cover { box-shadow: var(--shadow-2); }
+
+/* Entrance: rise 12px and fade (§13); reduced motion turns it into a near-instant fade (global rule below). */
+@keyframes fa-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.fa-rise { animation: fa-rise var(--dur-calm) var(--ease-enter) both; }
+@keyframes fa-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.fa-draw { transform-origin: left; animation: fa-draw var(--dur-calm) var(--ease-calm) both; }

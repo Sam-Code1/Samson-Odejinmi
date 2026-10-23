@@ -40,7 +40,7 @@ export default async function ProductEditPage({ params }: { params: Promise<{ pr
     ((pays ?? []) as { amount_minor: number; currency: string }[]).forEach((r) => by.set(r.currency, (by.get(r.currency) ?? 0) + r.amount_minor));
     sales = { orders: pays?.length ?? 0, revenue: by.size ? [...by].map(([c, v]) => formatMoneyMinor(v, c)).join(" · ") : "0" };
   }
-  const publicHref = type === "course" && p.courses ? `/academy/courses/${p.courses.slug}` : `/academy/shop/${p.slug}`;
+  const publicHref = type === "course" && p.courses ? `/academy/courses/${p.courses.slug}` : `/academy/books/${p.slug}`;
 
   return (
     <>

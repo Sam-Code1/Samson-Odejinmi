@@ -5,6 +5,7 @@ import { themeScript } from "@/lib/theme-script";
 import { introScript } from "@/lib/intro-script";
 import { getSiteSettings } from "@/lib/cms";
 import "./globals.css";
+import "./academy-theme.css";
 
 const manrope = Manrope({ subsets: ["latin"], display: "swap", variable: "--font-manrope", weight: ["400", "500", "600", "700", "800"] });
 // Italic accent words in big headings ("Selected *work*"). One weight, italic only.

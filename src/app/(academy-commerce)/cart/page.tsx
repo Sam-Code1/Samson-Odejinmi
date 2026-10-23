@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function CartPage() {
   const items = await readCart();
   const wrap = (n: React.ReactNode) => <Container className="pb-24 pt-14 sm:pt-20 lg:pt-24">{n}</Container>;
-  if (!items.length) return wrap(<StateMessage title="Your cart is empty" body="Find something useful in the shop." action={{ href: "/shop", label: "Explore the shop" }} />);
+  if (!items.length) return wrap(<StateMessage title="Your cart is empty" body="Find something useful in Books." action={{ href: "/academy/books", label: "Explore books" }} />);
   const [lines, shopper] = await Promise.all([cartLines(items), getShopperCurrency()]);
   const usable = lines.filter((l) => l.available);
   const priced = CURRENCIES.filter((c) => usable.length > 0 && usable.every((l) => l.prices[c] !== undefined));
@@ -59,7 +59,7 @@ export default async function CartPage() {
           </div>
         )}
       <p className="mt-6 text-caption text-ink-3">No account needed to buy. Coupons are applied at checkout.</p>
-      <p className="mt-8"><Link href="/shop" className="text-label text-ink-2 underline underline-offset-4 hover:text-ink">Continue shopping</Link></p>
+      <p className="mt-8"><Link href="/academy/books" className="text-label text-ink-2 underline underline-offset-4 hover:text-ink">Continue browsing</Link></p>
     </div>,
   );
 }

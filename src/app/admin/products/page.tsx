@@ -25,7 +25,7 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeader eyebrow="Sales" title="Products" subtitle="Ebooks, guides, templates, downloads, bundles and course products. Prices and files are read by the server at checkout and download; nothing in the browser can change them."
-        actions={<><Link href="/admin/products/shop" className="inline-flex h-10 items-center rounded border border-line-strong px-4 text-label hover:border-ink">Shop settings</Link><Link href="/admin/products/new" className="inline-flex h-10 items-center gap-2 rounded bg-ink px-4 text-label text-canvas hover:bg-ink/90"><Plus aria-hidden className="h-4 w-4" />New product</Link></>} />
+        actions={<><Link href="/admin/products/shop" className="inline-flex h-10 items-center rounded border border-line-strong px-4 text-label hover:border-ink">Books settings</Link><Link href="/admin/products/new" className="inline-flex h-10 items-center gap-2 rounded bg-ink px-4 text-label text-canvas hover:bg-ink/90"><Plus aria-hidden className="h-4 w-4" />New product</Link></>} />
       <div className="mb-5 flex flex-wrap gap-3">
         <FilterSelect param="status" label="Status" options={[{ value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" }]} />
         <FilterSelect param="type" label="Type" options={Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }))} />
@@ -34,7 +34,7 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: Pr
         <DataTable<Row> rows={(data ?? []) as unknown as Row[]} rowKey={(r) => r.id}
           empty={{ title: status || type ? "No products match" : "No products yet", body: "Create your first ebook, guide or bundle. It stays a draft until you publish it.", action: { href: "/admin/products/new", label: "Create a product" } }}
           columns={[
-            { key: "n", header: "Product", primary: true, cell: (r) => <div className="min-w-0"><Link href={`/admin/products/${r.id}`} className="font-semibold hover:underline">{r.name}</Link><p className="truncate text-caption text-ink-3">/academy/shop/{r.slug}</p></div> },
+            { key: "n", header: "Product", primary: true, cell: (r) => <div className="min-w-0"><Link href={`/admin/products/${r.id}`} className="font-semibold hover:underline">{r.name}</Link><p className="truncate text-caption text-ink-3">/academy/books/{r.slug}</p></div> },
             { key: "t", header: "Type", cell: (r) => <>{TYPE_LABELS[r.product_type]}{r.courses ? <span className="block text-caption text-ink-3">{r.courses.title}</span> : null}</> },
             { key: "p", header: "Price", className: "tabular-nums", cell: (r) => r.product_type === "course" ? <span className="text-ink-3">Course pricing</span> : r.product_prices.length ? r.product_prices.map((p) => formatMoneyMinor(p.amount_minor, p.currency)).join(" · ") : <span className="text-warm">Not set</span> },
             { key: "s", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },

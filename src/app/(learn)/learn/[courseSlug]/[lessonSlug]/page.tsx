@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadCourse } from "@/lib/learning";
 import { setLessonComplete } from "@/app/student-actions";
 import { LessonBody, type LessonData, type ResourceItem } from "@/components/learn/LessonBody";
 import { CompleteButton } from "@/components/learn/CompleteButton";
-import { ProgressBar } from "@/components/ui/ProgressBar";
-import { StateMessage } from "@/components/ui/States";
+import { Progress } from "@/components/brand/Brand";
 import { TutorLauncher } from "@/components/ai/TutorLauncher";
 import { learnerAiEnabled } from "@/lib/ai/usage";
 
@@ -32,7 +32,14 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   const lesson = lessonRaw as (LessonData & { module_id: string }) | null;
 
   if (!lesson) {
-    return <StateMessage title="This lesson isn't available" body="It may have moved, or it isn't published yet." action={{ href: `/learn/${courseSlug}`, label: "Back to the course" }} />;
+    return (
+      <div className="fa-callout mx-auto max-w-xl">
+        <p className="fa-label !text-blue">Not available</p>
+        <p className="mt-2 text-h4">This lesson isn&apos;t available</p>
+        <p className="mt-2 text-body text-ink-2">It may have moved, or it isn&apos;t published yet.</p>
+        <Link href={`/learn/${courseSlug}`} className="fa-btn fa-btn-secondary mt-6">Back to the course</Link>
+      </div>
+    );
   }
 
   const { data: resRaw } = await supabase
@@ -48,32 +55,35 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   const doneCount = data.completed.filter((id) => data.flat.some((l) => l.id === id)).length;
   const current = data.flat[idx];
   const lessonQuizzes = data.quizzes.filter((q) => q.lesson_id === lesson.id);
+  const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <article className="mx-auto max-w-4xl">
-      <p className="text-caption text-ink-3">{data.course.title}{current ? ` · ${current.moduleTitle}` : ""}</p>
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
-        <h1 className="text-h1">{lesson.title}</h1>
+    <article className="mx-auto max-w-5xl">
+      <p className="fa-label">Lesson {pad(idx + 1)} of {pad(data.flat.length)}{current ? ` · ${current.moduleTitle}` : ""}</p>
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+        <h1 className="text-h2">{lesson.title}</h1>
         {learnerAiEnabled() && <TutorLauncher courseSlug={courseSlug} lessonSlug={lessonSlug} lessonTitle={lesson.title} />}
       </div>
       {lesson.summary && <p className="mt-4 max-w-prose text-body-lg text-ink-2">{lesson.summary}</p>}
-      <div className="mt-5 max-w-xs">
-        <ProgressBar value={data.percent} label="Course progress" />
-        <p className="mt-1.5 text-caption text-ink-3">{Math.round(data.percent)}% complete · {doneCount} / {data.flat.length} lessons completed</p>
+      <div className="mt-5 flex max-w-sm items-center gap-4">
+        <Progress value={data.percent / 100} label="Course progress" className="flex-1" />
+        <p className="shrink-0 text-caption text-ink-3">{doneCount} / {data.flat.length}</p>
       </div>
 
       <LessonBody lesson={lesson} resources={(resRaw ?? []) as unknown as ResourceItem[]} quizzes={lessonQuizzes} courseSlug={courseSlug} />
 
-      <div className="mt-14 flex flex-wrap items-center justify-between gap-6 border-t border-line pt-8">
+      <div className="mt-14 flex flex-col gap-6 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between">
         <form action={setLessonComplete}>
           <input type="hidden" name="lessonId" value={lesson.id} />
           <input type="hidden" name="courseSlug" value={courseSlug} />
           <input type="hidden" name="completed" value={isDone ? "false" : "true"} />
           <CompleteButton completed={isDone} />
         </form>
-        <nav aria-label="Lesson navigation" className="flex items-center gap-8 text-label">
-          {prev && <Link href={`/learn/${courseSlug}/${prev.slug}`} className="text-ink-2 hover:text-ink"><span className="link-line pb-1">Previous lesson</span></Link>}
-          {next ? <Link href={`/learn/${courseSlug}/${next.slug}`} className="text-ink"><span className="link-line pb-1">Next lesson</span></Link> : <Link href="/dashboard" className="text-ink"><span className="link-line pb-1">Back to dashboard</span></Link>}
+        <nav aria-label="Lesson navigation" className="flex flex-wrap items-center gap-3">
+          {prev && <Link href={`/learn/${courseSlug}/${prev.slug}`} className="fa-btn fa-btn-secondary"><ArrowLeft aria-hidden className="h-4 w-4" />Previous</Link>}
+          {next
+            ? <Link href={`/learn/${courseSlug}/${next.slug}`} className="fa-btn fa-btn-primary">Next lesson<ArrowRight aria-hidden className="fa-arrow h-4 w-4" /></Link>
+            : <Link href="/dashboard" className="fa-btn fa-btn-primary">Back to my learning</Link>}
         </nav>
       </div>
     </article>

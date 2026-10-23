@@ -42,7 +42,7 @@ export function PostForm({ post, campaigns, defaultCampaign, siteUrl, prefill }:
   const startCampaign = post?.campaign_id ?? defaultCampaign ?? "";
   const [platform, setPlatform] = useState(post?.platform ?? prefill?.platform ?? "instagram");
   const [campaignId, setCampaignId] = useState(startCampaign);
-  const [cta, setCta] = useState(post?.cta_url ?? "/academy/shop");
+  const [cta, setCta] = useState(post?.cta_url ?? "/academy/books");
   const [utm, setUtm] = useState({
     source: post?.utm_source ?? "", medium: post?.utm_medium ?? "", campaign: post?.utm_campaign ?? prefill?.utm_campaign ?? "", content: post?.utm_content ?? "", term: post?.utm_term ?? "",
   });
@@ -71,7 +71,7 @@ export function PostForm({ post, campaigns, defaultCampaign, siteUrl, prefill }:
       </FormSection>
       <FormSection title="Call to action and tracking">
         <TextInput label="CTA label" name="cta_label" defaultValue={post?.cta_label ?? prefill?.cta_label ?? ""} maxLength={60} placeholder="Get the ebook" />
-        <TextInput label="CTA link" name="cta_url" value={cta} onChange={(e) => setCta(e.target.value)} maxLength={500} hint="A page on your site (/academy/shop/…) or a full https:// link." />
+        <TextInput label="CTA link" name="cta_url" value={cta} onChange={(e) => setCta(e.target.value)} maxLength={500} hint="A page on your site (/academy/books/…) or a full https:// link." />
         <TextInput label="utm_source" name="utm_source_display" value={utm.source} onChange={(e) => setUtm({ ...utm, source: e.target.value })} placeholder={platform} />
         <TextInput label="utm_medium" name="utm_medium_display" value={utm.medium} onChange={(e) => setUtm({ ...utm, medium: e.target.value })} placeholder={MEDIUM[platform]} />
         <TextInput label="utm_campaign" name="utm_campaign_display" value={utm.campaign} onChange={(e) => setUtm({ ...utm, campaign: e.target.value })} placeholder={campSlug || "campaign-name"} />

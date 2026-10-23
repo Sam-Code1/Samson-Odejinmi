@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { fulfilByReference } from "@/lib/payments/fulfil";
 import { StateMessage } from "@/components/ui/States";
-import { Badge } from "@/components/ui/Badge";
+import { SubjectIcon } from "@/components/brand/CourseCard";
+import { BookCover } from "@/components/books/BookParts";
 import { getShopSettings } from "@/lib/products";
 import { CATEGORIES, ENROLMENT_SELECT, ENTITLEMENT_SELECT, buildLibrary, bundleChildren, filterLibrary, isMissingTable, type LibraryItem } from "@/lib/library";
 import { isUuid } from "@/lib/admin/validation";
@@ -82,13 +83,14 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
   const shopOpen = shop.enabled && !productsMissing;
 
   return (
-    <div className="space-y-16">
-      <div>
-        <h1 className="text-h1">Library</h1>
-        <p className="mt-4 max-w-prose text-body text-ink-2">Your courses and everything you&apos;ve bought or been given. Download links are private to you and expire after a minute, so open them from here each time.</p>
-      </div>
+    <div className="space-y-12">
+      <header>
+        <p className="fa-label">Library</p>
+        <h1 className="mt-3 text-h2">Everything you own</h1>
+        <p className="mt-3 max-w-prose text-body text-ink-2">Your courses and every book or resource you&apos;ve bought or been given. Download links are private to you and expire after a minute, so open them from here each time.</p>
+      </header>
 
-      {claimed && <p role="status" className="rounded-xl border border-blue/30 bg-elevated p-5 text-body-sm">Your purchase is now in your Library. Courses in it are ready to start.</p>}
+      {claimed && <p role="status" className="fa-callout text-body-sm"><span className="fa-label !text-success">✓ Added</span><span className="mt-1 block">Your purchase is now in your Library. Courses in it are ready to start.</span></p>}
 
       {admin && productsMissing && (
         <div role="note" className="rounded-xl border border-warm/40 bg-elevated p-5 text-body-sm">
@@ -121,7 +123,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
         </div>
       ) : all.length === 0 ? (
         <StateMessage compact title="Your library is empty" body="Courses you enrol in and products you buy will appear here, ready to open or download."
-          action={shopOpen ? { href: "/academy/shop", label: "Browse products" } : { href: "/academy/courses", label: "Explore courses" }}
+          action={shopOpen ? { href: "/academy/books", label: "Browse books" } : { href: "/academy/courses", label: "Explore courses" }}
           secondary={shopOpen ? { href: "/academy/courses", label: "Explore courses" } : undefined} />
       ) : (
         <section aria-label="Your items" className="space-y-6">
@@ -135,8 +137,8 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
               <nav aria-label="Filter by type" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
                 {CATEGORIES.filter((c) => c.id === "all" || counts[c.id] > 0).map((c) => (
                   <Link key={c.id} href={{ pathname: "/library", query: { ...(c.id !== "all" ? { tab: c.id } : {}), ...(q ? { q } : {}) } }} aria-current={tab === c.id ? "page" : undefined}
-                    className={cn("inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full px-4 text-label", tab === c.id ? "bg-ink text-canvas" : "border border-line text-ink-2 hover:border-ink hover:text-ink")}>
-                    {c.label}<span className="tabular-nums opacity-70">{counts[c.id]}</span>
+                    className={cn("inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-[6px] border px-3.5 text-sm font-medium transition-colors", tab === c.id ? "border-ink bg-ink text-canvas" : "border-line text-ink-2 hover:border-line-strong hover:text-ink")}>
+                    {c.label}<span className="font-mono text-xs opacity-70">{counts[c.id]}</span>
                   </Link>
                 ))}
               </nav>
@@ -144,8 +146,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
                 {tab !== "all" && <input type="hidden" name="tab" value={tab} />}
                 <label htmlFor="lib-q" className="sr-only">Search your library</label>
                 <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
-                <input id="lib-q" name="q" type="search" defaultValue={q} maxLength={80} placeholder="Search your library"
-                  className="h-11 w-full rounded border border-line-strong bg-transparent pl-9 pr-3 text-base placeholder:text-ink-3 focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30 sm:text-body-sm" />
+                <input id="lib-q" name="q" type="search" defaultValue={q} maxLength={80} placeholder="Search your library" className="fa-input pl-9" />
               </form>
             </div>
           )}
@@ -181,22 +182,30 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
 
 function LibraryCard({ item }: { item: LibraryItem }) {
   const Icon = item.action?.kind === "download" ? Download : item.action?.kind === "contents" ? Layers : PlayCircle;
+  const isCourse = item.category === "courses";
   return (
-    <li className="flex min-w-0 flex-col rounded-xl border border-line bg-elevated p-5">
-      <Badge className="self-start">{item.typeLabel}</Badge>
-      <h3 className="mt-3 break-words text-h4">{item.title}</h3>
-      {item.subtitle && <p className="mt-1 line-clamp-2 text-body-sm text-ink-2">{item.subtitle}</p>}
-      <p className="mt-1 text-caption text-ink-3">{item.origin}{item.date ? ` · ${date(item.date)}` : ""}</p>
-      {item.action && (
-        <div className="mt-auto pt-5">
-          {item.action.kind === "download" ? (
-            <a href={item.action.href} rel="nofollow" className="inline-flex min-h-[44px] items-center gap-2 rounded bg-ink px-4 text-label text-canvas hover:bg-ink/90"><Icon aria-hidden className="h-4 w-4" />{item.action.label}</a>
-          ) : (
-            <Link href={item.action.href} className={cn("inline-flex min-h-[44px] items-center gap-2 rounded px-4 text-label", item.action.kind === "contents" ? "border border-line-strong hover:border-ink" : "bg-ink text-canvas hover:bg-ink/90")}><Icon aria-hidden className="h-4 w-4" />{item.action.label}</Link>
-          )}
-          {item.reviewHref && <Link href={item.reviewHref} className="ml-3 inline-flex min-h-[44px] items-center text-caption text-ink-2 underline underline-offset-4 hover:text-ink">Leave a review</Link>}
-        </div>
-      )}
+    <li className="fa-card fa-card-hover flex min-w-0 flex-col overflow-hidden">
+      <div className="fa-dots flex aspect-[16/9] items-center justify-center border-b border-line px-[30%] py-4">
+        {isCourse
+          ? <SubjectIcon subject={item.subtitle ?? item.title} className="h-12 w-12 text-ink" />
+          : <div className="w-full max-w-[5.5rem]"><BookCover name={item.title} image={item.coverImage} type={item.productType} /></div>}
+      </div>
+      <div className="flex flex-1 flex-col p-5">
+        <span className="fa-tag self-start" data-dot>{item.typeLabel}</span>
+        <h3 className="mt-3 break-words text-h4">{item.title}</h3>
+        {item.subtitle && <p className="mt-1 line-clamp-2 text-body-sm text-ink-2">{item.subtitle}</p>}
+        <p className="mt-2 text-caption text-ink-3">{item.origin}{item.date ? ` · ${date(item.date)}` : ""}</p>
+        {item.action && (
+          <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-5">
+            {item.action.kind === "download" ? (
+              <a href={item.action.href} rel="nofollow" className="fa-btn fa-btn-primary fa-btn-sm"><Icon aria-hidden className="h-4 w-4" />{item.action.label}</a>
+            ) : (
+              <Link href={item.action.href} className={cn("fa-btn fa-btn-sm", item.action.kind === "contents" ? "fa-btn-secondary" : "fa-btn-primary")}><Icon aria-hidden className="h-4 w-4" />{item.action.label}</Link>
+            )}
+            {item.reviewHref && <Link href={item.reviewHref} className="inline-flex min-h-[36px] items-center text-sm font-medium text-blue hover:underline">Leave a review</Link>}
+          </div>
+        )}
+      </div>
     </li>
   );
 }

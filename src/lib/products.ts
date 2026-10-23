@@ -7,18 +7,9 @@ import type { Currency, PriceRow } from "@/content/course";
  * Public product catalogue (published products only, enforced by RLS). Cookie-less reads, so shop pages are cacheable;
  * admin changes refresh them through the "cms" cache tag.
  */
-export const PRODUCT_TYPES = ["course", "ebook", "guide", "template", "download", "bundle"] as const;
-export type ProductType = (typeof PRODUCT_TYPES)[number];
-export const TYPE_LABELS: Record<ProductType, string> = {
-  course: "Course", ebook: "Ebook", guide: "Guide", template: "Template", download: "Digital download", bundle: "Bundle",
-};
-/** Types delivered as a file through the secure download route. */
-export const FILE_TYPES: ProductType[] = ["ebook", "guide", "template", "download"];
-
-export type ProductCard = {
-  id: string; slug: string; name: string; type: ProductType; shortDescription: string | null; coverImage: string | null;
-  courseSlug: string | null; prices: PriceRow[]; badge: string | null; featured: boolean; publishedAt: string | null;
-};
+// Types and labels live in a client-safe module so client components can use them too.
+import { PRODUCT_TYPES, type ProductCard, type ProductType } from "@/lib/product-types";
+export { PRODUCT_TYPES, TYPE_LABELS, FILE_TYPES, type ProductCard, type ProductType } from "@/lib/product-types";
 export type PublicProduct = ProductCard & {
   description: string | null; seoTitle: string | null; seoDescription: string | null; ogImage: string | null; updatedAt: string | null;
   items: ProductCard[]; related: ProductCard[];

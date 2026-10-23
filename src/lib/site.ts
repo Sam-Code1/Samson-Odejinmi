@@ -10,13 +10,13 @@ export const mainNav = [
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
   { href: "/academy", label: "Academy" },
-  { href: "/shop", label: "Shop" },
+  { href: "/academy/books", label: "Books" },
   { href: "/contact", label: "Contact" },
 ];
 
 export const academyNav = [
   { href: "/academy/courses", label: "Courses" },
-  { href: "/academy/shop", label: "Shop" },
+  { href: "/academy/books", label: "Books" },
   { href: "/academy#resources", label: "Resources" },
   { href: "/academy#instructor", label: "About" },
   { href: "/dashboard", label: "Student portal" },

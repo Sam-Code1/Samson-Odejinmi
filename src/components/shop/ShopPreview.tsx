@@ -5,7 +5,7 @@ import { Container, Section, SectionHeader } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { PlaceholderArt } from "@/components/visual/MediaFrame";
-import { productHref } from "@/components/academy/ProductCard";
+import { bookHref } from "@/components/books/BookParts";
 import { getPublishedProducts, getShopSettings, TYPE_LABELS } from "@/lib/products";
 import { canOptimize } from "@/lib/cms/images";
 import { formatMoney } from "@/lib/utils";
@@ -16,8 +16,8 @@ import { formatMoney } from "@/lib/utils";
  * prices in every currency the product is sold in. Renders nothing when the shop is closed or has no products.
  */
 const COPY = {
-  site: { title: "Resources I've created", intro: "Practical guides, digital products and learning resources designed around 3D, design and creative technology.", cta: "Explore the shop", base: "/shop" as const },
-  academy: { title: "Go beyond the lessons", intro: "Explore practical resources created to help you understand creative technology and build with confidence.", cta: "Explore the shop", base: "/academy/shop" as const },
+  site: { title: "Resources I've created", intro: "Practical guides, digital products and learning resources designed around 3D, design and creative technology.", cta: "Explore Books", base: "/academy/books" as const },
+  academy: { title: "Go beyond the lessons", intro: "Explore practical resources created to help you understand creative technology and build with confidence.", cta: "Explore Books", base: "/academy/books" as const },
 };
 
 export async function ShopPreview({ surface, tone = "peach", id }: { surface: "site" | "academy"; tone?: "peach" | "mint" | "violet"; id?: string }) {
@@ -43,7 +43,7 @@ export async function ShopPreview({ surface, tone = "peach", id }: { surface: "s
                 </div>
                 <div className="flex flex-1 flex-col p-5 sm:p-6">
                   <Badge className="self-start">{TYPE_LABELS[p.type]}</Badge>
-                  <h3 className="mt-3 text-h4"><Link href={productHref(p, copy.base)} className="after:absolute after:inset-0"><span className="link-line pb-0.5">{p.name}</span></Link></h3>
+                  <h3 className="mt-3 text-h4"><Link href={bookHref(p)} className="after:absolute after:inset-0"><span className="link-line pb-0.5">{p.name}</span></Link></h3>
                   {p.shortDescription && <p className="mt-2 line-clamp-2 text-body-sm text-ink-2">{p.shortDescription}</p>}
                   <div className="mt-auto flex items-center justify-between gap-4 pt-5">
                     <p className="text-label tabular-nums">{p.prices.length ? p.prices.map((x) => (x.amountMinor === 0 ? "Free" : formatMoney(x.amountMinor, x.currency))).filter((v, k, a) => a.indexOf(v) === k).join(" · ") : "Coming soon"}</p>

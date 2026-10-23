@@ -27,9 +27,10 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 12. **`supabase/migrations/0012_currency_capabilities.sql`** (records what each payment provider's merchant account actually accepts per currency, so checkout never sends a currency to a provider that refused it and routes to another capable provider; optional "was" prices). Idempotent, non-destructive.
 13. **`supabase/migrations/0013_guest_commerce.sql`** (guest checkout without an account, cart orders with line items, FOLA order numbers, hashed expiring order links for guest downloads, claiming a guest order into an account, commerce switches, commerce events). Idempotent, non-destructive; existing checkouts keep working. Needs `SUPABASE_SERVICE_ROLE_KEY` on the server.
 14. **`supabase/migrations/0014_product_reviews.sql`** (verified-buyer product reviews and ratings with moderation). Idempotent.
-15. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
-16. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
-17. Make yourself an admin (after registering):
+15. **`supabase/migrations/0015_profile_avatars.sql`** (student profile photos: a public `avatars` bucket where each user can only write their own folder, 2 MB, JPG/PNG/WebP). Idempotent.
+16. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
+17. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
+18. Make yourself an admin (after registering):
    ```sql
    insert into public.admin_users (user_id) select id from auth.users where email = 'odejinmisamson37@gmail.com';
    ```

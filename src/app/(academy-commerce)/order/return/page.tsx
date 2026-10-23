@@ -25,7 +25,7 @@ export default async function OrderReturn({ searchParams }: { searchParams: Prom
   }
   return (
     <Container className="pb-24 pt-14 sm:pt-20">
-      <StateMessage title="Your payment is being confirmed" body="As soon as it's confirmed we email your receipt with a private download link. It usually arrives within a minute. If you paid on a different device, use that email link." action={{ href: "/order/access", label: "Resend my link" }} secondary={{ href: "/shop", label: "Back to the shop" }} />
+      <StateMessage title="Your payment is being confirmed" body="As soon as it's confirmed we email your receipt with a private download link. It usually arrives within a minute. If you paid on a different device, use that email link." action={{ href: "/order/access", label: "Resend my link" }} secondary={{ href: "/academy/books", label: "Back to Books" }} />
     </Container>
   );
 }

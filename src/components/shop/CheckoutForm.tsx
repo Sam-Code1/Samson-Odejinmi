@@ -9,8 +9,10 @@ import { PaymentPicker } from "@/components/academy/PaymentPicker";
 import { CurrencyUnavailable } from "@/components/academy/CurrencySelector";
 import type { PublicPayment } from "@/lib/payments/options";
 import { formatMoney } from "@/lib/utils";
+import { BookCover } from "@/components/books/BookParts";
+import { SubjectIcon } from "@/components/brand/CourseCard";
 
-type Line = { key: string; name: string; typeLabel: string; price: number | null };
+type Line = { key: string; name: string; typeLabel: string; price: number | null; image?: string | null; kind?: "product" | "course" };
 
 /**
  * Checkout form. Sends item ids, currency, coupon, email/name (guests) and the preferred provider. Every number shown
@@ -59,8 +61,11 @@ export function CheckoutForm({ itemKeys, lines, currency, priced, payment, signe
         <h2 id="co-items" className="sr-only">Your order</h2>
         <ul className="divide-y divide-line border-y border-line">
           {lines.map((l) => (
-            <li key={l.key} className="flex items-start justify-between gap-4 py-4">
-              <div className="min-w-0"><p className="text-caption uppercase tracking-wide text-ink-3">{l.typeLabel}</p><p className="break-words text-body font-medium">{l.name}</p></div>
+            <li key={l.key} className="flex items-center justify-between gap-4 py-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="w-12 shrink-0">{l.kind === "course" ? <div className="fa-dots grid aspect-[2/3] place-items-center rounded-[2px] border border-line"><SubjectIcon subject={l.name} className="h-6 w-6 text-ink" /></div> : <BookCover name={l.name} image={l.image ?? null} type="ebook" sizes="48px" />}</div>
+                <div className="min-w-0"><span className="fa-tag">{l.typeLabel}</span><p className="mt-1.5 break-words text-body font-medium">{l.name}</p></div>
+              </div>
               <p className="shrink-0 text-body tabular-nums">{l.price === 0 ? "Free" : formatMoney(l.price!, currency)}</p>
             </li>
           ))}

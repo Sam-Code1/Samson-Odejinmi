@@ -1,225 +1,178 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Container, Section, SectionHeader } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
-import { NewsletterSignup } from "@/components/academy/NewsletterSignup";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Accordion } from "@/components/ui/Accordion";
-import { Badge } from "@/components/ui/Badge";
-import { Rise, Settle, Stagger } from "@/components/ui/Motion";
-import { AcademyVisual } from "@/components/visual/AcademyVisual";
-import { CourseSummaryCard } from "@/components/academy/CourseSummaryCard";
-import { CarouselStacked, type Slide } from "@/components/ui/carousel-07";
-import { LearningStack } from "@/components/sections/StepStack";
+import { NewsletterSignup } from "@/components/academy/NewsletterSignup";
+import { FaContainer, FaSection } from "@/components/brand/Shell";
+import { Callout, IsoF, Pathway } from "@/components/brand/Brand";
+import { CourseCard } from "@/components/brand/CourseCard";
+import { BOOKS, BookCard, BookCover, PriceTag, bookHref } from "@/components/books/BookParts";
 import { getPublishedCourses } from "@/lib/academy";
 import { faqAcademy } from "@/content/about";
-import { getCoursePricing } from "@/lib/pricing";
 import { buildMetadata } from "@/lib/cms/seo";
-import { ShopPreview } from "@/components/shop/ShopPreview";
-import { getPublishedProducts, getShopSettings } from "@/lib/products";
+import { getPublishedProducts, getShopSettings, TYPE_LABELS } from "@/lib/products";
 
 export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("academy", {
-    title: "Fola Academy — Practical Creative Education",
+    title: "Fola Academy — Creative & Technical Education",
     absoluteTitle: true,
-    description: "Practical creative education for people who want to understand how things are made, not simply which buttons to press. Start with Blender Foundations.",
+    description: "Making 3D, design and creative technology easier to understand. Courses, books and resources that teach how creative tools work, and why.",
     path: "/academy",
   });
 }
 
-const flow = ["Concept", "Demonstration", "Practice", "Project"];
-const audience = ["Complete beginners", "Aspiring 3D artists", "Students", "Designers", "Animators", "Self-taught creatives", "People curious about Blender", "People overwhelmed by tutorials"];
-const model = [
-  { name: "Understand", body: "Learn what a thing is, and why it exists, before you touch the software." },
-  { name: "Practise", body: "Try it yourself in small, focused exercises that make the idea stick." },
-  { name: "Build", body: "Bring the pieces together in a complete project you made yourself." },
-  { name: "Grow", body: "Carry the understanding into your own work and your next topic." },
+const PHILOSOPHY = [
+  { n: "01", title: "Learn the craft.", body: "Foundations that outlast any version number." },
+  { n: "02", title: "Understand the tools.", body: "Every button explained by the problem it solves." },
+  { n: "03", title: "Build with purpose.", body: "Projects that end in something real." },
 ];
-const resources = ["Guides", "Blueprints", "Workbooks", "Cheat sheets"];
+const METHOD = [
+  { title: "Idea", body: "Learn what a thing is, and why it exists, before you touch the software." },
+  { title: "Demonstration", body: "See it done once, slowly, with the reasoning said out loud." },
+  { title: "Practice", body: "Small, focused exercises that make the idea stick." },
+  { title: "Project", body: "Bring the pieces together in something you made yourself." },
+];
 
+/**
+ * Fola Academy homepage (Brand Guidelines §16): blueprint-grid hero with the positioning line, one framed hero object,
+ * two CTAs; philosophy band; course grid; latest book; method; founder note; questions.
+ * Prices on this cached page are shown in every currency a book is sold in (no guessing the visitor's currency).
+ */
 export default async function AcademyPage() {
   const [courses, products, shop] = await Promise.all([getPublishedCourses(), getPublishedProducts(), getShopSettings()]);
-  const hasProducts = shop.enabled && products.length > 0;
-  const course = courses[0] ?? null;
-  const prices = course ? await getCoursePricing(course.slug) : [];
-  const moduleSlides: Slide[] = course
-    ? course.modules.filter((m) => m.lessons.length > 0).map((m) => ({
-        id: String(m.position), title: m.title, description: `${m.lessons.length} ${m.lessons.length === 1 ? "lesson" : "lessons"}, starting with "${m.lessons[0].title}".`,
-        badge: `Module ${m.position}`, href: `/academy/courses/${course.slug}#curriculum`,
-      }))
-    : [];
+  const books = shop.enabled ? products.filter((p) => p.type !== "course") : [];
+  const latest = books.find((b) => b.featured) ?? books[0] ?? null;
+  const more = books.filter((b) => b.id !== latest?.id).slice(0, 4);
+  const first = courses[0] ?? null;
 
   return (
     <>
-      <section className="mesh grain relative overflow-hidden border-b border-line">
-        <Settle className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] lg:block [mask-image:linear-gradient(90deg,transparent,#000_35%)]">
-          <AcademyVisual className="h-full w-full" />
-        </Settle>
-        <Container className="relative pb-14 pt-14 sm:pt-20 lg:pb-28 lg:pt-28">
-          <Stagger className="max-w-3xl">
-            <Rise><p className="text-label text-ink-3">Fola Academy</p></Rise>
-            <Rise>
-              <h1 className="mt-5 text-display">
-                <span className="block">Learn the idea.</span>
-                <span className="block">Understand the process.</span>
-                <span className="block">Build something real.</span>
-              </h1>
-            </Rise>
-            <Rise>
-              <p className="mt-8 max-w-[34rem] text-body-lg text-ink-2">Practical creative education for people who want to understand how things are made, not simply which buttons to press.</p>
-            </Rise>
-            <Rise>
-              <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
-                <Button href="/academy/courses" size="lg">Explore courses</Button>
-                <Button href="#how" variant="text">How it works</Button>
-              </div>
-            </Rise>
-          </Stagger>
-          <div className="relative mt-14 aspect-[4/3] overflow-hidden rounded-sm border border-line lg:hidden">
-            <AcademyVisual className="absolute inset-0 h-full w-full" />
+      {/* Hero */}
+      <section className="fa-blueprint border-b border-line">
+        <FaContainer className="grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-12 lg:gap-10 lg:py-28">
+          <div className="lg:col-span-7">
+            <p className="fa-label fa-rise">Creative &amp; technical education</p>
+            {/* A long positioning line: h1 scale (the display size is kept for short headlines, §08 "one per view"). */}
+            <h1 className="mt-5 text-h1 !text-[clamp(2.5rem,1.7rem+2.9vw,4.5rem)] !font-extrabold !leading-[0.98] fa-rise" style={{ animationDelay: "60ms" }}>Making 3D, design and creative technology easier to understand.</h1>
+            <p className="mt-7 max-w-[36rem] text-body-lg text-ink-2 fa-rise" style={{ animationDelay: "120ms" }}>Courses, books and resources that teach how creative tools work, and why.</p>
+            <div className="mt-10 flex flex-wrap gap-3 fa-rise" style={{ animationDelay: "180ms" }}>
+              <Link href="/academy/courses" className="fa-btn fa-btn-primary fa-btn-lg">Explore courses<ArrowRight aria-hidden className="fa-arrow h-4 w-4" /></Link>
+              {latest ? <Link href={bookHref(latest)} className="fa-btn fa-btn-secondary fa-btn-lg">Read the first chapter</Link> : <Link href="#method" className="fa-btn fa-btn-secondary fa-btn-lg">How we teach</Link>}
+            </div>
           </div>
-        </Container>
+          <figure className="lg:col-span-5">
+            <div className="fa-frame relative mx-auto aspect-[5/4] max-w-lg border border-line bg-surface">
+              <IsoF className="absolute inset-0 h-full w-full p-[8%]" />
+            </div>
+            <figcaption className="fa-label mt-4 text-center lg:text-left">Fig. 00 — The constructed F</figcaption>
+          </figure>
+        </FaContainer>
       </section>
 
-      <Section id="why">
-        <Container className="grid gap-14 lg:grid-cols-12">
-          <div className="lg:col-span-6">
-            <h2 className="text-h1">Learning creative software shouldn&apos;t feel like learning a cockpit.</h2>
-          </div>
-          <div className="lg:col-span-5 lg:col-start-8">
-            <p className="text-body-lg text-ink-2">Open Blender for the first time and you meet hundreds of buttons. Many beginner tutorials ask you to follow along first and understand later, so you can finish a lesson and still not know why it worked.</p>
-            <p className="mt-5 text-body-lg text-ink-2">Fola Academy turns that around. Each topic starts with the idea, then shows it, then lets you practise it, then puts it to use.</p>
-          </div>
-          <ol className="grid gap-8 sm:grid-cols-4 lg:col-span-12">
-            {flow.map((f, i) => (
-              <li key={f} className="relative border-t border-line pt-6">
-                <span aria-hidden className="thread-solid absolute -top-px left-0 h-px w-12" />
-                <span className="text-caption tabular-nums text-ink-3">{String(i + 1).padStart(2, "0")}</span>
-                <p className="mt-2 text-h3">{f}</p>
-              </li>
-            ))}
-          </ol>
-        </Container>
-      </Section>
-
-      <Section tone="violet">
-        <Container className="grid gap-14 lg:grid-cols-12">
-          <div className="lg:col-span-5">
-            <SectionHeader title="Who it's for" intro="Fola Academy starts at the beginning. It isn't trying to be for everyone or every level yet." />
-          </div>
-          <div className="lg:col-span-6 lg:col-start-7">
-            <ul className="flex flex-wrap gap-3">
-              {audience.map((a) => <li key={a} className="rounded-full border border-line-strong bg-elevated/70 px-4 py-2 text-label">{a}</li>)}
-            </ul>
-            <div className="mt-10 border-t border-line pt-6">
-              <p className="text-h4">Not the right fit yet</p>
-              <p className="mt-2 max-w-prose text-body-sm text-ink-2">If you want advanced, specialised training, or a promise of becoming a professional in a few weeks, this isn&apos;t that. The first programme is a beginner foundation.</p>
+      {/* Philosophy band */}
+      <section aria-label="Philosophy" className="theme-night border-b border-line bg-canvas">
+        <FaContainer className="grid divide-y divide-line md:grid-cols-3 md:divide-x md:divide-y-0">
+          {PHILOSOPHY.map((p) => (
+            <div key={p.n} className="py-10 md:px-8 md:py-14 md:first:pl-0">
+              <p className="font-mono text-xs text-ink-3">{p.n}</p>
+              <p className="mt-3 text-h4">{p.title}</p>
+              <p className="mt-2 text-body-sm text-ink-2">{p.body}</p>
             </div>
-          </div>
-        </Container>
-      </Section>
+          ))}
+        </FaContainer>
+      </section>
 
-      <Section id="how" tone="blue">
-        <Container>
-          <div className="grid items-center gap-14 lg:grid-cols-12">
-            <div className="lg:col-span-5">
-              <SectionHeader title="How learning works" intro="Four stages, in order. Each one builds on the one before." />
-              <ol className="mt-8 space-y-2 text-body-sm text-ink-2">
-                {model.map((m, i) => <li key={m.name}><span className="tabular-nums text-ink-3">{String(i + 1).padStart(2, "0")}</span> &nbsp;{m.name}</li>)}
-              </ol>
-            </div>
-            <div className="flex justify-center pb-6 lg:col-span-7"><LearningStack /></div>
-          </div>
-        </Container>
-      </Section>
-
-      <Section id="course">
-        <Container>
-          <SectionHeader title="The first course" />
-          <div className="mt-12">
-            {course ? <CourseSummaryCard course={course} prices={prices} /> : <p className="max-w-prose text-body text-ink-2">The first course is being prepared. It will appear here as soon as it&apos;s ready.</p>}
-          </div>
-        </Container>
-      </Section>
-
-      {course && moduleSlides.length > 0 && (
-      <Section tone="night">
-        <Container>
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <SectionHeader title={`What's inside ${course.title}`} intro={`${course.moduleCount} ${course.moduleCount === 1 ? "module" : "modules"}, ${course.lessonCount} ${course.lessonCount === 1 ? "lesson" : "lessons"}.`} />
-            <Button href={`/academy/courses/${course.slug}#curriculum`} variant="text">Full curriculum</Button>
-          </div>
-          <div className="mt-10"><CarouselStacked slides={moduleSlides} label="Course modules" /></div>
-        </Container>
-      </Section>
-      )}
-
-      {/* Real products from the shop once any are published; until then, the honest "coming soon" list. */}
-      {hasProducts ? <ShopPreview surface="academy" id="resources" /> : (
-      <Section tone="peach" id="resources">
-        <Container>
-          <SectionHeader title="Resources" intro="Guides and practice material will live here as they're finished. Nothing is published yet." />
-          <ul className="mt-12 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
-            {resources.map((r) => (
-              <li key={r} className="flex min-h-36 flex-col justify-between bg-elevated p-6">
-                <p className="text-h4">{r}</p>
-                <Badge className="self-start">Coming soon</Badge>
-              </li>
-            ))}
+      {/* Courses */}
+      <FaSection id="courses" label="Courses" title="Start with understanding" action={<Link href="/academy/courses" className="fa-btn fa-btn-text">All courses<ArrowRight aria-hidden className="fa-arrow h-4 w-4" /></Link>}>
+        {courses.length ? (
+          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((c, i) => <li key={c.slug}><CourseCard c={c} index={i} /></li>)}
           </ul>
-        </Container>
-      </Section>
+        ) : <p className="max-w-prose text-body text-ink-2">The first course is being prepared. It appears here as soon as it&apos;s ready.</p>}
+      </FaSection>
+
+      {/* Latest book */}
+      {latest && (
+        <FaSection id="books" label="Books" title="The latest book" action={<Link href={BOOKS} className="fa-btn fa-btn-text">All books<ArrowRight aria-hidden className="fa-arrow h-4 w-4" /></Link>}>
+          <div className="grid items-center gap-12 lg:grid-cols-12">
+            <div className="fa-dots fa-frame mx-auto w-full max-w-sm rounded-[8px] border border-line px-[14%] py-[9%] lg:col-span-4">
+              <BookCover name={latest.name} image={latest.coverImage} type={latest.type} sizes="(min-width: 1024px) 20rem, 70vw" />
+            </div>
+            <div className="lg:col-span-7 lg:col-start-6">
+              <span className="fa-tag" data-dot>{TYPE_LABELS[latest.type]}</span>
+              <h3 className="mt-4 text-h1"><Link href={bookHref(latest)} className="hover:text-blue">{latest.name}</Link></h3>
+              {latest.shortDescription && <p className="fa-quote mt-5 max-w-prose text-[1.375rem] leading-snug text-ink-2">{latest.shortDescription}</p>}
+              <p className="mt-6 text-h4">{latest.prices.length ? latest.prices.map((p) => <PriceTag key={p.currency} p={{ prices: [p] }} currency={p.currency} className="mr-4" />) : null}</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link href={bookHref(latest)} className="fa-btn fa-btn-primary">Get the book<ArrowRight aria-hidden className="fa-arrow h-4 w-4" /></Link>
+                <Link href={BOOKS} className="fa-btn fa-btn-secondary">Browse all books</Link>
+              </div>
+            </div>
+          </div>
+          {more.length > 0 && (
+            <ul className="mt-16 grid grid-cols-1 gap-x-6 gap-y-12 xs:grid-cols-2 lg:grid-cols-4">
+              {more.map((b, i) => <li key={b.id}><BookCard p={b} currency={b.prices[0]?.currency ?? "NGN"} index={i + 1} /></li>)}
+            </ul>
+          )}
+        </FaSection>
       )}
 
-      <Section id="instructor">
-        <Container className="grid items-center gap-14 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <div className="relative aspect-[4/5] max-w-sm overflow-hidden rounded-sm">
-              <Image src="/images/samson-odejinmi.jpg" alt="Portrait of Samson Odejinmi, instructor" fill sizes="(min-width: 1024px) 24rem, 80vw" className="object-cover" />
-              <span aria-hidden className="thread-v absolute inset-y-0 left-0 w-px" />
+      {/* Method */}
+      <FaSection id="method" label="How we teach" title="Mental models first, then tools, then projects." intro="Most creative education starts with the software. We start one layer deeper, with the problem each tool was invented to solve. Once you understand the problem, the buttons explain themselves.">
+        <ol className="grid gap-px overflow-hidden rounded-[8px] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+          {METHOD.map((m, i) => (
+            <li key={m.title} className="flex flex-col bg-canvas p-6">
+              <div className="flex items-center gap-3">
+                <span aria-hidden className={i === 0 ? "h-3 w-3 rounded-full border-[1.5px] border-[rgb(var(--path-start))]" : i === METHOD.length - 1 ? "h-3 w-3 bg-[rgb(var(--path-end))]" : "h-px w-3 bg-line-strong"} />
+                <span className="font-mono text-xs text-ink-3">{String(i + 1).padStart(2, "0")}</span>
+              </div>
+              <p className="mt-5 text-h4">{m.title}</p>
+              <p className="mt-2 text-body-sm text-ink-2">{m.body}</p>
+            </li>
+          ))}
+        </ol>
+        <Callout label="Why this works" className="mt-10 max-w-3xl">Software changes. Understanding compounds. When you know why a tool exists, you can learn the next version, or the next tool, on your own.</Callout>
+      </FaSection>
+
+      {/* Founder note */}
+      <FaSection id="about" label="About" title={<span id="instructor">A note from the founder</span>}>
+        <div className="grid items-start gap-12 lg:grid-cols-12">
+          <figure className="lg:col-span-4">
+            <div className="fa-frame relative aspect-[4/5] max-w-sm overflow-hidden">
+              <Image src="/images/samson-odejinmi.jpg" alt="Portrait of Samson Afolabi Odejinmi, founder of Fola Academy" fill sizes="(min-width: 1024px) 24rem, 80vw" className="object-cover" />
             </div>
+            <figcaption className="fa-label mt-4">Samson Afolabi Odejinmi · Founder</figcaption>
+          </figure>
+          <div className="fa-book space-y-5 text-ink-2 lg:col-span-7 lg:col-start-6">
+            <p>I&apos;m Samson Afolabi Odejinmi, known as Fola. I became interested in animation and 3D around 2020, with limited access to the resources and equipment to pursue it fully. I later trained in 3D Animation and Video Production at Del-York Creative Academy in Lagos, and took part in physical 3D training with YAPI in Lagos.</p>
+            <p>I&apos;m exploring where 3D, programming and creative technology meet, with Technical Direction as a long-term goal. Fola Academy is where I&apos;m building the learning I wanted as a beginner: practical, structured, and focused on understanding what you&apos;re doing and why it works.</p>
+            <Pathway className="!mt-8 max-w-xs" />
+            <Link href="/about" className="fa-btn fa-btn-text font-sans">More about Samson<ArrowRight aria-hidden className="fa-arrow h-4 w-4" /></Link>
           </div>
-          <div className="lg:col-span-7 lg:col-start-6">
-            <h2 className="text-h2">About the instructor</h2>
-            <div className="mt-8 space-y-5 text-body-lg text-ink-2">
-              <p>I&apos;m Samson Afolabi Odejinmi, known as Fola. I became interested in animation and 3D around 2020, with limited access to the resources and equipment to pursue it fully. I later trained in 3D Animation and Video Production at Del-York Creative Academy in Lagos, and took part in physical 3D training with YAPI in Lagos.</p>
-              <p>I&apos;m currently exploring where 3D, programming and creative technology meet, with Technical Direction as a long-term goal. Fola Academy is where I&apos;m building the kind of learning I want beginners to have: practical, structured, and focused on understanding what you&apos;re doing and why it works.</p>
-            </div>
-            <div className="mt-8"><Button href="/about" variant="text">More about Samson</Button></div>
+        </div>
+      </FaSection>
+
+      {/* Questions + newsletter */}
+      <FaSection label="Questions" title="Before you start">
+        <div className="grid gap-12 lg:grid-cols-12">
+          <div className="lg:col-span-7"><Accordion items={faqAcademy.map((f) => ({ q: f.q, a: f.a }))} /></div>
+          <div className="lg:col-span-4 lg:col-start-9"><NewsletterSignup title="Get the first look" body="New courses and books, when they're ready. No spam; unsubscribe with one click." /></div>
+        </div>
+      </FaSection>
+
+      {/* Closing */}
+      <section className="theme-night fa-blueprint border-t border-line">
+        <FaContainer className="flex flex-col items-start justify-between gap-10 py-20 sm:py-28 lg:flex-row lg:items-end">
+          <div>
+            <p className="fa-label">Start here</p>
+            <h2 className="mt-4 max-w-3xl text-h1">{first ? "Start with the foundations." : "New courses are on the way."}</h2>
           </div>
-        </Container>
-      </Section>
-
-      <Section tone="mint">
-        <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <h2 className="text-h2">More programmes</h2>
-            <p className="mt-5 text-body text-ink-2">More programmes are being developed. When a course is ready, it appears here.</p>
-          </div>
-        </Container>
-      </Section>
-
-      <Section tone="mint">
-        <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
-          <div className="lg:col-span-4"><SectionHeader title="Stay in the loop" intro="New courses, guides and ebooks, when they're ready." /></div>
-          <div className="lg:col-span-7 lg:col-start-6"><NewsletterSignup title="Get the first look" /></div>
-        </Container>
-      </Section>
-
-      <Section>
-        <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
-          <div className="lg:col-span-4"><SectionHeader title="Questions" /></div>
-          <div className="lg:col-span-7 lg:col-start-6"><Accordion items={faqAcademy.map((f) => ({ q: f.q, a: f.a }))} /></div>
-        </Container>
-      </Section>
-
-      <Section tone="night">
-        <Container className="flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-end">
-          <h2 className="text-h1 max-w-3xl">{course ? "Start with the foundations." : "New courses are on the way."}</h2>
-          <Button href={course ? `/academy/courses/${course.slug}` : "/academy/courses"} size="lg">{course ? `See ${course.title}` : "See courses"}</Button>
-        </Container>
-      </Section>
+          <Link href={first ? `/academy/courses/${first.slug}` : "/academy/courses"} className="fa-btn fa-btn-primary fa-btn-lg">{first ? `Begin ${first.title}` : "See courses"}<ArrowRight aria-hidden className="fa-arrow h-4 w-4" /></Link>
+        </FaContainer>
+      </section>
     </>
   );
 }

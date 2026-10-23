@@ -28,7 +28,7 @@ export default async function OrderPage({ params }: { params: Promise<{ token: s
   let found = await orderForToken(token);
   const wrap = (n: React.ReactNode) => <Container className="pb-24 pt-14 sm:pt-20 lg:pt-24">{n}</Container>;
   if (!found) {
-    return wrap(<StateMessage title="This link has expired or isn't valid" body="Order links are private and expire after 30 days. Enter the email you used at checkout and we'll send you a new one straight away." action={{ href: "/order/access", label: "Get a new link" }} secondary={{ href: "/shop", label: "Browse the shop" }} />);
+    return wrap(<StateMessage title="This link has expired or isn't valid" body="Order links are private and expire after 30 days. Enter the email you used at checkout and we'll send you a new one straight away." action={{ href: "/order/access", label: "Get a new link" }} secondary={{ href: "/academy/books", label: "Browse books" }} />);
   }
   // Return from the provider: confirm with the provider server to server (never trusts the redirect itself).
   if (found.order.status === "pending") {
@@ -112,7 +112,7 @@ export default async function OrderPage({ params }: { params: Promise<{ token: s
               <div className="mt-5 flex flex-wrap gap-3">
                 <Button href={`/register?next=${encodeURIComponent(`/claim?t=${token}`)}`}>Create account</Button>
                 <Button href={`/login?next=${encodeURIComponent(`/claim?t=${token}`)}`} variant="secondary">I have an account</Button>
-                {!hasCourse && <Link href="/shop" className="inline-flex min-h-[44px] items-center px-2 text-label text-ink-2 underline underline-offset-4 hover:text-ink">Continue as guest</Link>}
+                {!hasCourse && <Link href="/academy/books" className="inline-flex min-h-[44px] items-center px-2 text-label text-ink-2 underline underline-offset-4 hover:text-ink">Continue as guest</Link>}
               </div>
             )}
           <p className="mt-4 text-caption text-ink-3">We also emailed this receipt with a private link, so you can come back to your downloads for 30 days, and request a new link any time.</p>
@@ -135,7 +135,7 @@ export default async function OrderPage({ params }: { params: Promise<{ token: s
       {paid && !guest && <p className="mt-8 text-body-sm text-ink-2">It&apos;s also in your <Link href="/library" className="underline underline-offset-4">Library</Link>.</p>}
       {order.status === "failed" && <div className="mt-8 flex flex-wrap gap-3"><Button href="/cart">Try again</Button><Button href="/contact" variant="secondary">Contact us</Button></div>}
       {order.status === "pending" && <div className="mt-8"><Button href={`/order/${token}`}>Refresh</Button></div>}
-      <p className="mt-10"><Link href="/shop" className="text-label text-ink-2 underline underline-offset-4 hover:text-ink">Continue shopping</Link></p>
+      <p className="mt-10"><Link href="/academy/books" className="text-label text-ink-2 underline underline-offset-4 hover:text-ink">Continue browsing</Link></p>
     </div>
   );
 }

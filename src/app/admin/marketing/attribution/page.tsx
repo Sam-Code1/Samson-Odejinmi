@@ -53,7 +53,7 @@ export default async function AttributionPage({ searchParams }: { searchParams: 
           </Panel>
           <Panel title="How to tag links" className="lg:col-span-2">
             <div className="space-y-3 text-body-sm text-ink-2">
-              <p>Add UTM parameters to every link you post, e.g. <code className="break-all rounded bg-surface px-1.5 py-0.5">https://yourdomain.com/academy/shop/before-you-open-blender?utm_source=instagram&amp;utm_medium=social&amp;utm_campaign=blender-launch</code></p>
+              <p>Add UTM parameters to every link you post, e.g. <code className="break-all rounded bg-surface px-1.5 py-0.5">https://yourdomain.com/academy/books/before-you-open-blender?utm_source=instagram&amp;utm_medium=social&amp;utm_campaign=blender-launch</code></p>
               <p>Campaigns → a post builds this link for you. Affiliate links (<code>?ref=code</code>) are attributed automatically.</p>
               <p className="text-caption text-ink-3">Only the campaign parameters are stored, in first-party cookies, and only when someone arrives through a tagged link: no IP addresses, no tracking pixels on the site, no third-party cookies.</p>
             </div>

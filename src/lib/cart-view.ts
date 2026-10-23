@@ -33,7 +33,7 @@ export async function cartLines(items: CartItem[]): Promise<CartLine[]> {
       const own = ((p.product_prices ?? []) as { currency: string; amount_minor: number; active: boolean }[]).filter((x) => x.active !== false);
       const prices = type === "course" && p.course_id ? coursePrices(p.course_id as string) : Object.fromEntries(own.map((x) => [x.currency, Number(x.amount_minor)]));
       const courseSlug = (p.courses as { slug?: string } | null)?.slug;
-      return { key, item, name: p.name as string, typeLabel: TYPE_LABELS[type] ?? "Product", href: type === "course" && courseSlug ? `/academy/courses/${courseSlug}` : `/shop/${p.slug}`, image: (p.cover_image as string | null) ?? null, prices, available: true };
+      return { key, item, name: p.name as string, typeLabel: TYPE_LABELS[type] ?? "Product", href: type === "course" && courseSlug ? `/academy/courses/${courseSlug}` : `/academy/books/${p.slug}`, image: (p.cover_image as string | null) ?? null, prices, available: true };
     }
     const c = ((courses ?? []) as Record<string, unknown>[]).find((x) => x.id === item.id);
     if (!c) return { key, item, name: "No longer available", typeLabel: "", href: null, image: null, prices: {}, available: false };

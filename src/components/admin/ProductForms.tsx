@@ -18,7 +18,7 @@ export function NewProductForm({ courses }: { courses: { id: string; title: stri
       <FormSection title="New product" description="It starts as a draft: nothing is public until you add a price (and file) and publish it.">
         <TextInput label="Name" name="name" required maxLength={160} className="sm:col-span-2" />
         <SelectInput label="Type" name="product_type" defaultValue="ebook" options={TYPES} />
-        <TextInput label="Slug (optional)" name="slug" maxLength={80} hint="URL: /academy/shop/<slug>. Generated from the name if empty." />
+        <TextInput label="Slug (optional)" name="slug" maxLength={80} hint="URL: /academy/books/<slug>. Generated from the name if empty." />
         <SelectInput label="Course (for course products only)" name="course_id" defaultValue="" className="sm:col-span-2"
           hint="A course product sells the existing course: it uses the course's own page and prices, never a copy."
           options={[{ value: "", label: "Not a course product" }, ...courses.map((c) => ({ value: c.id, label: c.title }))]} />
@@ -52,9 +52,11 @@ export function ProductDetailsForm({ p, library }: { p: ProductRow; library: Lib
       <FormSection title="Details">
         <StatusError />
         <TextInput label="Name" name="name" required defaultValue={p.name} maxLength={160} className="sm:col-span-2" />
-        <TextInput label="Slug" name="slug" required defaultValue={p.slug} maxLength={80} hint={`Public URL: /academy/shop/${p.slug}`} />
-        <TextAreaInput label="Short description" name="short_description" rows={2} defaultValue={p.short_description ?? ""} maxLength={300} className="sm:col-span-2" hint="Shown on cards and in search results." />
-        <TextAreaInput label="Full description" name="description" rows={10} defaultValue={p.description ?? ""} maxLength={20000} className="sm:col-span-2" hint="Plain text. A blank line starts a new paragraph. Describe exactly what's included; no invented reviews or numbers." />
+        <TextInput label="Slug" name="slug" required defaultValue={p.slug} maxLength={80} hint={`Public URL: /academy/books/${p.slug}`} />
+        <TextAreaInput label="Short description (up to 300 characters)" name="short_description" rows={3} defaultValue={p.short_description ?? ""} maxLength={300} className="sm:col-span-2"
+          hint="One or two sentences. Shown on Books cards, as the italic standfirst under the title on the book page, in search results and when shared." />
+        <TextAreaInput label="Long description (About this book)" name="description" rows={14} defaultValue={p.description ?? ""} maxLength={20000} className="sm:col-span-2"
+          hint={'The full "About this book" section, set in the reading serif. Plain text with light formatting: a blank line starts a new paragraph · "## " starts a heading · lines starting "- " make a list · "> " makes a pull quote · *word* emphasises. Describe exactly what\'s included; no invented reviews or numbers.'} />
         <ImageField name="cover_image" label="Cover image" current={p.cover_image} library={library} hint="A book cover or product shot. Shown in the shop on a spotlight stage." />
       </FormSection>
       {p.features !== undefined && (

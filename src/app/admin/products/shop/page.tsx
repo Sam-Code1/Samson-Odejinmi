@@ -40,7 +40,7 @@ export default async function ShopSettingsPage() {
   return (
     <>
       <PageHeader eyebrow="Sales" title="Shop settings" subtitle={<>Open or close the shop, and set the shop page&apos;s title, introduction, empty state and email sign-up. Products, prices, order and featured items are set on each product. <Link href="/admin/products" className="underline underline-offset-4">All products</Link></>}
-        actions={<a href="/academy/shop" target="_blank" rel="noopener" className="inline-flex h-10 items-center gap-2 rounded border border-line-strong px-4 text-label hover:border-ink">View shop<ExternalLink aria-hidden className="h-3.5 w-3.5" /></a>} />
+        actions={<a href="/academy/books" target="_blank" rel="noopener" className="inline-flex h-10 items-center gap-2 rounded border border-line-strong px-4 text-label hover:border-ink">View shop<ExternalLink aria-hidden className="h-3.5 w-3.5" /></a>} />
 
       <div className="max-w-3xl space-y-8">
         {!ready && (

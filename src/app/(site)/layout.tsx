@@ -9,7 +9,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   return (
     <>
       <PreviewBanner />
-      <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl} hide={shop.enabled ? undefined : ["/shop"]} />
+      <Navbar siteName={settings.siteName} logoUrl={settings.logoUrl} hide={shop.enabled ? undefined : ["/academy/books"]} />
       <main id="main">{children}</main>
       <Footer settings={settings} socials={socials} />
     </>

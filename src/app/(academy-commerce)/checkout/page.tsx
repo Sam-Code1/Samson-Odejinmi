@@ -22,11 +22,11 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const single = parseItemKey(buy);
   const items = single ? [single] : await readCart();
   const wrap = (n: React.ReactNode) => <Container className="pb-24 pt-14 sm:pt-20 lg:pt-24">{n}</Container>;
-  if (!items.length) return wrap(<StateMessage title="Your cart is empty" body="Find something useful in the shop." action={{ href: "/shop", label: "Explore the shop" }} />);
+  if (!items.length) return wrap(<StateMessage title="Your cart is empty" body="Find something useful in Books." action={{ href: "/academy/books", label: "Explore books" }} />);
 
   const [lines, shopper, payOpts, user, guestOk] = await Promise.all([cartLines(items), getShopperCurrency(), getPaymentOptions(), getUser(), guestCheckoutEnabled()]);
   const usable = lines.filter((l) => l.available);
-  if (!usable.length) return wrap(<StateMessage title="These items are no longer available" body="Something in your cart was taken off sale." action={{ href: "/shop", label: "Explore the shop" }} />);
+  if (!usable.length) return wrap(<StateMessage title="These items are no longer available" body="Something in your cart was taken off sale." action={{ href: "/academy/books", label: "Explore books" }} />);
   // Currencies every item is priced in.
   const priced = CURRENCIES.filter((c) => usable.every((l) => l.prices[c] !== undefined));
   const currency = shopper.chosen ? shopper.currency : pickCurrency(priced, shopper.currency, shopper.country) ?? shopper.currency;
@@ -35,27 +35,32 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   return wrap(
     <div className="grid gap-12 lg:grid-cols-12">
       <div className="lg:col-span-7">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        <p className="fa-label">Books · Checkout</p>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
           <h1 className="text-h2">Checkout</h1>
           <CurrencySelector current={currency} size="sm" />
         </div>
         <p className="mt-3 text-body-sm text-ink-2">{user ? `Signed in as ${user.email}. Your purchase goes straight to your Library.` : "No account needed. Pay, then download straight away. You can create an account afterwards if you like."}</p>
         <div className="mt-8">
           <CheckoutForm
-            itemKeys={usable.map((l) => l.key)} lines={usable.map((l) => ({ key: l.key, name: l.name, typeLabel: l.typeLabel, price: l.prices[currency] ?? null }))}
+            itemKeys={usable.map((l) => l.key)} lines={usable.map((l) => ({ key: l.key, name: l.name, typeLabel: l.typeLabel, price: l.prices[currency] ?? null, image: l.image, kind: l.item.kind }))}
             currency={currency} priced={priced} payment={payment} signedInEmail={user?.email ?? null} guestAllowed={guestOk}
             loginHref={`/login?next=${encodeURIComponent(single ? `/checkout?buy=${buy}` : "/checkout")}`} />
         </div>
       </div>
       <aside className="lg:col-span-5">
-        <div className="rounded-xl border border-line bg-elevated p-6 lg:sticky lg:top-24">
-          <h2 className="text-h4">How it works</h2>
-          <ol className="mt-4 space-y-3 text-body-sm text-ink-2">
-            <li>1. Pay securely on your payment provider&apos;s page, in {currency}.</li>
-            <li>2. As soon as the payment is confirmed, your receipt opens with your downloads.</li>
-            <li>3. We email the receipt with a private link too, so you can come back any time.</li>
+        <div className="fa-card p-6 lg:sticky lg:top-28">
+          <p className="fa-label">How it works</p>
+          <ol className="relative mt-5 space-y-5">
+            <span aria-hidden className="thread-v absolute bottom-2 left-[5px] top-2 w-px opacity-70" />
+            {[`Pay securely on your payment provider's page, in ${currency}.`, "As soon as the payment is confirmed, your receipt opens with your downloads.", "We email the receipt with a private link too, so you can come back any time."].map((t, i, a) => (
+              <li key={i} className="relative flex gap-4 text-body-sm text-ink-2">
+                <span aria-hidden className={i === 0 ? "relative z-10 mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-[1.5px] border-[rgb(var(--path-start))] bg-surface" : i === a.length - 1 ? "relative z-10 mt-1 h-[11px] w-[11px] shrink-0 bg-[rgb(var(--path-end))]" : "relative z-10 mt-1 h-[11px] w-[11px] shrink-0 rounded-full bg-node"} />
+                <span><span className="mr-2 font-mono text-xs text-ink-3">0{i + 1}</span>{t}</span>
+              </li>
+            ))}
           </ol>
-          <p className="mt-5 text-caption text-ink-3">Courses need a free account to save your progress; you can create it right after paying.</p>
+          <p className="mt-6 border-t border-line pt-5 text-caption text-ink-3">Courses need a free account to save your progress; you can create it right after paying.</p>
         </div>
       </aside>
     </div>,

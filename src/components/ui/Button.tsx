@@ -13,7 +13,8 @@ const base =
   "group relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-quick ease-quiet focus-visible:outline-offset-4 disabled:opacity-60 disabled:pointer-events-none";
 
 const variants = {
-  primary: "bg-ink text-canvas hover:bg-ink/90 rounded",
+  // `action` is ink on the main site and the brand action blue inside the Academy (.fa-root).
+  primary: "bg-action text-on-action hover:bg-action-hover rounded",
   secondary: "border border-line-strong text-ink hover:border-ink/60 hover:bg-ink/[0.03] rounded",
   text: "text-ink",
 };

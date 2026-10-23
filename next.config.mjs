@@ -11,6 +11,16 @@ const nextConfig = {
   },
   // Admin file uploads (resources, images) go through server actions.
   experimental: { serverActions: { bodySizeLimit: "25mb" } },
+  // The store is "Books" inside Fola Academy. Old shop links keep working (permanent redirects, SEO carried over).
+  async redirects() {
+    return [
+      { source: "/shop", destination: "/academy/books", permanent: true },
+      { source: "/shop/:slug", destination: "/academy/books/:slug", permanent: true },
+      { source: "/academy/shop", destination: "/academy/books", permanent: true },
+      { source: "/academy/shop/:slug", destination: "/academy/books/:slug", permanent: true },
+      { source: "/books", destination: "/academy/books", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

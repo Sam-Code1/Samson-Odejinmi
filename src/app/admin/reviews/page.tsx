@@ -49,7 +49,7 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
           <DataTable<Row> rows={rows} rowKey={(r) => r.id}
             empty={{ title: `No ${status} reviews`, body: status === "pending" ? "New reviews from buyers appear here for approval." : "Nothing here." }}
             columns={[
-              { key: "p", header: "Product", primary: true, cell: (r) => r.products ? <Link href={`/shop/${r.products.slug}#reviews`} target="_blank" className="underline underline-offset-4">{r.products.name}</Link> : "–" },
+              { key: "p", header: "Product", primary: true, cell: (r) => r.products ? <Link href={`/academy/books/${r.products.slug}#reviews`} target="_blank" className="underline underline-offset-4">{r.products.name}</Link> : "–" },
               { key: "r", header: "Rating", className: "tabular-nums", cell: (r) => <span aria-label={`${r.rating} out of 5`}>{"★".repeat(r.rating)}<span className="text-ink-3">{"★".repeat(5 - r.rating)}</span> {r.rating}/5</span> },
               { key: "t", header: "Review", cell: (r) => <div className="max-w-md">{r.title && <p className="font-medium">{r.title}</p>}{r.body && <p className="line-clamp-4 whitespace-pre-line text-body-sm text-ink-2">{r.body}</p>}</div> },
               { key: "c", header: "Customer", cell: (r) => <>{r.display_name}<span className="block break-all text-caption text-ink-3">{r.user_id ? `${email.get(r.user_id) ?? "Account"} · Account` : `${r.payments?.guest_email ?? "Guest"} · Guest`}</span>

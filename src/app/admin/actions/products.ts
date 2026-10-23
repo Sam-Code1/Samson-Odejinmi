@@ -25,7 +25,7 @@ const FILE_EXT: Record<string, string> = {
 function refresh(id?: string) {
   revalidateSite();
   revalidatePath("/admin/products");
-  revalidatePath("/academy/shop", "layout");
+  revalidatePath("/academy/books", "layout");
   if (id) revalidatePath(`/admin/products/${id}`);
 }
 

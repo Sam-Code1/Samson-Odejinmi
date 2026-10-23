@@ -53,7 +53,7 @@ export default async function CheckoutCallback({ searchParams }: { searchParams:
     return wrap(<StateMessage title="Payment confirmed. It's yours." body={`Thank you. ${formatMoney(pay.amount_minor, pay.currency)} was received for ${product.name}. Reference ${pay.reference}. A confirmation is on its way to your email.`} action={learn ? { href: `/learn/${course.slug}`, label: "Start learning" } : { href: "/library", label: "Open your library" }} secondary={{ href: "/dashboard", label: "Dashboard" }} />);
   }
   if (product && (pay.status === "failed" || pay.status === "refunded")) {
-    return wrap(<StateMessage title="Your payment could not be completed." body={`Please try again. If you were charged, contact us with your reference: ${pay.reference}`} action={{ href: `/academy/shop/${product.slug}`, label: "Try again" }} secondary={{ href: "/contact", label: "Contact" }} />);
+    return wrap(<StateMessage title="Your payment could not be completed." body={`Please try again. If you were charged, contact us with your reference: ${pay.reference}`} action={{ href: `/academy/books/${product.slug}`, label: "Try again" }} secondary={{ href: "/contact", label: "Contact" }} />);
   }
 
   if (pay.status === "successful") {

@@ -64,7 +64,7 @@ export async function saveContentPost(_: ActionResult, fd: FormData): Promise<Ac
     const status = str(fd, "status", 12) || "draft";
     if (!["draft", "scheduled", "published", "archived"].includes(status)) errors.status = "Choose a status.";
     const cta = httpsOrPath(optStr(fd, "cta_url", 500)), creative = httpsOrPath(optStr(fd, "creative_url", 500));
-    if (cta === "invalid") errors.cta_url = "Use a full https:// link or a site path like /academy/shop.";
+    if (cta === "invalid") errors.cta_url = "Use a full https:// link or a site path like /academy/books.";
     if (creative === "invalid") errors.creative_url = "Use a full https:// link to the image or video.";
     const published = optStr(fd, "published_url", 500);
     if (published && !/^https:\/\/\S+$/.test(published)) errors.published_url = "Use the full https:// link of the live post.";
