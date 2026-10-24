@@ -56,6 +56,7 @@ export function AcademyHeader({ nav }: { nav: { href: string; label: string }[] 
         <div className="flex items-center gap-1 sm:gap-2">
           <CartLink />
           <div className="hidden sm:block"><ThemeSwitcher /></div>
+          <Link href="/login" className="inline-flex min-h-[44px] items-center px-2 text-sm font-medium text-ink hover:underline hover:underline-offset-4">Log in</Link>
           <Link href="/dashboard" className="hidden min-h-[44px] items-center px-2 text-sm font-medium text-blue hover:underline hover:underline-offset-4 lg:inline-flex">My learning</Link>
           <Link href="/academy/courses" className="fa-btn fa-btn-primary fa-btn-sm hidden sm:inline-flex">Start learning<ArrowRight aria-hidden className="fa-arrow h-4 w-4" /></Link>
           <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-controls="fa-menu" aria-label="Open menu"
@@ -71,7 +72,7 @@ export function AcademyHeader({ nav }: { nav: { href: string; label: string }[] 
           </div>
           <div className="flex flex-1 flex-col justify-between overflow-y-auto px-4 py-8 sm:px-6">
             <ul className="space-y-1">
-              {[...nav, { href: "/dashboard", label: "My learning" }, { href: "/library", label: "Library" }].map((l, i) => (
+              {[...nav, { href: "/login", label: "Log in" }, { href: "/dashboard", label: "My learning" }, { href: "/library", label: "Library" }].map((l, i) => (
                 <li key={l.href} className="fa-rise" style={{ animationDelay: `${i * 50}ms` }}>
                   <Link href={l.href} className="flex min-h-[56px] items-center justify-between border-b border-line text-h3">
                     {l.label}<ArrowRight aria-hidden className="h-5 w-5 text-ink-3" />

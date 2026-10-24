@@ -14,6 +14,7 @@ export const STUDIO_NAV = [
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
   { href: "/academy", label: "Academy" },
+  { href: "/academy/courses", label: "Courses" },
   { href: "/academy/books", label: "Books" },
   { href: "/contact", label: "Contact" },
 ];
@@ -54,6 +55,7 @@ export function StudioHeader({ name = "Samson Odejinmi", hide = [] }: { name?: s
         </ul>
         <div className="flex items-center gap-1 sm:gap-2">
           <div className="hidden sm:block"><ThemeSwitcher /></div>
+          <Link href="/login" className="hidden min-h-[44px] items-center px-2 text-sm font-medium text-ink-2 hover:text-ink sm:inline-flex">Log in</Link>
           <Link href="/contact" className="hidden h-10 items-center gap-1.5 rounded-full bg-action px-4 text-sm font-semibold text-on-action transition-colors hover:bg-action-hover sm:inline-flex">
             Start a project<ArrowUpRight aria-hidden className="h-4 w-4" />
           </Link>
@@ -76,7 +78,7 @@ export function StudioHeader({ name = "Samson Odejinmi", hide = [] }: { name?: s
             ))}
           </ul>
           <div className="flex items-center justify-between gap-4 border-t border-line px-4 py-5 sm:px-6">
-            <ThemeSwitcher inline />
+            <div className="flex items-center gap-4"><ThemeSwitcher inline /><Link href="/login" className="text-sm font-semibold">Log in</Link></div>
             <Link href="/contact" className="inline-flex h-11 items-center gap-1.5 rounded-full bg-action px-5 text-sm font-semibold text-on-action">Start a project<ArrowUpRight aria-hidden className="h-4 w-4" /></Link>
           </div>
         </div>,

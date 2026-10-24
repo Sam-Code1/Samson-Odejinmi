@@ -13,6 +13,9 @@ import { buildMetadata } from "@/lib/cms/seo";
 import { canOptimize } from "@/lib/cms/images";
 import { byCategory, getGallery, selectedWork } from "@/lib/gallery";
 import { site } from "@/lib/site";
+import { AcademyShelf } from "@/components/studio/AcademyShelf";
+import { getPublishedCourses } from "@/lib/academy";
+import { getPublishedProducts, getShopSettings } from "@/lib/products";
 
 export const revalidate = 3600;
 
@@ -29,7 +32,8 @@ const W = "mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10";
  * Words come from Admin → Website → Homepage; the work comes from Admin → Website → Gallery.
  */
 export default async function HomePage() {
-  const [page, projects, settings, gallery] = await Promise.all([getPage("home"), getProjects(), getSiteSettings(), getGallery()]);
+  const [page, projects, settings, gallery, courses, products, shop] = await Promise.all([getPage("home"), getProjects(), getSiteSettings(), getGallery(), getPublishedCourses(), getPublishedProducts(), getShopSettings()]);
+  const books = shop.enabled ? products.filter((p) => p.type !== "course").slice(0, 4) : [];
   const hero = page.hero, about = page.about_preview, academy = page.academy, contact = page.contact_cta, statement = page.statement;
   const disciplines = byCategory(gallery);
   const filled = disciplines.filter((d) => d.items.length > 0);
@@ -172,9 +176,12 @@ export default async function HomePage() {
           <div className="flex flex-wrap gap-3 lg:col-span-5 lg:justify-end">
             <Link href={academy?.cta?.href ?? "/academy"} className="inline-flex h-12 items-center gap-2 rounded-full bg-action px-6 text-[0.9375rem] font-semibold text-on-action hover:bg-action-hover">{academy?.cta?.label ?? "Visit Fola Academy"}<ArrowRight aria-hidden className="h-4 w-4" /></Link>
             <Link href="/academy/books" className="inline-flex h-12 items-center gap-2 rounded-full border border-line-strong px-6 text-[0.9375rem] font-semibold hover:border-ink">Books</Link>
+            <Link href="/academy/courses" className="inline-flex h-12 items-center gap-2 rounded-full border border-line-strong px-6 text-[0.9375rem] font-semibold hover:border-ink">Courses</Link>
           </div>
         </div>
       </section>
+
+      <AcademyShelf books={books} courses={courses.slice(0, 3)} />
 
       {/* ── Contact ── */}
       <section>
