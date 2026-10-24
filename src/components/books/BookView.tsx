@@ -25,12 +25,14 @@ export async function bookMetadata(slug: string): Promise<Metadata> {
   if (!shop.enabled) return { title: { absolute: "Books — Fola Academy" }, robots: { index: false, follow: true } };
   const title = `${p.seoTitle ?? p.name} — Fola Academy`;
   const description = p.seoDescription ?? p.shortDescription ?? undefined;
-  const image = p.ogImage ?? p.coverImage ?? undefined;
+  // A generated 1200×630 JPEG (small enough for WhatsApp), never the raw upload, which can be a multi-MB PNG.
+  const v = encodeURIComponent((p.updatedAt ?? "").slice(0, 19));
+  const image = { url: `${site.url}/og/book/${encodeURIComponent(p.slug)}${v ? `?v=${v}` : ""}`, width: 1200, height: 630, type: "image/jpeg", alt: p.name };
   const url = bookUrl(p.slug);
   return {
     title: { absolute: title }, description, alternates: { canonical: url },
-    openGraph: { title, description, url, type: "website", ...(image ? { images: [image] } : {}) },
-    twitter: { card: image ? "summary_large_image" : "summary", title, description, ...(image ? { images: [image] } : {}) },
+    openGraph: { title, description, url, type: "website", siteName: "Fola Academy", images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 

@@ -3,6 +3,7 @@ import { Instrument_Serif, Manrope } from "next/font/google";
 import { site } from "@/lib/site";
 import { themeScript } from "@/lib/theme-script";
 import { introScript } from "@/lib/intro-script";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { getSiteSettings } from "@/lib/cms";
 import "./globals.css";
 import "./academy-theme.css";
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         {children}
+        <GoogleAnalytics />
       </body>
     </html>
   );
