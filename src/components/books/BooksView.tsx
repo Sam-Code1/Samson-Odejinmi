@@ -100,11 +100,20 @@ export async function BooksView({ searchParams }: { searchParams: SP }) {
                   <BookCover name={spotlight.name} image={spotlight.coverImage} type={spotlight.type} priority sizes="(min-width: 1024px) 26rem, 80vw" />
                 </div>
                 <div className="lg:col-span-6 lg:col-start-7">
-                  <p className="fa-label">Featured · {TYPE_LABELS[spotlight.type]}</p>
+                  <p className="fa-label">{spotlight.comingSoon ? "Coming soon" : "Featured"} · {TYPE_LABELS[spotlight.type]}{spotlight.edition ? ` · ${spotlight.edition}` : ""}</p>
                   <h2 id="spotlight" className="mt-4 text-h1"><Link href={bookHref(spotlight)} className="hover:text-blue">{spotlight.name}</Link></h2>
                   {spotlight.shortDescription && <p className="fa-quote mt-5 max-w-prose text-[1.375rem] leading-snug text-ink-2">{spotlight.shortDescription}</p>}
-                  <p className="mt-8 text-h3"><PriceTag p={spotlight} currency={currency} /></p>
-                  <div className="mt-6 max-w-md"><BuyButtons itemKey={`p:${spotlight.id}`} owned={false} ownedHref="/library" ownedLabel="Open your library" available={!!priceIn(spotlight, currency)} /></div>
+                  {spotlight.comingSoon ? (
+                    <>
+                      {spotlight.prices.length > 0 && <><p className="fa-label mt-8">Price at launch</p><p className="mt-1 text-h3"><PriceTag p={spotlight} currency={currency} /></p></>}
+                      <div className="mt-6 max-w-md"><Link href={`${bookHref(spotlight)}#notify`} className="fa-btn fa-btn-secondary w-full">Coming soon{spotlight.launchNote ? ` · ${spotlight.launchNote}` : ""}: get notified</Link></div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-8 text-h3"><PriceTag p={spotlight} currency={currency} /></p>
+                      <div className="mt-6 max-w-md"><BuyButtons itemKey={`p:${spotlight.id}`} owned={false} ownedHref="/library" ownedLabel="Open your library" available={!!priceIn(spotlight, currency)} /></div>
+                    </>
+                  )}
                   <Link href={bookHref(spotlight)} className="fa-btn fa-btn-text mt-2">Read more about this book<ArrowRight aria-hidden className="fa-arrow h-4 w-4" /></Link>
                 </div>
               </FaContainer>

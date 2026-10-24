@@ -6,6 +6,7 @@ import { FaContainer, FaSection } from "@/components/brand/Shell";
 import { Pathway } from "@/components/brand/Brand";
 import { CurrencySelector } from "@/components/academy/CurrencySelector";
 import { BuyButtons } from "@/components/shop/CartClient";
+import { NewsletterSignup } from "@/components/academy/NewsletterSignup";
 import { ReportReview, ReviewForm, Stars } from "@/components/shop/Reviews";
 import { BOOKS, BookCard, BookCover, PriceTag, RichDescription, priceIn } from "./BookParts";
 import { getProduct, getShopSettings, TYPE_LABELS, FILE_TYPES } from "@/lib/products";
@@ -63,10 +64,14 @@ export async function BookView({ slug, reviewPage = 1 }: { slug: string; reviewP
   const jsonLd = {
     "@context": "https://schema.org", "@type": p.type === "ebook" ? ["Product", "Book"] : "Product", name: p.name, description: p.shortDescription ?? undefined,
     ...(p.coverImage ? { image: p.coverImage } : {}), brand: { "@type": "Brand", name: "Fola Academy" }, author: { "@type": "Person", name: "Samson Afolabi Odejinmi" }, url,
-    offers: p.prices.map((pr) => ({ "@type": "Offer", price: (pr.amountMinor / 100).toFixed(2), priceCurrency: pr.currency, availability: "https://schema.org/InStock", url })),
+    offers: p.prices.map((pr) => ({ "@type": "Offer", price: (pr.amountMinor / 100).toFixed(2), priceCurrency: pr.currency, availability: p.comingSoon ? "https://schema.org/PreOrder" : "https://schema.org/InStock", url })),
+    ...(p.edition ? { bookEdition: p.edition } : {}),
     ...(rating && rating.count > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: rating.average, reviewCount: rating.count, bestRating: 5, worstRating: 1 } } : {}),
   };
-  const buy = <BuyButtons itemKey={`p:${p.id}`} owned={owned} ownedHref="/library" ownedLabel="Open your library" available={!!shown} />;
+  // Coming soon: the details and price are public; buying opens on publish (the database refuses before that).
+  const buy = p.comingSoon
+    ? <div><span aria-disabled="true" className="fa-btn fa-btn-secondary w-full cursor-not-allowed opacity-80">Coming soon{p.launchNote ? ` · ${p.launchNote}` : ""}</span><p className="mt-3 text-body-sm text-ink-2">Not on sale yet. <a href="#notify" className="font-semibold text-ink underline underline-offset-4">Get notified when it&apos;s out</a>.</p></div>
+    : <BuyButtons itemKey={`p:${p.id}`} owned={owned} ownedHref="/library" ownedLabel="Open your library" available={!!shown} />;
 
   return (
     <>
@@ -86,7 +91,9 @@ export async function BookView({ slug, reviewPage = 1 }: { slug: string; reviewP
           </div>
           <div className="lg:col-span-7">
             <div className="flex flex-wrap items-center gap-2">
+              {p.comingSoon && <span className="fa-tag !border-node !text-node" data-dot>Coming soon{p.launchNote ? ` · ${p.launchNote}` : ""}</span>}
               <span className="fa-tag" data-dot>{TYPE_LABELS[p.type]}</span>
+              {p.edition && <span className="fa-tag">{p.edition}</span>}
               {p.details.level && <span className="fa-tag">{p.details.level}</span>}
               {p.badge && <span className="fa-tag" data-tone="accent">{p.badge}</span>}
             </div>
@@ -98,11 +105,11 @@ export async function BookView({ slug, reviewPage = 1 }: { slug: string; reviewP
 
             <div className="fa-card mt-8 p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                {shown ? <p className="text-h3"><PriceTag p={p} currency={currency} /></p> : <p className="text-h4 text-ink-2">Not available in {currency}</p>}
+                {shown ? <div>{p.comingSoon && <p className="fa-label mb-1">Price at launch</p>}<p className="text-h3"><PriceTag p={p} currency={currency} /></p></div> : <p className="text-h4 text-ink-2">{p.comingSoon && !p.prices.length ? "Price announced at launch" : `Not available in ${currency}`}</p>}
                 {p.prices.length > 0 && <CurrencySelector current={currency} size="sm" />}
               </div>
               {!shown && p.prices.length > 0 && <p className="mt-2 text-body-sm text-ink-2">Available in {p.prices.map((x) => x.currency).join(", ")}. Switch currency above.</p>}
-              <p className="mt-2 text-caption text-ink-3">{isFile ? "Instant download after payment · Kept in your Library if you have an account" : p.type === "bundle" ? "Everything below, in one purchase" : "One-time payment"}</p>
+              <p className="mt-2 text-caption text-ink-3">{p.comingSoon ? `${p.edition ? `${p.edition} · ` : ""}Coming soon: you'll be able to buy it here the moment it's published.` : isFile ? "Instant download after payment · Kept in your Library if you have an account" : p.type === "bundle" ? "Everything below, in one purchase" : "One-time payment"}</p>
               <div className="mt-6">{buy}</div>
             </div>
 
@@ -114,6 +121,15 @@ export async function BookView({ slug, reviewPage = 1 }: { slug: string; reviewP
           </div>
         </FaContainer>
       </section>
+
+      {p.comingSoon && (
+        <section id="notify" className="scroll-mt-28 border-b border-line">
+          <FaContainer className="grid gap-8 py-14 sm:py-16 lg:grid-cols-12 lg:items-center">
+            <div className="lg:col-span-6"><p className="fa-label">Coming soon</p><h2 className="mt-3 text-h2">Be first to read it.</h2><p className="mt-3 max-w-prose text-body text-ink-2">One email the day {p.name} is out{p.launchNote ? ` (${p.launchNote.replace(/^out\s*/i, "").trim() || p.launchNote})` : ""}, then occasional news about new books and courses.</p></div>
+            <div className="lg:col-span-5 lg:col-start-8"><NewsletterSignup title={`Tell me when ${p.name} is out`} body="No spam; unsubscribe with one click." /></div>
+          </FaContainer>
+        </section>
+      )}
 
       {p.description && (
         <FaSection label="About this book" title="What it teaches, and why.">
@@ -195,7 +211,7 @@ export async function BookView({ slug, reviewPage = 1 }: { slug: string; reviewP
       )}
 
       {/* Mobile: the price and the one primary action stay within reach. */}
-      {shown && !owned && (
+      {shown && !owned && !p.comingSoon && (
         <div className="sticky bottom-0 z-30 border-t border-line bg-canvas/95 px-4 py-3 backdrop-blur lg:hidden">
           <div className="mx-auto flex max-w-[1248px] items-center justify-between gap-4">
             <div className="min-w-0"><p className="truncate text-body-sm font-semibold">{p.name}</p><p className="text-caption text-ink-2"><PriceTag p={p} currency={currency} /></p></div>

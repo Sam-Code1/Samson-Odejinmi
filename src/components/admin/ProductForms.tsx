@@ -1,8 +1,8 @@
 "use client";
 
-import { saveShopSettings, createProduct, saveProduct, saveProductPrices, setBundleItems, setRelatedProducts, uploadProductFile } from "@/app/admin/actions/products";
+import { saveShopSettings, createProduct, saveProduct, saveProductPrices, setBundleItems, setRelatedProducts } from "@/app/admin/actions/products";
 import { AdminForm } from "./AdminForm";
-import { CheckboxInput, FileInput, FormSection, SelectInput, TextAreaInput, TextInput } from "./FormFields";
+import { CheckboxInput, FormSection, SelectInput, TextAreaInput, TextInput } from "./FormFields";
 import { RepeaterField } from "./RepeaterField";
 import { ImageField, type LibraryImage } from "./ImageField";
 import { useFieldError } from "./FormContext";
@@ -33,6 +33,8 @@ export type ProductRow = {
   /** Shop details: present once migration 0009 has run. */
   display_order?: number; featured?: boolean; badge?: string | null; features?: string[]; faq?: { q: string; a: string }[];
   details?: { format?: string; length?: string; level?: string; includes_note?: string };
+  /** Migration 0018 (undefined before it runs). */
+  edition?: string | null; launch_note?: string | null;
 };
 
 function StatusError() {
@@ -42,17 +44,30 @@ function StatusError() {
 
 export function ProductDetailsForm({ p, library }: { p: ProductRow; library: LibraryImage[] }) {
   const published = p.status === "published";
+  const soon = p.status === "coming_soon";
+  const canSoon = p.edition !== undefined; // the database has migration 0018
+  const btn = "h-10 rounded border px-4 text-label";
   return (
-    <AdminForm action={saveProduct} submitLabel={published ? "Save changes" : "Save draft"}
-      extra={published
-        ? <button type="submit" name="intent" value="unpublish" className="h-10 rounded border border-line-strong px-4 text-label hover:border-ink">Unpublish</button>
-        : <button type="submit" name="intent" value="publish" className="h-10 rounded border border-blue/50 px-4 text-label text-blue hover:bg-blue/10">Save and publish</button>}>
+    <AdminForm action={saveProduct} submitLabel={published || soon ? "Save changes" : "Save draft"}
+      extra={<>
+        {!published && <button type="submit" name="intent" value="publish" className={`${btn} border-blue/50 text-blue hover:bg-blue/10`}>Save and publish</button>}
+        {canSoon && !soon && <button type="submit" name="intent" value="coming_soon" className={`${btn} border-line-strong hover:border-ink`}>Save as coming soon</button>}
+        {(published || soon) && <button type="submit" name="intent" value="unpublish" className={`${btn} border-line-strong hover:border-ink`}>{published ? "Unpublish" : "Hide (draft)"}</button>}
+      </>}>
       <input type="hidden" name="productId" value={p.id} />
       <input type="hidden" name="status" value={p.status === "archived" ? "archived" : p.status} />
       <FormSection title="Details">
         <StatusError />
         <TextInput label="Name" name="name" required defaultValue={p.name} maxLength={160} className="sm:col-span-2" />
         <TextInput label="Slug" name="slug" required defaultValue={p.slug} maxLength={80} hint={`Public URL: /academy/books/${p.slug}`} />
+        {canSoon && <>
+          <input type="hidden" name="edition_present" value="1" />
+          <TextInput label="Edition / version (optional)" name="edition" defaultValue={p.edition ?? ""} maxLength={40} placeholder="1st edition" hint="Shown on the cover card and the book page, e.g. 1st edition, 2nd edition, Version 2.0." />
+          <TextInput label="Launch note (optional)" name="launch_note" defaultValue={p.launch_note ?? ""} maxLength={80} placeholder="Out in December" hint="Shown next to “Coming soon”. Only promise a date you're sure of." />
+          <p className="text-caption text-ink-3 sm:col-span-2">
+            Status: <strong className="text-ink">{{ published: "Published (on sale)", coming_soon: "Coming soon (visible, not on sale)", archived: "Archived", draft: "Draft (only admins see it)" }[p.status] ?? p.status}</strong>. Coming soon shows the book, its details and its price (if set) in Books with a “Get notified” sign-up; nobody can buy it until you publish.
+          </p>
+        </>}
         <TextAreaInput label="Short description (up to 300 characters)" name="short_description" rows={3} defaultValue={p.short_description ?? ""} maxLength={300} className="sm:col-span-2"
           hint="One or two sentences. Shown on Books cards, as the italic standfirst under the title on the book page, in search results and when shared." />
         <TextAreaInput label="Long description (About this book)" name="description" rows={14} defaultValue={p.description ?? ""} maxLength={20000} className="sm:col-span-2"
@@ -90,18 +105,6 @@ export function ProductPricesForm({ productId, prices }: { productId: string; pr
         {(["NGN", "USD", "GBP"] as const).map((c) => (
           <TextInput key={c} label={`${c} price`} name={`price_${c}`} inputMode="decimal" defaultValue={prices[c] != null ? String(prices[c] / 100) : ""} hint={c === "NGN" ? "In naira, e.g. 5000" : c === "USD" ? "In dollars, e.g. 9" : "In pounds, e.g. 7"} />
         ))}
-      </FormSection>
-    </AdminForm>
-  );
-}
-
-export function ProductFileForm({ productId, current }: { productId: string; current: { file_name: string; file_size: number | null; updated_at: string } | null }) {
-  return (
-    <AdminForm action={uploadProductFile} submitLabel={current ? "Replace file" : "Upload file"} stickyBar={false}>
-      <input type="hidden" name="productId" value={productId} />
-      <FormSection title="Deliverable file" description="Stored privately. Buyers download it from their library through a link that expires after 60 seconds; there is never a public URL.">
-        {current && <p className="text-body-sm sm:col-span-2">Current file: <strong className="break-all">{current.file_name}</strong>{current.file_size ? ` · ${(current.file_size / 1_048_576).toFixed(1)} MB` : ""}</p>}
-        <FileInput label={current ? "New file" : "File"} name="file" accept=".pdf,.epub,.zip,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,.blend,.psd,.csv,.txt" className="sm:col-span-2" hint="Up to 25 MB. PDF, EPUB, ZIP, Office files, images, .blend, .psd, CSV or text." />
       </FormSection>
     </AdminForm>
   );

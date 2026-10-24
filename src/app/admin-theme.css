@@ -93,3 +93,4 @@
 .ad-root :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]).bg-transparent { background-color: rgb(var(--elevated)); }
 /* Older pages build their boxes as "rounded-lg border bg-elevated": give them the card treatment too. */
 .ad-root .rounded-lg.border.bg-elevated { border-radius: 14px; box-shadow: var(--ad-shadow); }
+@keyframes ad-indeterminate { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }

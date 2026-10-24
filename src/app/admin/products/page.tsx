@@ -18,7 +18,7 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const status = first(sp.status), type = first(sp.type);
   let q = ctx.supabase.from("products").select("id, name, slug, product_type, status, updated_at, courses(title), product_prices(currency, amount_minor)").order("updated_at", { ascending: false });
-  if (status && ["draft", "published", "archived"].includes(status)) q = q.eq("status", status); else q = q.neq("status", "archived");
+  if (status && ["draft", "coming_soon", "published", "archived"].includes(status)) q = q.eq("status", status); else q = q.neq("status", "archived");
   if (type && type in TYPE_LABELS) q = q.eq("product_type", type);
   const { data, error } = await q;
 
@@ -27,7 +27,7 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: Pr
       <PageHeader eyebrow="Sales" title="Products" subtitle="Ebooks, guides, templates, downloads, bundles and course products. Prices and files are read by the server at checkout and download; nothing in the browser can change them."
         actions={<><Link href="/admin/products/shop" className="inline-flex h-10 items-center rounded border border-line-strong px-4 text-label hover:border-ink">Books settings</Link><Link href="/admin/products/new" className="inline-flex h-10 items-center gap-2 rounded bg-ink px-4 text-label text-canvas hover:bg-ink/90"><Plus aria-hidden className="h-4 w-4" />New product</Link></>} />
       <div className="mb-5 flex flex-wrap gap-3">
-        <FilterSelect param="status" label="Status" options={[{ value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" }]} />
+        <FilterSelect param="status" label="Status" options={[{ value: "published", label: "Published" }, { value: "coming_soon", label: "Coming soon" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" }]} />
         <FilterSelect param="type" label="Type" options={Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }))} />
       </div>
       {error ? <AdminError title="Products need the Batch 3 migration" body="Run supabase/migrations/0008_batch3_products_marketing.sql in the Supabase SQL editor, then refresh." /> : (

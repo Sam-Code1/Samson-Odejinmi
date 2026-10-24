@@ -50,6 +50,7 @@ function toCard(r: Row, cp: Map<string, PriceRow[]>, was: Map<string, number>): 
     id: r.id as string, slug: r.slug as string, name: r.name as string, type: r.product_type, shortDescription: s(r.short_description),
     coverImage: s(r.cover_image), courseSlug: course?.slug ?? null, prices: prices.sort((a, b) => CURRENCIES.indexOf(a.currency) - CURRENCIES.indexOf(b.currency)),
     badge: s(r.badge), featured: r.featured === true, publishedAt: s(r.published_at),
+    comingSoon: r.status === "coming_soon", launchNote: s(r.launch_note), edition: s(r.edition),
   };
 }
 
@@ -76,12 +77,15 @@ export const getPublishedProducts = cache(async (): Promise<ProductCard[]> => {
   if (!supabaseConfigured) return [];
   try {
     const supabase = await contentClient();
-    // Shop order (migration 0009): featured first, then the admin's order, then newest. Falls back before 0009.
-    let res = await supabase.from("products").select(`${COLS}, badge, featured, display_order`).eq("status", "published")
+    // Shop order (migration 0009): featured first, then the admin's order, then newest. Coming-soon books (0018) are
+    // listed too. Each step falls back for databases that don't have the newer columns yet.
+    const ordered = (cols: string, statuses: string[]) => supabase.from("products").select(cols).in("status", statuses)
       .order("featured", { ascending: false }).order("display_order").order("published_at", { ascending: false, nullsFirst: false });
+    let res = await ordered(`${COLS}, status, edition, launch_note, badge, featured, display_order`, ["published", "coming_soon"]);
+    if (res.error) res = await ordered(`${COLS}, badge, featured, display_order`, ["published"]) as typeof res;
     if (res.error) res = await supabase.from("products").select(COLS).eq("status", "published").order("published_at", { ascending: false, nullsFirst: false }) as typeof res;
     if (res.error || !res.data) return [];
-    return cards(res.data as Row[]);
+    return cards(res.data as unknown as Row[]);
   } catch {
     return [];
   }
@@ -92,7 +96,8 @@ export const getProduct = cache(async (slug: string): Promise<PublicProduct | nu
   try {
     const supabase = await contentClient();
     const cols = `${COLS}, description, seo_title, seo_description, og_image, updated_at`;
-    let res = await supabase.from("products").select(`${cols}, badge, featured, features, faq, details`).eq("slug", slug).eq("status", "published").maybeSingle();
+    let res = await supabase.from("products").select(`${cols}, status, edition, launch_note, badge, featured, features, faq, details`).eq("slug", slug).in("status", ["published", "coming_soon"]).maybeSingle();
+    if (res.error) res = await supabase.from("products").select(`${cols}, badge, featured, features, faq, details`).eq("slug", slug).eq("status", "published").maybeSingle() as typeof res;
     if (res.error) res = await supabase.from("products").select(cols).eq("slug", slug).eq("status", "published").maybeSingle() as typeof res;
     const r = res.data;
     if (!r) return null;

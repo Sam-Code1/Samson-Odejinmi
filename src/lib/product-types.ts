@@ -12,4 +12,8 @@ export const FILE_TYPES: ProductType[] = ["ebook", "guide", "template", "downloa
 export type ProductCard = {
   id: string; slug: string; name: string; type: ProductType; shortDescription: string | null; coverImage: string | null;
   courseSlug: string | null; prices: PriceRow[]; badge: string | null; featured: boolean; publishedAt: string | null;
+  /** Migration 0018: visible with its price, not for sale until published. */
+  comingSoon?: boolean; launchNote?: string | null;
+  /** Edition / version label, e.g. "2nd edition" or "Version 2.0". */
+  edition?: string | null;
 };

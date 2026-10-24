@@ -67,7 +67,8 @@ export async function saveProduct(_: ActionResult, fd: FormData): Promise<Action
     let status = str(fd, "status", 12) || (before.status as string);
     if (intent === "publish") status = "published";
     if (intent === "unpublish") status = "draft";
-    if (!["draft", "published", "archived"].includes(status)) errors.status = "Choose a status.";
+    if (intent === "coming_soon") status = "coming_soon";
+    if (!["draft", "coming_soon", "published", "archived"].includes(status)) errors.status = "Choose a status.";
 
     const patch: Record<string, unknown> = {
       name, slug, status, short_description: optStr(fd, "short_description", 300), description: optStr(fd, "description", 20000),
@@ -76,6 +77,11 @@ export async function saveProduct(_: ActionResult, fd: FormData): Promise<Action
     for (const [field, kind] of [["cover_image", "site_image"], ["og_image", "og_image"]] as const) {
       const r = await resolveImageField(ctx, fd, field, kind);
       if (!r.ok) errors[field] = r.error; else if (r.url !== undefined) patch[field] = r.url;
+    }
+    // Edition and launch note (migration 0018). Only sent when the database has them.
+    if (fd.has("edition_present")) {
+      patch.edition = optStr(fd, "edition", 40);
+      patch.launch_note = optStr(fd, "launch_note", 80);
     }
     // Shop details (migration 0009). Only read when the form sends them, so older databases keep saving.
     if (fd.has("extras_present")) {
@@ -111,11 +117,15 @@ export async function saveProduct(_: ActionResult, fd: FormData): Promise<Action
     if (Object.keys(errors).length) return { ok: false, fieldErrors: errors };
     const { error } = await ctx.supabase.from("products").update(patch).eq("id", id);
     if (error?.code === "23505") return { ok: false, fieldErrors: { slug: "Another product already uses that slug." } };
+    if (error?.code === "23514" && status === "coming_soon") return { ok: false, fieldErrors: { status: "Run migration 0018 in Supabase to use “Coming soon”." } };
     if (error) return dbError(error);
-    const action = before.status !== status ? (status === "published" ? "product published" : status === "archived" ? "product archived" : "product unpublished") : "product updated";
+    const action = before.status !== status ? (status === "published" ? "product published" : status === "coming_soon" ? "product set to coming soon" : status === "archived" ? "product archived" : "product unpublished") : "product updated";
     await logActivity(ctx, action, "product", id, name);
     refresh(id);
-    return { ok: true, message: status === "published" && before.status !== "published" ? "Published. It's live in the shop." : "Product saved." };
+    return { ok: true, message: before.status === status ? "Product saved."
+      : status === "published" ? "Published. It's live in the shop and on sale."
+      : status === "coming_soon" ? "Now Coming soon: visible in Books with its details and price, but not on sale until you publish."
+      : "Product saved." };
   });
 }
 
@@ -152,27 +162,36 @@ export async function saveProductPrices(_: ActionResult, fd: FormData): Promise<
   });
 }
 
-export async function uploadProductFile(_: ActionResult, fd: FormData): Promise<ActionResult> {
+/**
+ * Large files (anything over Vercel's 4.5 MB request limit) are uploaded by the admin's browser straight to the private
+ * product-files bucket (Storage policy: products permission only). This then checks the stored object and attaches it:
+ * the path must sit in this product's folder, the type must be allowed, and the real stored size must be within limits.
+ */
+export async function attachProductFile(_: ActionResult, fd: FormData): Promise<ActionResult> {
   return runAdmin("products", async (ctx) => {
     const id = str(fd, "productId", 40);
+    const path = str(fd, "path", 300);
+    const fileName = str(fd, "file_name", 200);
     if (!isUuid(id)) return { ok: false, error: "Missing product." };
-    const { data: p } = await ctx.supabase.from("products").select("name, product_type").eq("id", id).maybeSingle();
-    if (!p || !FILE_TYPES.includes(p.product_type as ProductType)) return { ok: false, error: "Only ebooks, guides, templates and downloads have a file." };
-    const file = fd.get("file");
-    if (!isFile(file)) return { ok: false, fieldErrors: { file: "Choose a file to upload." } };
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const folder = `products/${id}/`;
+    if (!path.startsWith(folder) || path.includes("..") || path.slice(folder.length).includes("/")) return { ok: false, error: "That upload doesn't belong to this product." };
+    const ext = path.split(".").pop()?.toLowerCase() ?? "";
     const mime = FILE_EXT[ext];
-    if (!mime) return { ok: false, fieldErrors: { file: "Use PDF, EPUB, ZIP, Word, Excel, PowerPoint, PNG/JPG, .blend, .psd, CSV or text." } };
-    if (file.size > MAX_PRODUCT_FILE) return { ok: false, fieldErrors: { file: "Files must be 25 MB or smaller. For bigger files, upload a ZIP of the essentials." } };
-    const safe = file.name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(-80) || `file.${ext}`;
-    const path = `products/${id}/${crypto.randomUUID()}-${safe}`;
-    const { error: ue } = await ctx.supabase.storage.from("product-files").upload(path, file, { contentType: mime, upsert: false });
-    if (ue) return { ok: false, error: "The file couldn't be uploaded. Check that migration 0008 created the product-files bucket." };
+    const discard = async () => { await ctx.supabase.storage.from("product-files").remove([path]); };
+    if (!mime) { await discard(); return { ok: false, fieldErrors: { file: "Use PDF, EPUB, ZIP, Word, Excel, PowerPoint, PNG/JPG, .blend, .psd, CSV or text." } }; }
+    const { data: p } = await ctx.supabase.from("products").select("name, product_type").eq("id", id).maybeSingle();
+    if (!p || !FILE_TYPES.includes(p.product_type as ProductType)) { await discard(); return { ok: false, error: "Only ebooks, guides, templates and downloads have a file." }; }
+    // The size comes from Storage itself, not from the browser.
+    const { data: listed } = await ctx.supabase.storage.from("product-files").list(folder.slice(0, -1), { search: path.slice(folder.length), limit: 1 });
+    const obj = listed?.find((o) => `${folder}${o.name}` === path);
+    if (!obj) return { ok: false, error: "The upload wasn't found. Try uploading again." };
+    const size = Number((obj.metadata as { size?: number } | null)?.size ?? 0);
+    if (size > MAX_PRODUCT_FILE) { await discard(); return { ok: false, fieldErrors: { file: "Files must be 25 MB or smaller. For bigger files, upload a ZIP of the essentials." } }; }
     const { data: old } = await ctx.supabase.from("product_files").select("file_path").eq("product_id", id).maybeSingle();
-    const { error } = await ctx.supabase.from("product_files").upsert({ product_id: id, file_path: path, file_name: file.name.slice(0, 200), file_size: file.size, mime_type: mime, uploaded_by: ctx.user.id }, { onConflict: "product_id" });
-    if (error) { await ctx.supabase.storage.from("product-files").remove([path]); return dbError(error); }
+    const { error } = await ctx.supabase.from("product_files").upsert({ product_id: id, file_path: path, file_name: (fileName || path.slice(folder.length)).slice(0, 200), file_size: size || null, mime_type: mime, uploaded_by: ctx.user.id }, { onConflict: "product_id" });
+    if (error) { await discard(); return dbError(error); }
     if (old?.file_path && old.file_path !== path) await ctx.supabase.storage.from("product-files").remove([old.file_path as string]);
-    await logActivity(ctx, "product file uploaded", "product", id, p.name as string, { size: file.size });
+    await logActivity(ctx, "product file uploaded", "product", id, p.name as string, { size });
     refresh(id);
     return { ok: true, message: "File uploaded. Buyers download it from their library through a private, expiring link." };
   });

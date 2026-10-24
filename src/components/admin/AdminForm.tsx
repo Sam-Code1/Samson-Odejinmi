@@ -17,7 +17,16 @@ type Action = (prev: ActionResult, fd: FormData) => Promise<ActionResult>;
 export function AdminForm({ action, children, submitLabel = "Save changes", saveIntent, extra, className, stickyBar = true }: {
   action: Action; children: React.ReactNode; submitLabel?: string; saveIntent?: string; extra?: React.ReactNode; className?: string; stickyBar?: boolean;
 }) {
-  const [state, dispatch, pending] = useActionState(action, initialResult);
+  // A request that fails outright (dropped connection, a body over the host's size limit) becomes a message on the
+  // form instead of the error page. Next.js redirects (digest NEXT_…) still pass through.
+  const [state, dispatch, pending] = useActionState(async (prev: ActionResult, fd: FormData): Promise<ActionResult> => {
+    try {
+      return await action(prev, fd);
+    } catch (e) {
+      if (e && typeof e === "object" && "digest" in e && String((e as { digest?: unknown }).digest).startsWith("NEXT_")) throw e;
+      return { ok: false, error: "That didn't go through. Check your connection and try again. If you were uploading a large file (over about 4 MB), it may be too big to send this way." };
+    }
+  }, initialResult);
   const [dirty, setDirty] = useState(false);
   useResultToast(state, () => setDirty(false));
 

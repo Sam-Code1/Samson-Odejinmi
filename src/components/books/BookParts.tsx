@@ -62,11 +62,14 @@ export function BookCard({ p, currency, index = 0, rating }: { p: Card; currency
     <article className="group relative flex h-full flex-col">
       <div className="fa-dots fa-card-hover relative flex aspect-[4/5] items-center justify-center rounded-[8px] border border-line px-[16%] py-[10%]">
         <BookCover name={p.name} image={p.coverImage} type={p.type} index={index} className="transition-transform duration-[240ms] ease-[cubic-bezier(0.2,0,0,1)] group-hover:-translate-y-1" />
-        {p.badge && <span className="fa-tag absolute left-3 top-3 bg-surface" data-tone="accent">{p.badge}</span>}
+        {p.comingSoon
+          ? <span className="absolute left-3 top-3 rounded-full bg-node px-2.5 py-1 font-mono text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#0b0b0c]">Coming soon</span>
+          : p.badge && <span className="fa-tag absolute left-3 top-3 bg-surface" data-tone="accent">{p.badge}</span>}
       </div>
       <div className="flex flex-1 flex-col pt-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="fa-tag" data-dot>{TYPE_LABELS[p.type]}</span>
+          {p.edition && <span className="fa-tag">{p.edition}</span>}
           {rating && rating.count > 0 && <span className="inline-flex items-center gap-1 text-caption text-ink-2"><Star aria-hidden className="h-3 w-3 fill-current text-node" />{rating.average.toFixed(1)}<span className="text-ink-3">({rating.count})</span></span>}
         </div>
         <h3 className="mt-3 text-h4">
@@ -74,7 +77,9 @@ export function BookCard({ p, currency, index = 0, rating }: { p: Card; currency
         </h3>
         {p.shortDescription && <p className="mt-2 line-clamp-2 text-body-sm text-ink-2">{p.shortDescription}</p>}
         <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-          <PriceTag p={p} currency={currency} className="text-label" />
+          {p.comingSoon
+            ? <span className="text-caption font-semibold text-ink-2">{p.launchNote ?? "Coming soon"}</span>
+            : <PriceTag p={p} currency={currency} className="text-label" />}
           <span aria-hidden className="inline-flex items-center gap-1 text-caption text-ink-3 transition-colors group-hover:text-blue">View<ArrowRight className="h-3.5 w-3.5 transition-transform duration-[160ms] group-hover:translate-x-[3px]" /></span>
         </div>
       </div>

@@ -30,7 +30,8 @@ The public site works without Supabase. Accounts, learning and Admin need it.
 15. **`supabase/migrations/0015_profile_avatars.sql`** (student profile photos: a public `avatars` bucket where each user can only write their own folder, 2 MB, JPG/PNG/WebP). Idempotent.
 16. **`supabase/migrations/0016_portfolio_gallery.sql`** (the portfolio gallery behind `/work` and the homepage: `gallery_items`, by discipline, seeded with the work in `public/work/`; visitors read published pieces, admins with the "website" permission manage them in Admin → Website → Gallery). Idempotent; until it runs, the site shows the built-in pieces.
 17. **`supabase/migrations/0017_coming_soon_sites_certificates.sql`** ("Coming soon" courses: visible with outline and price, never purchasable until published, including through a course product in Books; website projects: discipline, captured preview and live-preview switch; certificate signatory name, title and signature image, returned by public verification). Idempotent.
-18. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
+18. **`supabase/migrations/0018_product_coming_soon.sql`** ("Coming soon" books and products: visible with details and price, never purchasable until published; plus an edition / version label and a launch note). Idempotent.
+19. `supabase/seed.sql` (optional: creates the Blender Foundations outline as a **draft**)
 17. Authentication → URL configuration: add `http://localhost:3000/auth/callback` to Redirect URLs.
 18. Make yourself an admin (after registering):
    ```sql

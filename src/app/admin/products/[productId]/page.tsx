@@ -4,7 +4,8 @@ import { ExternalLink } from "lucide-react";
 import { PageHeader, Panel } from "@/components/admin/PageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { StatCard } from "@/components/admin/StatCard";
-import { BundleItemsForm, ProductDetailsForm, ProductFileForm, ProductPricesForm, RelatedProductsForm, type ProductRow } from "@/components/admin/ProductForms";
+import { BundleItemsForm, ProductDetailsForm, ProductPricesForm, RelatedProductsForm, type ProductRow } from "@/components/admin/ProductForms";
+import { ProductFileUpload } from "@/components/admin/ProductFileUpload";
 import { requirePermission } from "@/lib/admin/guard";
 import { getLibraryImages } from "@/lib/admin/media";
 import { formatMoneyMinor, isUuid } from "@/lib/admin/validation";
@@ -59,7 +60,7 @@ export default async function ProductEditPage({ params }: { params: Promise<{ pr
           {type === "course"
             ? <Panel title="Prices">Course products use the course&apos;s own prices. <Link href={`/admin/courses/${p.course_id}?tab=pricing`} className="underline underline-offset-4">Edit course pricing</Link>.</Panel>
             : <ProductPricesForm productId={p.id} prices={priceMap} />}
-          {FILE_TYPES.includes(type) && <ProductFileForm productId={p.id} current={(file as { file_name: string; file_size: number | null; updated_at: string } | null) ?? null} />}
+          {FILE_TYPES.includes(type) && <ProductFileUpload productId={p.id} current={(file as { file_name: string; file_size: number | null; updated_at: string } | null) ?? null} />}
         </div>
       </div>
       {type === "bundle" && (
