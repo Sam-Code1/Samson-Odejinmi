@@ -74,7 +74,7 @@ async function AcademyFooter() {
             <Pathway className="mt-6 max-w-[16rem]" />
           </div>
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-4 lg:col-span-8">
-            {col("Learn", [{ href: "/academy/courses", label: "Courses" }, { href: "/academy/books", label: "Books" }, { href: "/dashboard", label: "My learning" }, { href: "/library", label: "Library" }])}
+            {col("Learn", [{ href: "/academy/courses", label: "Courses" }, { href: "/academy/books", label: "Books" }, { href: "/dashboard", label: "My learning" }, { href: "/library", label: "Library" }, { href: "/affiliates", label: "Affiliate programme" }])}
             {col("Academy", [{ href: "/academy#about", label: "About" }, { href: "/academy#instructor", label: "Instructor" }, { href: "/verify", label: "Verify a certificate" }, { href: "/", label: site.name }])}
             {col("Connect", [{ href: "/contact", label: "Contact" }, ...socials.map((s) => ({ href: s.url, label: s.label, external: true }))])}
             {col("Legal", [...legalLinks, { href: "/order/access", label: "Find my purchase" }])}

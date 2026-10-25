@@ -9,9 +9,11 @@ import type { SeoRouteKey } from "@/lib/cms/types";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [courses, projects, products] = await Promise.all([getPublishedCourses(), getProjects(), getPublishedProducts()]);
   const routes: [string, SeoRouteKey][] = [["", "home"], ["/work", "portfolio"], ["/about", "about"], ["/portfolio", "portfolio"], ["/services", "services"], ["/contact", "contact"], ["/academy", "academy"], ["/academy/courses", "academy_courses"]];
+  const extra = ["/affiliates"];
   const seo = await Promise.all(routes.map(([, key]) => getSeo(key)));
   return [
     ...routes.filter((_, i) => !seo[i].noindex).map(([p]) => ({ url: `${site.url}${p}`, lastModified: new Date() })),
+    ...extra.map((p) => ({ url: `${site.url}${p}`, lastModified: new Date() })),
     ...["/legal", ...Object.keys(legalPages).map((s) => `/legal/${s}`)].map((p) => ({ url: `${site.url}${p}`, lastModified: new Date() })),
     ...courses.map((c) => ({ url: `${site.url}/academy/courses/${c.slug}`, lastModified: new Date() })),
     // Shop pages (course products live on their course page). Downloads and the library are never listed.

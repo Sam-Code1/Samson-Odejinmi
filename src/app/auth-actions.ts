@@ -11,6 +11,7 @@ import { envSiteUrl } from "@/lib/site";
 
 export type FormState = { error?: string; message?: string; fields?: Record<string, string> };
 
+const safeNextProvided = (v: FormDataEntryValue | null) => typeof v === "string" && v !== "" && safeNext(v, "") !== "";
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NOT_CONFIGURED = "Accounts aren't available right now. Please try again later.";
 
@@ -32,6 +33,14 @@ export async function login(_: FormState, fd: FormData): Promise<FormState> {
   await recordSecurityEvent(error ? "login_failed" : "login_success", { email, userId: signed?.user?.id ?? null });
   // One generic message for every failure, so the form doesn't reveal which accounts exist.
   if (error) return { error: "That email and password don't match. Check them and try again.", fields: { email } };
+  // No destination given: people who only joined as affiliates (no courses) land on their affiliate dashboard.
+  if (!safeNextProvided(fd.get("next")) && signed?.user) {
+    const [{ data: aff }, { count: enrolled }] = await Promise.all([
+      supabase.from("affiliates").select("id").eq("user_id", signed.user.id).maybeSingle(),
+      supabase.from("enrolments").select("course_id", { count: "exact", head: true }).eq("user_id", signed.user.id),
+    ]);
+    if (aff && !enrolled) redirect("/affiliate");
+  }
   redirect(safeNext(fd.get("next")));
 }
 

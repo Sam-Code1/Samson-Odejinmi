@@ -67,12 +67,15 @@ export async function applyAffiliate(_: FormState, fd: FormData): Promise<FormSt
   const user = await getUser();
   if (!user) return { error: "Please sign in." };
   if (fd.get("terms") !== "on") return { error: "Please confirm you've read how the programme works." };
+  const plan = String(fd.get("plan") ?? "").trim().slice(0, 1000);
+  if (plan.length < 10) return { error: "Tell us briefly how you plan to share Fola Academy (a few words is enough)." };
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("apply_affiliate", { p_code: String(fd.get("code") ?? "").slice(0, 24), p_payout: String(fd.get("payout") ?? "").slice(0, 500) });
+  const { data, error } = await supabase.rpc("apply_affiliate", { p_code: String(fd.get("code") ?? "").slice(0, 24), p_payout: String(fd.get("payout") ?? "").slice(0, 500), p_plan: plan });
   const r = data as { ok: boolean; error?: string } | null;
+  if (error?.code === "PGRST202") return { error: "Applications aren't open yet. Please try again soon." };
   if (error || !r) return { error: "That didn't work. Please try again." };
   if (!r.ok) return { error: AFF_ERRORS[r.error ?? ""] ?? "That didn't work." };
-  revalidatePath("/affiliate");
+  revalidatePath("/affiliate", "layout");
   return { ok: true, message: "Thanks. Your application is in. You'll be able to share your link as soon as it's approved." };
 }
 
@@ -82,6 +85,6 @@ export async function updateAffiliatePayout(_: FormState, fd: FormData): Promise
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_my_affiliate_payout", { p_payout: String(fd.get("payout") ?? "").slice(0, 500) });
   if (error) return { error: "That didn't save. Please try again." };
-  revalidatePath("/affiliate");
+  revalidatePath("/affiliate", "layout");
   return { ok: true, message: "Payout details saved." };
 }

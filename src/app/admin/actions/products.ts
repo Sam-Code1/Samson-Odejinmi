@@ -83,6 +83,17 @@ export async function saveProduct(_: ActionResult, fd: FormData): Promise<Action
       patch.edition = optStr(fd, "edition", 40);
       patch.launch_note = optStr(fd, "launch_note", 80);
     }
+    // Affiliate commission for this product (migration 0019). Only sent when the database has it.
+    if (fd.has("affiliate_present")) {
+      patch.affiliate_enabled = fd.get("affiliate_enabled") === "on";
+      const raw = str(fd, "affiliate_rate", 6).replace(",", ".");
+      if (raw === "") patch.affiliate_rate_bps = null;
+      else {
+        const pct = Number(raw);
+        if (!Number.isFinite(pct) || pct < 0 || pct > 90) errors.affiliate_rate = "Enter a percentage between 0 and 90, or leave it empty.";
+        else patch.affiliate_rate_bps = Math.round(pct * 100);
+      }
+    }
     // Shop details (migration 0009). Only read when the form sends them, so older databases keep saving.
     if (fd.has("extras_present")) {
       const order = Number(str(fd, "display_order", 6) || "0");

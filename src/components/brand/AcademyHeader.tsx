@@ -72,7 +72,7 @@ export function AcademyHeader({ nav }: { nav: { href: string; label: string }[] 
           </div>
           <div className="flex flex-1 flex-col justify-between overflow-y-auto px-4 py-8 sm:px-6">
             <ul className="space-y-1">
-              {[...nav, { href: "/login", label: "Log in" }, { href: "/dashboard", label: "My learning" }, { href: "/library", label: "Library" }].map((l, i) => (
+              {[...nav, { href: "/login", label: "Log in" }, { href: "/dashboard", label: "My learning" }, { href: "/library", label: "Library" }, { href: "/affiliates", label: "Affiliate programme" }].map((l, i) => (
                 <li key={l.href} className="fa-rise" style={{ animationDelay: `${i * 50}ms` }}>
                   <Link href={l.href} className="flex min-h-[56px] items-center justify-between border-b border-line text-h3">
                     {l.label}<ArrowRight aria-hidden className="h-5 w-5 text-ink-3" />

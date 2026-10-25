@@ -38,18 +38,19 @@ export function PortalSideNav() {
   );
 }
 
-/** Bottom tab bar (mobile, §16 Mobile): Learn · Courses · Library · Me. */
+/** Bottom tab bar (mobile, §16 Mobile): Learn · Courses · Library · Earn (affiliate) · Me. */
 export function PortalTabBar() {
   const path = usePathname();
   const tabs = [
     { href: "/dashboard", label: "Learn", icon: Waypoints },
     { href: "/courses", label: "Courses", icon: Home },
     { href: "/library", label: "Library", icon: Library },
-    { href: "/profile", label: "Me", icon: User, also: ["/settings", "/affiliate"] },
+    { href: "/affiliate", label: "Earn", icon: Gift },
+    { href: "/profile", label: "Me", icon: User, also: ["/settings"] },
   ];
   return (
     <nav aria-label="Student portal" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-canvas/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-      <ul className="mx-auto grid max-w-md grid-cols-4">
+      <ul className="mx-auto grid max-w-md grid-cols-5">
         {tabs.map(({ href, label, icon: Icon, also }) => {
           const on = isOn(path, href) || (also ?? []).some((a) => isOn(path, a));
           return (

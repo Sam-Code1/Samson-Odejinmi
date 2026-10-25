@@ -26,7 +26,7 @@ export default async function AffiliatePage({ params }: { params: Promise<{ affi
     ctx.supabase.from("affiliate_clicks").select("id", { count: "exact", head: true }).eq("affiliate_id", affiliateId).gte("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString()),
   ]);
   if (!data) notFound();
-  const a = data as { id: string; code: string; status: string; commission_rate_bps: number; notes: string | null; payout_details: string | null; created_at: string; approved_at: string | null; profiles: Person };
+  const a = data as { id: string; code: string; status: string; commission_rate_bps: number; notes: string | null; payout_details: string | null; promotion_plan?: string | null; created_at: string; approved_at: string | null; profiles: Person };
   const rows = (coms ?? []) as unknown as Com[];
   const sum = (st: string) => {
     const m = new Map<string, number>();
@@ -62,6 +62,11 @@ export default async function AffiliatePage({ params }: { params: Promise<{ affi
         </section>
         <div className="space-y-6">
           <AffiliateForm a={a} />
+          {a.promotion_plan && (
+            <Panel title="How they plan to promote" description="Written by the applicant. Use it to decide whether to approve.">
+              <p className="whitespace-pre-wrap break-words text-body-sm">{a.promotion_plan}</p>
+            </Panel>
+          )}
           <Panel title="Payout details" description="Provided by the affiliate. Visible to staff with affiliate access only.">
             <p className="whitespace-pre-wrap break-words text-body-sm">{a.payout_details ?? "Not provided yet."}</p>
           </Panel>

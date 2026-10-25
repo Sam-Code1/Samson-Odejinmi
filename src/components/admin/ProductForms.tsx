@@ -35,6 +35,8 @@ export type ProductRow = {
   details?: { format?: string; length?: string; level?: string; includes_note?: string };
   /** Migration 0018 (undefined before it runs). */
   edition?: string | null; launch_note?: string | null;
+  /** Migration 0019 (undefined before it runs). Rate in basis points; empty = the affiliate's own rate. */
+  affiliate_enabled?: boolean; affiliate_rate_bps?: number | null;
 };
 
 function StatusError() {
@@ -86,6 +88,14 @@ export function ProductDetailsForm({ p, library }: { p: ProductRow; library: Lib
           <TextInput label="Level" name="detail_level" defaultValue={p.details?.level ?? ""} maxLength={120} placeholder="Beginner" />
           <TextInput label="Note (optional)" name="detail_includes_note" defaultValue={p.details?.includes_note ?? ""} maxLength={120} placeholder="Free updates included" />
           <RepeaterField name="faq" label="Questions and answers" fields={{ title: "Question", body: "Answer" }} initial={(p.faq ?? []).map((x) => ({ title: x.q, body: x.a }))} max={12} className="sm:col-span-2" help="Shown at the bottom of the product page." />
+        </FormSection>
+      )}
+      {p.affiliate_enabled !== undefined && (
+        <FormSection title="Affiliates" description="Affiliates can share a link to this product and earn a commission on what the buyer actually pays, after discounts.">
+          <input type="hidden" name="affiliate_present" value="1" />
+          <CheckboxInput label="Open to affiliates" name="affiliate_enabled" defaultChecked={p.affiliate_enabled} />
+          <TextInput label="Commission (%)" name="affiliate_rate" inputMode="decimal" defaultValue={p.affiliate_rate_bps != null ? String(p.affiliate_rate_bps / 100) : ""} placeholder="20"
+            hint="For this product only. Leave empty to use each affiliate's own rate (10% unless you changed it). Applies to future sales; past commissions keep their rate." />
         </FormSection>
       )}
       <FormSection title="Search and sharing">

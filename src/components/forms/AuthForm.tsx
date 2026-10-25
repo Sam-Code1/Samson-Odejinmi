@@ -49,9 +49,9 @@ export function AuthForm({ mode, action, next }: { mode: Mode; action: Action; n
       <div className="space-y-2 text-body-sm text-ink-2">
         {mode === "login" && (<>
           <p><Link href="/forgot-password" className="underline underline-offset-4 hover:text-ink">Forgot your password?</Link></p>
-          <p>New here? <Link href="/register" className="underline underline-offset-4 hover:text-ink">Create an account</Link></p>
+          <p>New here? <Link href={`/register${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="underline underline-offset-4 hover:text-ink">Create an account</Link></p>
         </>)}
-        {mode === "register" && <p>Already have an account? <Link href="/login" className="underline underline-offset-4 hover:text-ink">Log in</Link></p>}
+        {mode === "register" && <p>Already have an account? <Link href={`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="underline underline-offset-4 hover:text-ink">Log in</Link></p>}
         {mode === "forgot" && <p><Link href="/login" className="underline underline-offset-4 hover:text-ink">Back to log in</Link></p>}
       </div>
     </form>
