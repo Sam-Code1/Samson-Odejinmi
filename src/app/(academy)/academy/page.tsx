@@ -9,6 +9,7 @@ import { Callout, IsoF, Pathway } from "@/components/brand/Brand";
 import { CourseCard } from "@/components/brand/CourseCard";
 import { BOOKS, BookCard, BookCover, PriceTag, bookHref } from "@/components/books/BookParts";
 import { getPublishedCourses } from "@/lib/academy";
+import { getPublicOffers, pct } from "@/lib/affiliate";
 import { faqAcademy } from "@/content/about";
 import { buildMetadata } from "@/lib/cms/seo";
 import { getPublishedProducts, getShopSettings, TYPE_LABELS } from "@/lib/products";
@@ -42,7 +43,8 @@ const METHOD = [
  * Prices on this cached page are shown in every currency a book is sold in (no guessing the visitor's currency).
  */
 export default async function AcademyPage() {
-  const [courses, products, shop] = await Promise.all([getPublishedCourses(), getPublishedProducts(), getShopSettings()]);
+  const [courses, products, shop, offers] = await Promise.all([getPublishedCourses(), getPublishedProducts(), getShopSettings(), getPublicOffers()]);
+  const topRate = offers.reduce((m, o) => Math.max(m, o.rate_bps), 0);
   const books = shop.enabled ? products.filter((p) => p.type !== "course") : [];
   const latest = books.find((b) => b.featured) ?? books[0] ?? null;
   const more = books.filter((b) => b.id !== latest?.id).slice(0, 4);
@@ -119,6 +121,29 @@ export default async function AcademyPage() {
           )}
         </FaSection>
       )}
+
+      {/* Affiliate programme: open to everyone, so visitors know it exists */}
+      <section id="affiliate" aria-labelledby="aff-title" className="theme-night border-t border-line bg-canvas">
+        <FaContainer className="grid items-center gap-10 py-16 sm:py-24 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            <p className="fa-label">Affiliate programme</p>
+            <h2 id="aff-title" className="mt-3 text-h2">Share Fola Academy. Earn from every sale.</h2>
+            <p className="mt-4 max-w-prose text-body-lg text-ink-2">Know someone who&apos;d love a course or a book? Get your own link for each one and earn a commission when they buy{topRate > 0 ? <>, up to <strong className="text-ink">{pct(topRate)}</strong> per sale</> : null}. You don&apos;t have to be a student: anyone with a free account can apply.</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/affiliates" className="fa-btn fa-btn-primary">How it works<ArrowRight aria-hidden className="fa-arrow h-4 w-4" /></Link>
+              <Link href="/affiliate" className="fa-btn fa-btn-secondary">Become an affiliate</Link>
+            </div>
+          </div>
+          <ol className="grid gap-px overflow-hidden rounded-[8px] border border-line bg-line lg:col-span-5">
+            {["Apply with a free account", "Share a link to any course or book", "Earn when someone buys"].map((t, i) => (
+              <li key={t} className="flex items-center gap-4 bg-canvas p-5">
+                <span className="font-mono text-xs text-ink-3">{String(i + 1).padStart(2, "0")}</span>
+                <span className="text-body">{t}</span>
+              </li>
+            ))}
+          </ol>
+        </FaContainer>
+      </section>
 
       {/* Method */}
       <FaSection id="method" label="How we teach" title="Mental models first, then tools, then projects." intro="Most creative education starts with the software. We start one layer deeper, with the problem each tool was invented to solve. Once you understand the problem, the buttons explain themselves.">
