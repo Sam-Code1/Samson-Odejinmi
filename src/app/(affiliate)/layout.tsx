@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
 import { FolaLogo } from "@/components/brand/Brand";
-import { AffiliateNav } from "@/components/affiliate/AffiliateNav";
+import { AffiliateTabBar, AffiliateTabs } from "@/components/affiliate/AffiliateNav";
 import { signOut } from "@/app/auth-actions";
 import { requireUser } from "@/lib/auth";
 import { academyRoot } from "@/app/fonts";
@@ -34,9 +34,10 @@ export default async function AffiliateLayout({ children }: { children: React.Re
             </form>
           </div>
         </div>
-        <AffiliateNav />
+        <AffiliateTabs />
       </header>
       <main id="main" className="mx-auto w-full max-w-[1100px] px-4 pb-28 pt-8 sm:px-6 sm:pt-10 lg:px-10 md:pb-16">{children}</main>
+      <AffiliateTabBar />
     </div>
   );
 }

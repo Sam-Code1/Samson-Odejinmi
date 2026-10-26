@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { StateForm } from "@/components/forms/StateForm";
-import { Field } from "@/components/forms/Field";
+import { BankFields } from "@/components/affiliate/BankFields";
+import { BadgeCheck } from "lucide-react";
+import { getBanks } from "@/lib/banks";
 import { StateMessage } from "@/components/ui/States";
 import { Stat } from "@/components/affiliate/Stat";
 import { updateAffiliatePayout } from "@/app/marketing-actions";
@@ -15,6 +17,8 @@ export default async function AffiliateEarnings() {
   const { summary: s, unavailable } = await getMyAffiliate();
   if (unavailable) return <StateMessage title="Coming soon" body="The affiliate programme isn't open yet." action={{ href: "/academy", label: "Fola Academy" }} />;
   if (!s) redirect("/affiliate");
+  const banks = await getBanks();
+  const saved = s.payout_last4 && s.payout_bank;
 
   return (
     <div className="space-y-12">
@@ -48,9 +52,22 @@ export default async function AffiliateEarnings() {
       </section>
       <section aria-labelledby="payout" className="max-w-xl">
         <h2 id="payout" className="text-h3">Payout details</h2>
-        <div className="mt-5">
-          <StateForm action={updateAffiliatePayout} submitLabel="Save payout details" variant="secondary">
-            <Field label="Bank or payout details" name="payout" defaultValue={s.payout_details ?? ""} hint="Visible only to you and Fola Academy's finance team." />
+        {saved ? (
+          <div className="mt-5 rounded-lg border border-line bg-elevated p-4 sm:p-5">
+            <p className="text-caption text-ink-3">Paid to</p>
+            <p className="mt-1 font-medium [overflow-wrap:anywhere]">{s.payout_name}</p>
+            <p className="text-body-sm text-ink-2">{s.payout_bank} · ••••{s.payout_last4}</p>
+            <p className="mt-2 flex items-center gap-1.5 text-caption">
+              {s.payout_verified ? <><BadgeCheck aria-hidden className="h-4 w-4 text-[rgb(var(--success))]" /><span className="text-ink-2">Verified with your bank</span></> : <span className="text-ink-3">Not verified yet. Our team checks it before paying.</span>}
+            </p>
+          </div>
+        ) : s.payout_details ? (
+          <p className="mt-5 whitespace-pre-wrap break-words rounded-lg border border-line bg-elevated p-4 text-body-sm text-ink-2">{s.payout_details}</p>
+        ) : null}
+        <div className="mt-6">
+          <h3 className="mb-4 text-h4">{saved || s.payout_details ? "Change payout account" : "Add your payout account"}</h3>
+          <StateForm action={updateAffiliatePayout} submitLabel={saved ? "Save new account" : "Save payout account"} variant="secondary">
+            <BankFields banks={banks} />
           </StateForm>
         </div>
       </section>

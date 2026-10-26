@@ -6,6 +6,8 @@ import { Field, TextArea } from "@/components/forms/Field";
 import { CopyButton } from "@/components/admin/CopyButton";
 import { StateMessage } from "@/components/ui/States";
 import { Stat } from "@/components/affiliate/Stat";
+import { BankFields } from "@/components/affiliate/BankFields";
+import { getBanks } from "@/lib/banks";
 import { applyAffiliate } from "@/app/marketing-actions";
 import { byStatus, getMyAffiliate, getOffers, money, offerPath, pct } from "@/lib/affiliate";
 import { site } from "@/lib/site";
@@ -19,6 +21,7 @@ export default async function AffiliateOverview() {
   if (unavailable) return <StateMessage title="Coming soon" body="The affiliate programme isn't open yet." action={{ href: "/academy", label: "Fola Academy" }} />;
 
   if (!s) {
+    const banks = await getBanks();
     return (
       <div className="max-w-xl">
         <p className="fa-label">Affiliate programme</p>
@@ -35,7 +38,7 @@ export default async function AffiliateOverview() {
             <Field label="Your referral code" name="code" hint="3–24 characters: letters, numbers, - or _. It goes in your links, e.g. ?ref=fola123" required autoCapitalize="none" autoCorrect="off" />
             <TextArea label="How will you share Fola Academy?" name="plan" required className="[&_textarea]:min-h-28" maxLength={1000}
               hint="Where you'll post and who you reach, e.g. a YouTube channel, a Blender community, a newsletter, a class you teach. A couple of sentences is plenty." />
-            <Field label="How should we pay you? (optional)" name="payout" hint="Bank name and account number, for example. Only you and our finance team can see this." />
+            <BankFields banks={banks} />
             <label className="flex min-h-[44px] items-start gap-3 text-body-sm text-ink-2"><input type="checkbox" name="terms" className="mt-1 h-4 w-4 accent-[rgb(var(--blue))]" /><span>I&apos;ve read how the programme works and won&apos;t use spam or misleading claims.</span></label>
           </StateForm>
         </div>

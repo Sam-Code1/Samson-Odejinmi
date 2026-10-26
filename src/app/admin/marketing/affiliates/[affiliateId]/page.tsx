@@ -26,7 +26,7 @@ export default async function AffiliatePage({ params }: { params: Promise<{ affi
     ctx.supabase.from("affiliate_clicks").select("id", { count: "exact", head: true }).eq("affiliate_id", affiliateId).gte("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString()),
   ]);
   if (!data) notFound();
-  const a = data as { id: string; code: string; status: string; commission_rate_bps: number; notes: string | null; payout_details: string | null; promotion_plan?: string | null; created_at: string; approved_at: string | null; profiles: Person };
+  const a = data as { id: string; code: string; status: string; commission_rate_bps: number; notes: string | null; payout_details: string | null; promotion_plan?: string | null; payout_bank_name?: string | null; payout_account_number?: string | null; payout_account_name?: string | null; payout_verified?: boolean; payout_verified_at?: string | null; created_at: string; approved_at: string | null; profiles: Person };
   const rows = (coms ?? []) as unknown as Com[];
   const sum = (st: string) => {
     const m = new Map<string, number>();
@@ -68,7 +68,16 @@ export default async function AffiliatePage({ params }: { params: Promise<{ affi
             </Panel>
           )}
           <Panel title="Payout details" description="Provided by the affiliate. Visible to staff with affiliate access only.">
-            <p className="whitespace-pre-wrap break-words text-body-sm">{a.payout_details ?? "Not provided yet."}</p>
+            {a.payout_account_number ? (
+              <div className="space-y-2 text-body-sm">
+                <p className="font-medium">{a.payout_account_name}</p>
+                <p className="tabular-nums">{a.payout_bank_name} · {a.payout_account_number}</p>
+                <p className={a.payout_verified ? "text-caption text-ink-2" : "text-caption text-warm"}>
+                  {a.payout_verified ? `Verified with the bank${a.payout_verified_at ? ` on ${formatDate(a.payout_verified_at)}` : ""}. The name above came from the bank, not from the affiliate.` : "Not verified: the affiliate typed this name. Confirm it before paying."}
+                </p>
+                <p className="text-caption text-ink-3">Applicant: {a.profiles?.first_name} {a.profiles?.last_name}</p>
+              </div>
+            ) : <p className="whitespace-pre-wrap break-words text-body-sm">{a.payout_details ?? "Not provided yet."}</p>}
           </Panel>
           <Panel title="Account">
             <dl className="space-y-2 text-body-sm">

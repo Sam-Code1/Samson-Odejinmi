@@ -10,6 +10,8 @@ export type AffiliateSummary = {
   recent: { created_at: string; amount: number; currency: string; status: string; rate_bps?: number; items?: string | null }[];
   /** Migration 0019. */
   top_pages?: { path: string; clicks: number }[];
+  /** Migration 0020: the saved payout account (number masked). */
+  payout_bank?: string | null; payout_last4?: string | null; payout_name?: string | null; payout_verified?: boolean;
 };
 
 /** One thing an affiliate can promote, and what it pays (migration 0019; [] before it runs). */
