@@ -7,7 +7,7 @@ import { CurrencySelector } from "@/components/academy/CurrencySelector";
 import { NewsletterSignup } from "@/components/academy/NewsletterSignup";
 import { BuyButtons } from "@/components/shop/CartClient";
 import { BOOKS, BookCard, BookCover, PriceTag, bookHref, priceIn } from "./BookParts";
-import { getPublishedProducts, getShopSettings, TYPE_LABELS, type ProductCard as Card, type ProductType } from "@/lib/products";
+import { getPublishedProducts, getShopSettings, latestOf, TYPE_LABELS, type ProductCard as Card, type ProductType } from "@/lib/products";
 import { getRatings } from "@/lib/reviews";
 import { getShopperCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
@@ -73,7 +73,7 @@ export async function BooksView({ searchParams }: { searchParams: SP }) {
   const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
   const shown = list.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const defaultView = !tab && !q && sort === "featured" && page === 1;
-  const spotlight = defaultView ? (products.find((p) => p.featured && p.type !== "course") ?? products.find((p) => p.type !== "course")) : undefined;
+  const spotlight = defaultView ? latestOf(products.filter((p) => p.type !== "course")) : undefined;
   const grid = spotlight ? shown.filter((p) => p.id !== spotlight.id) : shown;
   const href = (o: Record<string, string | number | undefined>) => {
     const sp = new URLSearchParams();
@@ -100,7 +100,7 @@ export async function BooksView({ searchParams }: { searchParams: SP }) {
                   <BookCover name={spotlight.name} image={spotlight.coverImage} type={spotlight.type} priority sizes="(min-width: 1024px) 26rem, 80vw" />
                 </div>
                 <div className="lg:col-span-6 lg:col-start-7">
-                  <p className="fa-label">{spotlight.comingSoon ? "Coming soon" : "Featured"} · {TYPE_LABELS[spotlight.type]}{spotlight.edition ? ` · ${spotlight.edition}` : ""}</p>
+                  <p className="fa-label">{spotlight.comingSoon ? "Coming soon" : "Latest"} · {TYPE_LABELS[spotlight.type]}{spotlight.edition ? ` · ${spotlight.edition}` : ""}</p>
                   <h2 id="spotlight" className="mt-4 text-h1"><Link href={bookHref(spotlight)} className="hover:text-blue">{spotlight.name}</Link></h2>
                   {spotlight.shortDescription && <p className="fa-quote mt-5 max-w-prose text-[1.375rem] leading-snug text-ink-2">{spotlight.shortDescription}</p>}
                   {spotlight.comingSoon ? (

@@ -12,7 +12,7 @@ import { getPublishedCourses } from "@/lib/academy";
 import { getPublicOffers, pct } from "@/lib/affiliate";
 import { faqAcademy } from "@/content/about";
 import { buildMetadata } from "@/lib/cms/seo";
-import { getPublishedProducts, getShopSettings, TYPE_LABELS } from "@/lib/products";
+import { byNewest, getPublishedProducts, getShopSettings, latestOf, TYPE_LABELS } from "@/lib/products";
 
 export const revalidate = 300;
 
@@ -46,8 +46,9 @@ export default async function AcademyPage() {
   const [courses, products, shop, offers] = await Promise.all([getPublishedCourses(), getPublishedProducts(), getShopSettings(), getPublicOffers()]);
   const topRate = offers.reduce((m, o) => Math.max(m, o.rate_bps), 0);
   const books = shop.enabled ? products.filter((p) => p.type !== "course") : [];
-  const latest = books.find((b) => b.featured) ?? books[0] ?? null;
-  const more = books.filter((b) => b.id !== latest?.id).slice(0, 4);
+  // The newest book leads (a newly published edition replaces an older one), then the rest, newest first.
+  const latest = latestOf(books);
+  const more = books.filter((b) => b.id !== latest?.id).sort(byNewest).slice(0, 4);
   const first = courses[0] ?? null;
 
   return (

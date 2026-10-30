@@ -15,7 +15,7 @@ import { byCategory, getGallery, selectedWork } from "@/lib/gallery";
 import { site } from "@/lib/site";
 import { AcademyShelf } from "@/components/studio/AcademyShelf";
 import { getPublishedCourses } from "@/lib/academy";
-import { getPublishedProducts, getShopSettings } from "@/lib/products";
+import { byNewest, getPublishedProducts, getShopSettings } from "@/lib/products";
 
 export const revalidate = 3600;
 
@@ -33,7 +33,7 @@ const W = "mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10";
  */
 export default async function HomePage() {
   const [page, projects, settings, gallery, courses, products, shop] = await Promise.all([getPage("home"), getProjects(), getSiteSettings(), getGallery(), getPublishedCourses(), getPublishedProducts(), getShopSettings()]);
-  const books = shop.enabled ? products.filter((p) => p.type !== "course").slice(0, 4) : [];
+  const books = shop.enabled ? products.filter((p) => p.type !== "course").sort(byNewest).slice(0, 4) : [];
   const hero = page.hero, about = page.about_preview, academy = page.academy, contact = page.contact_cta, statement = page.statement;
   const disciplines = byCategory(gallery);
   const filled = disciplines.filter((d) => d.items.length > 0);

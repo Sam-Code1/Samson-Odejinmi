@@ -73,6 +73,14 @@ async function cards(rows: Row[]) {
   return rows.map((r) => toCard(r, cp, was)).filter((c): c is ProductCard => c !== null);
 }
 
+/** Newest first by publish date (coming-soon items have none, so they follow). Use it to pick "the latest" book. */
+export const byNewest = (a: { publishedAt: string | null }, b: { publishedAt: string | null }) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? "");
+/** The latest book: the most recently published one that can be bought, else the first of the list. */
+export function latestOf<T extends { publishedAt: string | null; comingSoon?: boolean }>(list: T[]): T | null {
+  const sorted = [...list].sort(byNewest);
+  return sorted.find((p) => !p.comingSoon) ?? sorted[0] ?? null;
+}
+
 export const getPublishedProducts = cache(async (): Promise<ProductCard[]> => {
   if (!supabaseConfigured) return [];
   try {
