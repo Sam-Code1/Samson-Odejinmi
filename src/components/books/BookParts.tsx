@@ -42,6 +42,14 @@ export function priceIn(p: Pick<Card, "prices">, currency: string) {
   return p.prices.find((x) => x.currency === currency) ?? null;
 }
 
+/** Percentage off when an original ("was") price is set and higher than the price, else null. */
+export function discountPct(p: Pick<Card, "prices">, currency: string): number | null {
+  const x = priceIn(p, currency) ?? p.prices[0];
+  if (!x?.compareAtMinor || x.compareAtMinor <= x.amountMinor || x.amountMinor < 0) return null;
+  const pct = Math.round((1 - x.amountMinor / x.compareAtMinor) * 100);
+  return pct >= 1 ? pct : null;
+}
+
 /** Price in the shopper's currency, or what it IS priced in (never silently another currency). */
 export function PriceTag({ p, currency, className }: { p: Pick<Card, "prices">; currency: string; className?: string }) {
   const exact = priceIn(p, currency);
@@ -64,7 +72,9 @@ export function BookCard({ p, currency, index = 0, rating }: { p: Card; currency
         <BookCover name={p.name} image={p.coverImage} type={p.type} index={index} className="transition-transform duration-[240ms] ease-[cubic-bezier(0.2,0,0,1)] group-hover:-translate-y-1" />
         {p.comingSoon
           ? <span className="absolute left-3 top-3 rounded-full bg-node px-2.5 py-1 font-mono text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#0b0b0c]">Coming soon</span>
-          : p.badge && <span className="fa-tag absolute left-3 top-3 bg-surface" data-tone="accent">{p.badge}</span>}
+          : discountPct(p, currency)
+            ? <span className="absolute left-3 top-3 rounded-full bg-node px-2.5 py-1 font-mono text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#0b0b0c]">{discountPct(p, currency)}% off</span>
+            : p.badge && <span className="fa-tag absolute left-3 top-3 bg-surface" data-tone="accent">{p.badge}</span>}
       </div>
       <div className="flex flex-1 flex-col pt-4">
         <div className="flex flex-wrap items-center gap-2">

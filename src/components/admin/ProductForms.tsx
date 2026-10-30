@@ -107,14 +107,23 @@ export function ProductDetailsForm({ p, library }: { p: ProductRow; library: Lib
   );
 }
 
-export function ProductPricesForm({ productId, prices }: { productId: string; prices: Record<string, number> }) {
+export function ProductPricesForm({ productId, prices, compare }: { productId: string; prices: Record<string, number>; compare?: Record<string, number> | null }) {
+  const canCompare = compare !== undefined && compare !== null; // the database has migration 0012
   return (
     <AdminForm action={saveProductPrices} submitLabel="Save prices" stickyBar={false}>
       <input type="hidden" name="productId" value={productId} />
       <FormSection title="Prices" description="Leave a currency empty to not sell in it. 0 = free (people still check out, so it lands in their library). Checkout always uses these server-side prices.">
-        {(["NGN", "USD", "GBP"] as const).map((c) => (
-          <TextInput key={c} label={`${c} price`} name={`price_${c}`} inputMode="decimal" defaultValue={prices[c] != null ? String(prices[c] / 100) : ""} hint={c === "NGN" ? "In naira, e.g. 5000" : c === "USD" ? "In dollars, e.g. 9" : "In pounds, e.g. 7"} />
-        ))}
+        {canCompare && <input type="hidden" name="compare_present" value="1" />}
+        {(["NGN", "USD", "GBP"] as const).map((c) => {
+          const off = canCompare && prices[c] != null && compare?.[c] && compare[c] > prices[c] ? Math.round((1 - prices[c] / compare[c]) * 100) : null;
+          return (
+            <div key={c} className="space-y-3 sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0">
+              <TextInput label={`${c} price`} name={`price_${c}`} inputMode="decimal" defaultValue={prices[c] != null ? String(prices[c] / 100) : ""} hint={c === "NGN" ? "In naira, e.g. 5000" : c === "USD" ? "In dollars, e.g. 9" : "In pounds, e.g. 7"} />
+              {canCompare && <TextInput label={`${c} original price (optional)`} name={`compare_${c}`} inputMode="decimal" defaultValue={compare?.[c] != null ? String(compare[c] / 100) : ""}
+                hint={off ? `Shown crossed out beside the price, with a "${off}% off" badge. Display only: customers are charged the price on the left.` : "A higher original price. When set, the shop shows it crossed out with a % off badge. Display only: customers are charged the price on the left."} />}
+            </div>
+          );
+        })}
       </FormSection>
     </AdminForm>
   );

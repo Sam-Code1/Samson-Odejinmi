@@ -20,7 +20,7 @@ export default async function ProductEditPage({ params }: { params: Promise<{ pr
   if (!ctx) return null;
   const [{ data }, { data: prices }, { data: file }, { data: items }, { data: related }, { data: others }, library] = await Promise.all([
     ctx.supabase.from("products").select("*, courses(title, slug)").eq("id", productId).maybeSingle(),
-    ctx.supabase.from("product_prices").select("currency, amount_minor").eq("product_id", productId),
+    ctx.supabase.from("product_prices").select("currency, amount_minor, compare_at_minor").eq("product_id", productId),
     ctx.supabase.from("product_files").select("file_name, file_size, updated_at").eq("product_id", productId).maybeSingle(),
     ctx.supabase.from("bundle_items").select("product_id").eq("bundle_id", productId).order("position"),
     ctx.supabase.from("related_products").select("related_id").eq("product_id", productId).order("position"),
@@ -30,7 +30,15 @@ export default async function ProductEditPage({ params }: { params: Promise<{ pr
   if (!data) notFound();
   const p = data as ProductRow & { courses: { title: string; slug: string } | null };
   const type = p.product_type as ProductType;
-  const priceMap = Object.fromEntries(((prices ?? []) as { currency: string; amount_minor: number }[]).map((r) => [r.currency, r.amount_minor]));
+  // "Original price" (migration 0012): when the column is missing the read fails, so fall back to plain prices.
+  let priceRows = (prices ?? []) as { currency: string; amount_minor: number; compare_at_minor?: number | null }[];
+  let compareMap: Record<string, number> | null = {};
+  if (!prices) {
+    const { data: plain } = await ctx.supabase.from("product_prices").select("currency, amount_minor").eq("product_id", productId);
+    priceRows = (plain ?? []) as typeof priceRows;
+    compareMap = null;
+  } else priceRows.forEach((r) => { if (r.compare_at_minor) compareMap![r.currency] = r.compare_at_minor; });
+  const priceMap = Object.fromEntries(priceRows.map((r) => [r.currency, r.amount_minor]));
   const opts = ((others ?? []) as { id: string; name: string; product_type: ProductType; status: string }[]);
 
   // Sales from real payments, only for staff who may see money.
@@ -59,7 +67,7 @@ export default async function ProductEditPage({ params }: { params: Promise<{ pr
         <div className="space-y-8">
           {type === "course"
             ? <Panel title="Prices">Course products use the course&apos;s own prices. <Link href={`/admin/courses/${p.course_id}?tab=pricing`} className="underline underline-offset-4">Edit course pricing</Link>.</Panel>
-            : <ProductPricesForm productId={p.id} prices={priceMap} />}
+            : <ProductPricesForm productId={p.id} prices={priceMap} compare={compareMap} />}
           {FILE_TYPES.includes(type) && <ProductFileUpload productId={p.id} current={(file as { file_name: string; file_size: number | null; updated_at: string } | null) ?? null} />}
         </div>
       </div>

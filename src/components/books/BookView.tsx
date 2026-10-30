@@ -10,7 +10,7 @@ import { NewsletterSignup } from "@/components/academy/NewsletterSignup";
 import { LookInside } from "./LookInside";
 import { previewPages } from "@/content/book-previews";
 import { ReportReview, ReviewForm, Stars } from "@/components/shop/Reviews";
-import { BOOKS, BookCard, BookCover, PriceTag, RichDescription, priceIn } from "./BookParts";
+import { BOOKS, BookCard, BookCover, PriceTag, RichDescription, discountPct, priceIn } from "./BookParts";
 import { getProduct, getShopSettings, TYPE_LABELS, FILE_TYPES } from "@/lib/products";
 import { getProductReviews, getRatings } from "@/lib/reviews";
 import { getShopperCurrency, pickCurrency } from "@/lib/currency";
@@ -66,6 +66,7 @@ export async function BookView({ slug, reviewPage = 1 }: { slug: string; reviewP
   const url = `${site.url}${bookUrl(p.slug)}`;
   const facts = FACTS.filter(([k]) => p.details[k]);
   const inside = previewPages(p.slug);
+  const off = shown && !p.comingSoon ? discountPct(p, currency) : null;
   const jsonLd = {
     "@context": "https://schema.org", "@type": p.type === "ebook" ? ["Product", "Book"] : "Product", name: p.name, description: p.shortDescription ?? undefined,
     ...(p.coverImage ? { image: p.coverImage } : {}), brand: { "@type": "Brand", name: "Fola Academy" }, author: { "@type": "Person", name: "Samson Afolabi Odejinmi" }, url,
@@ -110,7 +111,7 @@ export async function BookView({ slug, reviewPage = 1 }: { slug: string; reviewP
 
             <div className="fa-card mt-8 p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                {shown ? <div>{p.comingSoon && <p className="fa-label mb-1">Price at launch</p>}<p className="text-h3"><PriceTag p={p} currency={currency} /></p></div> : <p className="text-h4 text-ink-2">{p.comingSoon && !p.prices.length ? "Price announced at launch" : `Not available in ${currency}`}</p>}
+                {shown ? <div>{p.comingSoon && <p className="fa-label mb-1">Price at launch</p>}<p className="text-h3"><PriceTag p={p} currency={currency} /></p>{off && <p className="mt-2 flex flex-wrap items-center gap-2"><span className="rounded-full bg-node px-2.5 py-1 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-[#0b0b0c]">{off}% off</span><span className="text-caption text-ink-2">Launch price</span></p>}</div> : <p className="text-h4 text-ink-2">{p.comingSoon && !p.prices.length ? "Price announced at launch" : `Not available in ${currency}`}</p>}
                 {p.prices.length > 0 && <CurrencySelector current={currency} size="sm" />}
               </div>
               {!shown && p.prices.length > 0 && <p className="mt-2 text-body-sm text-ink-2">Available in {p.prices.map((x) => x.currency).join(", ")}. Switch currency above.</p>}

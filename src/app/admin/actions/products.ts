@@ -149,13 +149,24 @@ export async function saveProductPrices(_: ActionResult, fd: FormData): Promise<
     if (!p) return { ok: false, error: "That product no longer exists." };
     if (p.product_type === "course") return { ok: false, error: "Course prices are set on the course (Courses → Pricing), so there's one price list per course." };
     const errors: Record<string, string> = {};
-    const rows: { currency: string; amount_minor: number }[] = [];
+    const rows: { currency: string; amount_minor: number; compare_at_minor?: number | null }[] = [];
+    const withCompare = fd.has("compare_present");
     for (const c of CURRENCIES) {
       const raw = str(fd, `price_${c}`, 20).replace(/,/g, "");
-      if (!raw) continue;
+      const rawWas = withCompare ? str(fd, `compare_${c}`, 20).replace(/,/g, "") : "";
+      if (!raw) { if (rawWas) errors[`compare_${c}`] = "Set the price first, or clear this."; continue; }
       const n = Number(raw);
       if (!Number.isFinite(n) || n < 0 || n > 10_000_000) { errors[`price_${c}`] = "Enter an amount, e.g. 5000 (or 0 for free)."; continue; }
-      rows.push({ currency: c, amount_minor: Math.round(n * 100) });
+      const row: { currency: string; amount_minor: number; compare_at_minor?: number | null } = { currency: c, amount_minor: Math.round(n * 100) };
+      if (withCompare) {
+        if (!rawWas) row.compare_at_minor = null;
+        else {
+          const w = Number(rawWas);
+          if (!Number.isFinite(w) || w <= n || w > 10_000_000) errors[`compare_${c}`] = "The original price must be higher than the price.";
+          else row.compare_at_minor = Math.round(w * 100);
+        }
+      }
+      rows.push(row);
     }
     if (Object.keys(errors).length) return { ok: false, fieldErrors: errors };
     const { data: old } = await ctx.supabase.from("product_prices").select("currency, amount_minor").eq("product_id", id);
@@ -166,7 +177,7 @@ export async function saveProductPrices(_: ActionResult, fd: FormData): Promise<
       const { error } = await ctx.supabase.from("product_prices").upsert(rows.map((r) => ({ product_id: id, ...r, active: true })), { onConflict: "product_id,currency" });
       if (error) return dbError(error);
     }
-    const summary = rows.map((r) => `${r.currency} ${r.amount_minor / 100}`).join(", ") || "none";
+    const summary = rows.map((r) => `${r.currency} ${r.amount_minor / 100}${r.compare_at_minor ? ` (was ${r.compare_at_minor / 100})` : ""}`).join(", ") || "none";
     await logActivity(ctx, "price changed", "product", id, p.name as string, { prices: summary.slice(0, 120) });
     refresh(id);
     return { ok: true, message: "Prices saved." };
