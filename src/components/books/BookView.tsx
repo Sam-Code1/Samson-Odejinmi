@@ -7,6 +7,8 @@ import { Pathway } from "@/components/brand/Brand";
 import { CurrencySelector } from "@/components/academy/CurrencySelector";
 import { BuyButtons } from "@/components/shop/CartClient";
 import { NewsletterSignup } from "@/components/academy/NewsletterSignup";
+import { LookInside } from "./LookInside";
+import { previewPages } from "@/content/book-previews";
 import { ReportReview, ReviewForm, Stars } from "@/components/shop/Reviews";
 import { BOOKS, BookCard, BookCover, PriceTag, RichDescription, priceIn } from "./BookParts";
 import { getProduct, getShopSettings, TYPE_LABELS, FILE_TYPES } from "@/lib/products";
@@ -63,6 +65,7 @@ export async function BookView({ slug, reviewPage = 1 }: { slug: string; reviewP
   const more = reviews.length > PER_PAGE;
   const url = `${site.url}${bookUrl(p.slug)}`;
   const facts = FACTS.filter(([k]) => p.details[k]);
+  const inside = previewPages(p.slug);
   const jsonLd = {
     "@context": "https://schema.org", "@type": p.type === "ebook" ? ["Product", "Book"] : "Product", name: p.name, description: p.shortDescription ?? undefined,
     ...(p.coverImage ? { image: p.coverImage } : {}), brand: { "@type": "Brand", name: "Fola Academy" }, author: { "@type": "Person", name: "Samson Afolabi Odejinmi" }, url,
@@ -113,6 +116,7 @@ export async function BookView({ slug, reviewPage = 1 }: { slug: string; reviewP
               {!shown && p.prices.length > 0 && <p className="mt-2 text-body-sm text-ink-2">Available in {p.prices.map((x) => x.currency).join(", ")}. Switch currency above.</p>}
               <p className="mt-2 text-caption text-ink-3">{p.comingSoon ? `${p.edition ? `${p.edition} · ` : ""}Coming soon: you'll be able to buy it here the moment it's published.` : isFile ? "Instant download after payment · Kept in your Library if you have an account" : p.type === "bundle" ? "Everything below, in one purchase" : "One-time payment"}</p>
               <div className="mt-6">{buy}</div>
+              {inside.length > 0 && <a href="#look-inside" className="mt-4 inline-flex min-h-[44px] items-center gap-2 text-body-sm font-semibold text-blue hover:underline hover:underline-offset-4">Look inside: {inside.length} real pages<span aria-hidden>↓</span></a>}
             </div>
 
             {facts.length > 0 && (
@@ -131,6 +135,12 @@ export async function BookView({ slug, reviewPage = 1 }: { slug: string; reviewP
             <div className="lg:col-span-5 lg:col-start-8"><NewsletterSignup title={`Tell me when ${p.name} is out`} body="No spam; unsubscribe with one click." /></div>
           </FaContainer>
         </section>
+      )}
+
+      {inside.length > 0 && (
+        <FaSection id="look-inside" label="Look inside" title="Turn the pages before you buy." intro={`${inside.length} real pages from the ${p.edition ?? "book"}: the contents, the diagrams, the checklist and your first project. Flip through, then open any page full screen.`}>
+          <LookInside pages={inside} bookName={p.name} />
+        </FaSection>
       )}
 
       {p.description && (
